@@ -2175,7 +2175,7 @@ async function loadCapacity() {
 
     const days = ['seg','ter','qua','qui','sex'];
     const dayLabels = { seg:'Seg', ter:'Ter', qua:'Qua', qui:'Qui', sex:'Sex' };
-    const maxSlots = 27; // max por closer por dia
+    const maxSlots = 5; // max por closer por dia (blocos fixos de 1h30)
 
     // Agrega total de closers para threshold
     const totalClosers = d.totalClosers || 1;
@@ -2203,7 +2203,7 @@ async function loadCapacity() {
     tbody.innerHTML = d.closers.map(function(c) {
       const cells = days.map(function(day) {
         const n = c.days[day] || 0;
-        const cls = n >= 20 ? 'cap-cell-ok' : n >= 10 ? 'cap-cell-med' : 'cap-cell-low';
+        const cls = n >= 4 ? 'cap-cell-ok' : n >= 2 ? 'cap-cell-med' : 'cap-cell-low';
         return '<td class="cap-cell-num ' + cls + '">' + n + '</td>';
       }).join('');
       return '<tr><td>' + c.name + '</td>' + cells + '<td class="cap-cell-num">' + c.total + '</td></tr>';
