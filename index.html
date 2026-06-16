@@ -532,8 +532,8 @@ body::after {
 }
 .slot-btn:hover { border-color: var(--org); background: var(--org-tint); }
 .slot-btn.selected {
-  border-color: var(--org); background: var(--org);
-  box-shadow: 0 0 18px rgba(255,72,0,0.28);
+  border-color: var(--org); background: rgba(255,72,0,0.15);
+  box-shadow: 0 0 12px rgba(255,72,0,0.15);
 }
 .slot-day {
   display: block; font-size: 10px; font-weight: 600;
@@ -543,6 +543,10 @@ body::after {
 .slot-btn.selected .slot-day { color: rgba(255,255,255,0.7); }
 .slot-time { display: block; font-family: 'Space Grotesk', sans-serif; font-size: 14px; font-weight: 700; }
 .slot-empty { grid-column: 1/-1; padding: 28px; text-align: center; color: var(--txt-3); font-size: 13px; }
+
+.slot-badge { display: inline-block; font-size: 9px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 6px; border-radius: 99px; margin-bottom: 5px; }
+.slot-badge-slot { background: rgba(255,72,0,0.18); color: var(--org); }
+.slot-badge-free { background: rgba(255,255,255,0.06); color: var(--txt-3); }
 
 /* loading */
 .slot-loading { grid-column: 1/-1; display: flex; align-items: center; gap: 10px; padding: 24px; color: var(--txt-3); font-size: 13px; }
@@ -1735,6 +1739,7 @@ body::after {
           <!-- Controles -->
           <div class="cap-controls">
             <select class="cap-select" id="capSegment" onchange="loadCapacity()">
+              <option value="ALL">Todos</option>
               <option value="SMB">SMB</option>
               <option value="MID">MID</option>
               <option value="ENT">ENT</option>
@@ -2165,13 +2170,41 @@ async function loadCapacity() {
   tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--txt-3);padding:24px;">Carregando...</td></tr>';
 
   try {
-    const r = await fetch(API.capacity, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ segment, weekOffset })
-    });
-    const raw = await r.json();
-    const d = Array.isArray(raw) ? raw[0] : raw;
+    var d;
+    if (segment === 'ALL') {
+      // Busca os 3 segmentos e agrega
+      const [rSMB, rMID, rENT] = await Promise.all([
+        fetch(API.capacity, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ segment:'SMB', weekOffset }) }),
+        fetch(API.capacity, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ segment:'MID', weekOffset }) }),
+        fetch(API.capacity, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ segment:'ENT', weekOffset }) })
+      ]);
+      const [dSMB, dMID, dENT] = await Promise.all([rSMB.json(), rMID.json(), rENT.json()]);
+      const s = Array.isArray(dSMB) ? dSMB[0] : dSMB;
+      const m = Array.isArray(dMID) ? dMID[0] : dMID;
+      const e = Array.isArray(dENT) ? dENT[0] : dENT;
+      const days = ['seg','ter','qua','qui','sex'];
+      const agg = { seg:0, ter:0, qua:0, qui:0, sex:0 };
+      days.forEach(function(day) {
+        agg[day] = (s.aggregated[day]||0) + (m.aggregated[day]||0) + (e.aggregated[day]||0);
+      });
+      const tagSeg = function(closers, seg) { return (closers||[]).map(function(c){ return Object.assign({}, c, {segment: seg}); }); };
+      d = {
+        segment: 'ALL',
+        weekOffset,
+        dayDates: s.dayDates,
+        aggregated: agg,
+        closers: tagSeg(s.closers,'SMB').concat(tagSeg(m.closers,'MID')).concat(tagSeg(e.closers,'ENT')),
+        totalClosers: (s.totalClosers||0) + (m.totalClosers||0) + (e.totalClosers||0)
+      };
+    } else {
+      const r = await fetch(API.capacity, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ segment, weekOffset })
+      });
+      const raw = await r.json();
+      d = Array.isArray(raw) ? raw[0] : raw;
+    }
 
     const days = ['seg','ter','qua','qui','sex'];
     const dayLabels = { seg:'Seg', ter:'Ter', qua:'Qua', qui:'Qui', sex:'Sex' };
@@ -2200,14 +2233,36 @@ async function loadCapacity() {
       return;
     }
 
-    tbody.innerHTML = d.closers.map(function(c) {
-      const cells = days.map(function(day) {
-        const n = c.days[day] || 0;
-        const cls = n >= 4 ? 'cap-cell-ok' : n >= 2 ? 'cap-cell-med' : 'cap-cell-low';
-        return '<td class="cap-cell-num ' + cls + '">' + n + '</td>';
+    if (segment === 'ALL') {
+      // Agrupa por segmento
+      var segOrder = ['SMB', 'MID', 'ENT'];
+      var segLabels = { SMB: 'SMB', MID: 'Mid Market', ENT: 'Enterprise' };
+      var segColors = { SMB: 'var(--yellow)', MID: '#48b4ff', ENT: '#a064ff' };
+      var rows = '';
+      segOrder.forEach(function(seg) {
+        var segClosers = d.closers.filter(function(c) { return c.segment === seg; });
+        if (segClosers.length === 0) return;
+        rows += '<tr><td colspan="7" style="padding:10px 12px 6px;font-size:11px;font-weight:700;color:' + segColors[seg] + ';text-transform:uppercase;letter-spacing:0.08em;background:rgba(255,255,255,0.02);">' + segLabels[seg] + '</td></tr>';
+        segClosers.forEach(function(c) {
+          const cells = days.map(function(day) {
+            const n = c.days[day] || 0;
+            const cls = n >= 4 ? 'cap-cell-ok' : n >= 2 ? 'cap-cell-med' : 'cap-cell-low';
+            return '<td class="cap-cell-num ' + cls + '">' + n + '</td>';
+          }).join('');
+          rows += '<tr><td>' + c.name + '</td>' + cells + '<td class="cap-cell-num">' + c.total + '</td></tr>';
+        });
+      });
+      tbody.innerHTML = rows;
+    } else {
+      tbody.innerHTML = d.closers.map(function(c) {
+        const cells = days.map(function(day) {
+          const n = c.days[day] || 0;
+          const cls = n >= 4 ? 'cap-cell-ok' : n >= 2 ? 'cap-cell-med' : 'cap-cell-low';
+          return '<td class="cap-cell-num ' + cls + '">' + n + '</td>';
+        }).join('');
+        return '<tr><td>' + c.name + '</td>' + cells + '<td class="cap-cell-num">' + c.total + '</td></tr>';
       }).join('');
-      return '<tr><td>' + c.name + '</td>' + cells + '<td class="cap-cell-num">' + c.total + '</td></tr>';
-    }).join('');
+    }
 
   } catch(e) {
     aggGrid.innerHTML = '<div style="color:var(--red);padding:16px;">Erro: ' + e.message + '</div>';
@@ -2382,6 +2437,7 @@ async function fetchCloser() {
   document.getElementById('noAvailBanner').classList.remove('show');
 
   try {
+    console.log('[DEBUG fetchCloser] useSpecificSlot:', st.useSpecificSlot, '| specificSlotStart:', st.specificSlotStart);
     const payload = {
       lead_id: st.leadId,
       clientValue: st.rawValue,
@@ -2474,8 +2530,12 @@ function renderSlots(slots) {
   g.innerHTML='';
   slots.forEach(function(s){
     const btn=document.createElement('button');
-    btn.className='slot-btn'; btn.setAttribute('role','listitem');
-    btn.innerHTML='<span class="slot-day">'+s.day+' '+s.date+'</span><span class="slot-time">'+s.time+'</span>';
+    var isSlot = s.type === 'slot';
+    btn.className='slot-btn' + (isSlot ? ' is-slot' : ''); btn.setAttribute('role','listitem');
+    btn.innerHTML=
+      '<span class="slot-badge ' + (isSlot ? 'slot-badge-slot' : 'slot-badge-free') + '">' + (isSlot ? 'Slot' : 'Janela livre') + '</span>' +
+      '<span class="slot-day">'+s.day+' '+s.date+'</span>' +
+      '<span class="slot-time">'+s.time+'</span>';
     btn.onclick=function(){ selectSlot(btn,s); };
     g.appendChild(btn);
   });
