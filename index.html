@@ -1073,10 +1073,41 @@ body::after {
 .refresh-btn:hover { border-color: var(--org); color: var(--org); background: var(--org-tint2); }
 
 /* ── Badge ───────────────────────────────────── */
+/* ── Dashboard Capacidade ────────────────────────── */
+.cap-controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 20px; }
+.cap-select { background: var(--bg-raised); border: 1px solid var(--bd-default); border-radius: var(--r-sm); color: var(--txt-1); font-size: 13px; padding: 7px 12px; cursor: pointer; outline: none; }
+.cap-select:focus { border-color: var(--org); }
+.cap-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 28px; }
+.cap-day-card { background: var(--bg-card); border: 1px solid var(--bd-default); border-radius: var(--r); padding: 14px 12px; text-align: center; }
+.cap-day-label { font-size: 11px; font-weight: 600; color: var(--txt-3); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+.cap-day-date { font-size: 12px; color: var(--txt-3); margin-bottom: 10px; }
+.cap-day-count { font-size: 28px; font-weight: 700; line-height: 1; }
+.cap-day-sub { font-size: 11px; color: var(--txt-3); margin-top: 4px; }
+.cap-green { color: #4ade80; border-color: rgba(74,222,128,0.2); }
+.cap-yellow { color: #fbbf24; border-color: rgba(251,191,36,0.2); }
+.cap-red { color: #f87171; border-color: rgba(248,113,113,0.2); }
+.cap-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.cap-table th { text-align: left; padding: 8px 12px; font-size: 11px; font-weight: 600; color: var(--txt-3); text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 1px solid var(--bd-default); }
+.cap-table td { padding: 10px 12px; border-bottom: 1px solid var(--bd-subtle); color: var(--txt-1); }
+.cap-table tr:last-child td { border-bottom: none; }
+.cap-table .cap-cell-num { text-align: center; font-weight: 600; font-variant-numeric: tabular-nums; }
+.cap-table .cap-cell-low { color: #f87171; }
+.cap-table .cap-cell-med { color: #fbbf24; }
+.cap-table .cap-cell-ok { color: #4ade80; }
+.cap-section-title { font-size: 14px; font-weight: 700; color: var(--txt-1); margin-bottom: 12px; }
+
 /* ── Mercado (Emergency Pool) ─────────────────── */
 .mercado-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
 .mercado-title { font-size: 20px; font-weight: 700; color: var(--txt-1); }
 .mercado-subtitle { font-size: 13px; color: var(--txt-3); margin-top: 2px; }
+.admin-mode-select {
+  background: var(--bg-raised); border: 1px solid var(--bd-default);
+  border-radius: var(--r-sm); color: var(--txt-2);
+  font-size: 12px; font-weight: 500; padding: 5px 10px;
+  cursor: pointer; outline: none;
+}
+.admin-mode-select:focus { border-color: var(--org); }
+
 .slots-filters { padding: 10px 16px 14px; display: flex; flex-direction: column; gap: 10px; }
 .slots-filter-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .slots-filter-label { font-size: 11px; font-weight: 600; color: var(--txt-3); text-transform: uppercase; letter-spacing: 0.06em; min-width: 48px; }
@@ -1143,13 +1174,13 @@ body::after {
   <div class="login-wrap">
     <div class="login-card">
 
-      <div class="login-brand">
-        <svg width="26" height="30" viewBox="0 0 32 38" fill="none" aria-label="Hotmart logo" role="img">
-          <path d="M16 0C16 0 26 10 26 20C26 25.5 21.5 30 16 30C10.5 30 6 25.5 6 20C6 14.5 10 9 10 9C10 9 11 14 14 16C14 16 12 12 16 0Z" fill="#FF4800"/>
-          <circle cx="16" cy="22" r="5" fill="rgba(255,255,255,0.2)"/>
-          <circle cx="16" cy="22" r="3" fill="#FF4800"/>
+      <div class="login-brand" style="display:flex;align-items:center;gap:8px;">
+        <svg width="34" height="40" viewBox="0 0 34 40" fill="none" aria-label="Hotmart logo" role="img" xmlns="http://www.w3.org/2000/svg">
+          <path d="M17 0C13 8 11 13 13 18C10 15 9 11 9 11C6 14 4 19 4 23C4 31.3 9.9 38 17 38C24.1 38 30 31.3 30 23C30 14 22 5 17 0Z" fill="#FF4800"/>
+          <circle cx="17" cy="26" r="7" fill="white"/>
+          <circle cx="17" cy="26" r="4.5" fill="#FF4800"/>
         </svg>
-        <span class="login-wordmark">hotmart</span>
+        <span style="font-size:26px;font-weight:800;color:#fff;letter-spacing:-0.5px;line-height:1;">hotmart</span>
       </div>
 
       <div class="login-eyebrow">Closer Assignment</div>
@@ -1182,13 +1213,13 @@ body::after {
 
   <!-- Header -->
   <header class="hdr">
-    <div class="hdr-brand">
-      <svg width="20" height="24" viewBox="0 0 32 38" fill="none" aria-label="Hotmart" role="img">
-        <path d="M16 0C16 0 26 10 26 20C26 25.5 21.5 30 16 30C10.5 30 6 25.5 6 20C6 14.5 10 9 10 9C10 9 11 14 14 16C14 16 12 12 16 0Z" fill="#FF4800"/>
-        <circle cx="16" cy="22" r="5" fill="rgba(255,255,255,0.15)"/>
-        <circle cx="16" cy="22" r="3" fill="#FF4800"/>
+    <div class="hdr-brand" style="display:flex;align-items:center;gap:6px;">
+      <svg width="20" height="24" viewBox="0 0 34 40" fill="none" aria-label="Hotmart" role="img" xmlns="http://www.w3.org/2000/svg">
+        <path d="M17 0C13 8 11 13 13 18C10 15 9 11 9 11C6 14 4 19 4 23C4 31.3 9.9 38 17 38C24.1 38 30 31.3 30 23C30 14 22 5 17 0Z" fill="#FF4800"/>
+        <circle cx="17" cy="26" r="7" fill="white"/>
+        <circle cx="17" cy="26" r="4.5" fill="#FF4800"/>
       </svg>
-      <span class="hdr-wordmark">hotmart</span>
+      <span style="font-size:17px;font-weight:800;color:#fff;letter-spacing:-0.3px;line-height:1;">hotmart</span>
     </div>
     <div class="hdr-sep"></div>
     <span class="hdr-module">Closer Assignment</span>
@@ -1202,6 +1233,13 @@ body::after {
         <div class="hdr-user-email" id="hdrEmail">—</div>
       </div>
       <div class="hdr-avatar" id="hdrAvatar" aria-hidden="true">?</div>
+      <div id="adminViewMode" style="display:none; margin-right:8px;">
+        <select class="admin-mode-select" onchange="setAdminViewMode(this.value)">
+          <option value="admin">👁 Admin</option>
+          <option value="sdr">👁 SDR</option>
+          <option value="closer">👁 Closer</option>
+        </select>
+      </div>
       <button class="hdr-logout" onclick="doLogout()">Sair</button>
     </div>
   </header>
@@ -1509,6 +1547,15 @@ body::after {
     <!-- ── ADMIN VIEW ──────────────────────────── -->
     <div id="adminView" style="display:none">
 
+      <!-- Sub-tabs do dashboard -->
+      <div style="display:flex;gap:8px;padding:0 16px 16px;max-width:960px;margin:0 auto;">
+        <button class="filter-btn active" id="dashTabHistorico" onclick="switchDashTab('historico',this)">Histórico</button>
+        <button class="filter-btn" id="dashTabCapacidade" onclick="switchDashTab('capacidade',this)">Capacidade</button>
+      </div>
+
+      <!-- Seção Histórico -->
+      <div id="dashHistorico">
+
       <!-- Period filters -->
       <div class="dash-section">
         <div class="dash-section-header">
@@ -1679,6 +1726,56 @@ body::after {
         </div>
       </div>
 
+      </div><!-- /dashHistorico -->
+
+      <!-- Seção Capacidade -->
+      <div id="dashCapacidade" style="display:none">
+        <div style="max-width:960px;margin:0 auto;padding:0 16px 32px;">
+
+          <!-- Controles -->
+          <div class="cap-controls">
+            <select class="cap-select" id="capSegment" onchange="loadCapacity()">
+              <option value="SMB">SMB</option>
+              <option value="MID">MID</option>
+              <option value="ENT">ENT</option>
+            </select>
+            <select class="cap-select" id="capWeek" onchange="loadCapacity()">
+              <option value="0">Semana atual</option>
+              <option value="1">Próxima semana</option>
+            </select>
+            <button class="btn btn-ghost" onclick="loadCapacity()" style="font-size:13px;">↻ Atualizar</button>
+          </div>
+
+          <!-- Agregado -->
+          <div class="cap-section-title">Capacidade total por dia</div>
+          <div class="cap-grid" id="capAggGrid">
+            <div class="cap-day-card"><div class="cap-day-label">—</div></div>
+          </div>
+
+          <!-- Detalhe por closer -->
+          <div class="cap-section-title">Detalhe por closer</div>
+          <div style="background:var(--bg-card);border:1px solid var(--bd-default);border-radius:var(--r);overflow:hidden;">
+            <table class="cap-table" id="capTable">
+              <thead>
+                <tr>
+                  <th>Closer</th>
+                  <th class="cap-cell-num">Seg</th>
+                  <th class="cap-cell-num">Ter</th>
+                  <th class="cap-cell-num">Qua</th>
+                  <th class="cap-cell-num">Qui</th>
+                  <th class="cap-cell-num">Sex</th>
+                  <th class="cap-cell-num">Total</th>
+                </tr>
+              </thead>
+              <tbody id="capTableBody">
+                <tr><td colspan="7" style="text-align:center;color:var(--txt-3);padding:24px;">Carregando...</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        </div>
+      </div><!-- /dashCapacidade -->
+
     </div><!-- /adminView -->
 
   </main>
@@ -1804,6 +1901,7 @@ const API = {
   poolList:      'https://hotmart.app.n8n.cloud/webhook/pool-list',
   poolRemove:    'https://hotmart.app.n8n.cloud/webhook/pool-remove',
   poolAccept:    'https://hotmart.app.n8n.cloud/webhook/pool-accept',
+  capacity:      'https://hotmart.app.n8n.cloud/webhook/dashboard-capacity',
 };
 
 const SEGS = {
@@ -1907,6 +2005,7 @@ function setupRole(d) {
     tabSdr.style.display = '';
     tabMercado.style.display = '';
     tabAdmin.style.display = '';
+    document.getElementById('adminViewMode').style.display = '';
     switchTab('sdr');
   }
 }
@@ -1914,7 +2013,8 @@ function setupRole(d) {
 // ── Mercado ───────────────────────────────────
 async function loadMercado() {
   const grid = document.getElementById('mercadoGrid');
-  const role = session ? session.role : null;
+  var viewMode = document.getElementById('adminViewMode') && document.getElementById('adminViewMode').style.display !== 'none' ? document.querySelector('.admin-mode-select') : null;
+  const role = (viewMode && viewMode.value !== 'admin') ? viewMode.value : (session ? session.role : null);
   grid.innerHTML = '<div class="mercado-empty">Carregando...</div>';
 
   try {
@@ -2021,6 +2121,97 @@ async function removeLead(leadId, segment) {
     }
   } catch(e) {
     showToast('Erro: ' + e.message, 'error', 4000);
+  }
+}
+
+function setAdminViewMode(mode) {
+  var realRole = session ? session.role : 'admin';
+  if (mode === 'admin') {
+    setupRole(session);
+  } else {
+    // Simula visão sem trocar o role real
+    var tabSdr     = document.getElementById('tabSdr');
+    var tabMercado = document.getElementById('tabMercado');
+    var tabAdmin   = document.getElementById('tabAdmin');
+    [tabSdr, tabMercado, tabAdmin].forEach(function(t){ if(t) t.style.display='none'; });
+    document.getElementById('navTabs').style.display = 'block';
+    if (mode === 'sdr') {
+      tabSdr.style.display = '';
+      tabMercado.style.display = '';
+      switchTab('sdr');
+    } else if (mode === 'closer') {
+      tabMercado.style.display = '';
+      switchTab('mercado');
+    }
+  }
+}
+
+// ── Dashboard sub-tabs ────────────────────────
+function switchDashTab(tab, btn) {
+  document.getElementById('dashHistorico').style.display  = tab === 'historico'  ? '' : 'none';
+  document.getElementById('dashCapacidade').style.display = tab === 'capacidade' ? '' : 'none';
+  document.querySelectorAll('#adminView .filter-btn').forEach(function(b){ b.classList.remove('active'); });
+  if (btn) btn.classList.add('active');
+  if (tab === 'capacidade') loadCapacity();
+}
+
+// ── Dashboard Capacidade ──────────────────────
+async function loadCapacity() {
+  const segment   = document.getElementById('capSegment').value;
+  const weekOffset = parseInt(document.getElementById('capWeek').value);
+  const aggGrid   = document.getElementById('capAggGrid');
+  const tbody     = document.getElementById('capTableBody');
+  aggGrid.innerHTML = '<div class="cap-day-card" style="grid-column:1/-1;text-align:center;color:var(--txt-3);">Carregando...</div>';
+  tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--txt-3);padding:24px;">Carregando...</td></tr>';
+
+  try {
+    const r = await fetch(API.capacity, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ segment, weekOffset })
+    });
+    const raw = await r.json();
+    const d = Array.isArray(raw) ? raw[0] : raw;
+
+    const days = ['seg','ter','qua','qui','sex'];
+    const dayLabels = { seg:'Seg', ter:'Ter', qua:'Qua', qui:'Qui', sex:'Sex' };
+    const maxSlots = 27; // max por closer por dia
+
+    // Agrega total de closers para threshold
+    const totalClosers = d.totalClosers || 1;
+    const highThreshold = maxSlots * totalClosers * 0.7;
+    const midThreshold  = maxSlots * totalClosers * 0.4;
+
+    // Bloco agregado
+    aggGrid.innerHTML = days.map(function(day) {
+      const count = d.aggregated[day] || 0;
+      const cls = count >= highThreshold ? 'cap-green' : count >= midThreshold ? 'cap-yellow' : 'cap-red';
+      return '<div class="cap-day-card ' + cls + '">' +
+        '<div class="cap-day-label">' + dayLabels[day] + '</div>' +
+        '<div class="cap-day-date">' + (d.dayDates[day]||'') + '</div>' +
+        '<div class="cap-day-count">' + count + '</div>' +
+        '<div class="cap-day-sub">slots disponíveis</div>' +
+      '</div>';
+    }).join('');
+
+    // Tabela detalhe
+    if (!d.closers || d.closers.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--txt-3);padding:24px;">Nenhum closer ativo neste segmento.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = d.closers.map(function(c) {
+      const cells = days.map(function(day) {
+        const n = c.days[day] || 0;
+        const cls = n >= 20 ? 'cap-cell-ok' : n >= 10 ? 'cap-cell-med' : 'cap-cell-low';
+        return '<td class="cap-cell-num ' + cls + '">' + n + '</td>';
+      }).join('');
+      return '<tr><td>' + c.name + '</td>' + cells + '<td class="cap-cell-num">' + c.total + '</td></tr>';
+    }).join('');
+
+  } catch(e) {
+    aggGrid.innerHTML = '<div style="color:var(--red);padding:16px;">Erro: ' + e.message + '</div>';
+    tbody.innerHTML = '';
   }
 }
 
