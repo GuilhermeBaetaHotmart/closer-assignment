@@ -1719,9 +1719,9 @@ body::after {
           <table class="history-table">
             <thead><tr>
               <th>Data / Hora</th><th>Closer</th><th>Segmento</th>
-              <th>Subgrupo</th><th>Lead ID</th><th>Amount 12m</th><th>Horário da reunião</th>
+              <th>Subgrupo</th><th>Lead ID</th><th>Amount 12m</th><th>Horário da reunião</th><th>Tipo</th>
             </tr></thead>
-            <tbody id="historyTableBody"><tr><td colspan="7" class="table-empty">Carregando...</td></tr></tbody>
+            <tbody id="historyTableBody"><tr><td colspan="8" class="table-empty">Carregando...</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -2666,10 +2666,12 @@ async function doConfirmFinal(){
         segmentKey:  st.segKey,
         subgroupKey: st.subKey,
         sdrEmail:    session ? session.email : '',
-        ts:          new Date().toISOString()
+        ts:          new Date().toISOString(),
+        mode:        st.useSpecificSlot ? 'specific_date' : 'schedule'
       })
     });
-    const data = await res.json();
+    const raw = await res.json();
+    const data = Array.isArray(raw) ? raw[0] : raw;
     if (data.error) throw new Error(data.error);
     document.getElementById('reservationState').style.display = 'none';
     showSuccess(data);
@@ -3030,6 +3032,7 @@ function renderDashboard(data){
       '<td style="font-family:monospace;font-size:11px;color:var(--txt-3)">'+(h.lead_id||'—')+'</td>'+
       '<td style="font-family:\'Space Grotesk\',sans-serif;font-weight:700;font-size:13px">'+val+'</td>'+
       '<td style="font-size:11px;color:var(--txt-2)">'+(function(s){ if(!s||s==='—') return '—'; var d=new Date(s); return isNaN(d.getTime()) ? '—' : d.toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}); })(h.slot)+'</td>'+
+      '<td>'+(function(m){ var labels={schedule:'<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:99px;background:rgba(255,255,255,0.06);color:var(--txt-3)">Agenda</span>',specific_date:'<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:99px;background:rgba(255,92,0,0.12);color:var(--org)">Horário fixo</span>',pool:'<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:99px;background:rgba(72,180,255,0.12);color:#48b4ff">Mercado</span>'}; return labels[m]||'<span style="font-size:10px;color:var(--txt-3)">'+m+'</span>'; })(h.mode||'schedule')+'</td>'+
       '</tr>';
   }).join('');
 }
