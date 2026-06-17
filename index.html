@@ -1908,6 +1908,7 @@ const API = {
   poolRemove:    'https://hotmart.app.n8n.cloud/webhook/pool-remove',
   poolAccept:    'https://hotmart.app.n8n.cloud/webhook/pool-accept',
   capacity:      'https://hotmart.app.n8n.cloud/webhook/dashboard-capacity',
+  skip:          'https://hotmart.app.n8n.cloud/webhook/skip',
 };
 
 const SEGS = {
@@ -2590,8 +2591,22 @@ function setFilterPeriod(val, btn) {
 }
 
 function changeWeek(dir){ st.weekOffset+=dir; st.filterDay='all'; st.filterPeriod='all'; fetchSlots(); }
-function rejectAgenda(){
+async function rejectAgenda(){
   if(!st.queue.length){ alert('Não há mais closers disponíveis neste segmento.'); return; }
+  // Registra o pulo antes de trocar o closer
+  try {
+    await fetch(API.skip, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sdrEmail:         session ? session.email : '',
+        skippedCloserId:  st.closerId,
+        slots:            st.allSlots || []
+      })
+    });
+  } catch(e) {
+    console.warn('[skip] Erro ao registrar pulo:', e.message);
+  }
   st.refused.push(st.closerId); st.closerId=st.queue.shift(); st.weekOffset=0;
   fetchSlots(); renderRefused(); renderQueueHint();
 }
