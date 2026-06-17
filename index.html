@@ -464,6 +464,7 @@ body::after {
   display: none; margin-top: 16px;
   background: rgba(255,92,92,0.08); border: 1px solid rgba(255,92,92,0.25);
   border-radius: var(--r); padding: 14px 16px;
+  position: relative; z-index: 10;
 }
 .no-avail-banner.show { display: block; }
 .no-avail-title { font-size: 13px; font-weight: 600; color: var(--red); margin-bottom: 10px; }
@@ -1369,10 +1370,10 @@ body::after {
 
         <!-- Banner sem disponibilidade -->
         <div class="no-avail-banner" id="noAvailBanner">
-          <div class="no-avail-title">Nenhum closer disponível neste horário</div>
+          <div class="no-avail-title" id="noAvailTitle">Nenhum closer disponível neste horário</div>
           <div class="no-avail-btns">
             <button class="btn btn-ghost" onclick="clearSlotAndRetry()">Ver agenda normal</button>
-            <button class="btn btn-primary" onclick="goEmergencyPool()">Emergency Pool</button>
+            <button class="btn btn-primary" onclick="goEmergencyPool()">Enviar ao Mercado</button>
           </div>
         </div>
 
@@ -1460,7 +1461,7 @@ body::after {
 
         <div class="btn-row">
           <button class="btn btn-primary" id="btnConfirm" onclick="doReserve()" disabled>Reservar horário</button>
-          <button class="btn btn-ghost" onclick="rejectAgenda()">Agenda não atende — próximo</button>
+          <button class="btn btn-ghost" id="btnRejectAgenda" onclick="rejectAgenda()">Agenda não atende — próximo</button>
         </div>
         <div class="queue-hint" id="queueInfo" role="status"></div>
       </div>
@@ -2358,6 +2359,7 @@ async function goStep2() {
   await Promise.all([animPromise, fetchPromise]);
   document.getElementById('algoAnim').style.display='none';
   if (st.noAvailability) {
+    document.getElementById('c1').classList.remove('dimmed');
     document.getElementById('noAvailBanner').classList.add('show');
     document.getElementById('slotsGrid').innerHTML='';
     return;
@@ -2367,6 +2369,9 @@ async function goStep2() {
   document.getElementById('c2').style.display='';
   document.getElementById('c2').classList.remove('dimmed');
   document.getElementById('anonSub').textContent=SEGS[st.segKey].label+' · '+st.subLabel;
+  // No modo specific_date não faz sentido pular para próximo closer
+  var btnReject = document.getElementById('btnRejectAgenda');
+  if (btnReject) btnReject.style.display = (st.useSpecificSlot && st.specificSlotStart) ? 'none' : '';
 }
 
 // ── Slot picker ─────────────────────────────────
@@ -2448,8 +2453,15 @@ async function fetchCloser() {
     if (payload.mode === 'specific_date') payload.slotStart = st.specificSlotStart;
     const r=await fetch(API.algorithm,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
     const d=await r.json(); if(d.error) throw new Error(d.error);
-    if (d.no_availability) {
+    if (d.no_availability || d.fallback === 'emergency') {
       st.noAvailability = true;
+      // Atualiza título do banner conforme o motivo
+      var title = document.getElementById('noAvailTitle');
+      if (title) {
+        title.textContent = d.fallback === 'emergency'
+          ? 'Nenhum closer disponível neste segmento'
+          : 'Nenhum closer disponível neste horário';
+      }
       return;
     }
     st.noAvailability = false;
