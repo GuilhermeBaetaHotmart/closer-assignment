@@ -54,9 +54,168 @@
   --shadow-glow: 0 0 20px var(--org-glow);
 }
 
+
+/* ── Light mode ───────────────────────────────── */
+body.light {
+  color-scheme: light;
+  --org:        #E03E00;
+  --org-lt:     #FF5A1F;
+  --org-dk:     #B33200;
+  --org-glow:   rgba(224,62,0,0.2);
+  --org-tint:   rgba(224,62,0,0.08);
+  --org-tint2:  rgba(224,62,0,0.04);
+
+  --bg-base:    #F5F4F8;
+  --bg-raised:  #FFFFFF;
+  --bg-card:    #FFFFFF;
+  --bg-hover:   #F0EEF7;
+  --bg-overlay: rgba(245,244,248,0.95);
+
+  --bd-subtle:  rgba(0,0,0,0.06);
+  --bd-default: rgba(0,0,0,0.12);
+  --bd-strong:  rgba(224,62,0,0.25);
+
+  --txt-1:      #1A1828;
+  --txt-2:      #4A4760;
+  --txt-3:      #9492A8;
+
+  --yellow:     #C48A00;
+  --blue:       #0099CC;
+  --lilac:      #7B5FCC;
+  --green:      #1F9E74;
+  --red:        #D63B3B;
+
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.06);
+  --shadow-glow: 0 0 20px var(--org-glow);
+}
+
+body.light::before {
+  background-image:
+    linear-gradient(rgba(224,62,0,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(224,62,0,0.03) 1px, transparent 1px);
+}
+body.light::after {
+  background:
+    radial-gradient(ellipse 70% 50% at 15% 8%, rgba(224,62,0,0.04) 0%, transparent 55%),
+    radial-gradient(ellipse 50% 45% at 88% 92%, rgba(123,95,204,0.03) 0%, transparent 55%);
+}
+
+/* Toggle tema */
+.theme-toggle {
+  background: none;
+  border: 1px solid var(--bd-default);
+  border-radius: 100px;
+  padding: 5px 10px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 200ms ease;
+  display: flex; align-items: center; gap: 5px;
+  color: var(--txt-3);
+}
+.theme-toggle:hover { border-color: var(--org); background: var(--org-tint2); }
+
+
+/* ── Light mode overrides específicos ─────────── */
+body.light .login-card {
+  background: rgba(255,255,255,0.95);
+  box-shadow: 0 4px 32px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.06);
+}
+body.light .hdr {
+  background: rgba(245,244,248,0.97);
+  border-bottom-color: rgba(0,0,0,0.08);
+}
+body.light .slot-btn.selected .slot-day { color: rgba(255,255,255,0.9); }
+body.light .data-table tbody tr:nth-child(even) td { background: rgba(0,0,0,0.02); }
+body.light .data-table tbody tr:hover td { background: rgba(224,62,0,0.04) !important; }
+body.light .history-table tbody tr:hover td { background: rgba(224,62,0,0.03); }
+body.light .seg-toggle-track.off { background: rgba(0,0,0,0.08); }
+body.light .bar-track { background: rgba(0,0,0,0.08); }
+body.light .sub-mini-bar { background: rgba(0,0,0,0.08); }
+body.light .timer-track { background: rgba(0,0,0,0.1); }
+body.light .kpi-card:hover { border-color: var(--bd-strong); }
+body.light .slot-btn { background: #fff; }
+body.light .slot-btn:hover { background: var(--org-tint); }
+body.light .nav-tabs { background: #EBEBF5; border-color: rgba(0,0,0,0.08); }
+body.light .cal { border-color: rgba(0,0,0,0.1); }
+body.light .cal-head { background: rgba(224,62,0,0.05); }
+body.light .reservation-card { box-shadow: var(--shadow-card); }
+body.light .toast-success { background: rgba(255,255,255,0.98); }
+body.light .toast-error   { background: rgba(255,255,255,0.98); }
+body.light .toast-info    { background: rgba(255,255,255,0.98); }
+body.light #loginCanvas { opacity: 0.3; }
+body.light .env-badge { background: rgba(196,138,0,0.08); color: #C48A00; border-color: rgba(196,138,0,0.2); }
+
+
+/* ── Light mode: slots grid ───────────────────── */
+body.light .slots-grid {
+  background: #F0EEF8;
+}
+body.light .slot-btn {
+  background: #FFFFFF;
+  border-color: rgba(0,0,0,0.1);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+body.light .slot-btn:hover {
+  border-color: var(--org);
+  background: rgba(224,62,0,0.04);
+  box-shadow: 0 2px 8px rgba(224,62,0,0.12);
+}
+body.light .slot-btn.selected {
+  border-color: var(--org);
+  background: rgba(224,62,0,0.08);
+  box-shadow: 0 0 0 2px rgba(224,62,0,0.15);
+}
+body.light .slot-day { color: var(--txt-3); }
+body.light .slot-time { color: var(--txt-1); }
+body.light .slot-btn.selected .slot-day { color: rgba(255,255,255,0.85); }
+body.light .slot-btn.selected .slot-time { color: #fff; }
+body.light .slot-badge-free {
+  background: rgba(0,0,0,0.06);
+  color: var(--txt-2);
+}
+body.light .slot-badge-slot {
+  background: rgba(224,62,0,0.12);
+  color: var(--org);
+}
+body.light .cal-hint {
+  background: #FAFAFA;
+  color: var(--txt-3);
+}
+body.light .filter-btn {
+  background: #FFFFFF;
+  border-color: rgba(0,0,0,0.12);
+  color: var(--txt-2);
+}
+body.light .filter-btn.active {
+  background: var(--org);
+  border-color: var(--org);
+  color: #fff;
+}
+body.light .filter-btn:hover:not(.active) {
+  border-color: var(--org);
+  color: var(--org);
+}
+body.light .btn-ghost {
+  color: var(--txt-2);
+  border-color: rgba(0,0,0,0.15);
+}
+body.light .btn-ghost:hover {
+  border-color: var(--org);
+  color: var(--org);
+  background: rgba(224,62,0,0.04);
+}
+body.light .btn-primary:disabled {
+  background: #C8C6D8;
+  color: #fff;
+}
+
+/* ── Light mode: animação algoritmo ──────────── */
+/* algo card sempre dark — sem override light */
+
 /* ── Reset ────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { color-scheme: dark; }
+html { color-scheme: inherit; }
+body.light { color-scheme: light; }
 
 body {
   font-family: 'DM Sans', system-ui, sans-serif;
@@ -148,7 +307,7 @@ body::after {
 .form-input {
   width: 100%; padding: 12px 15px;
   font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 400;
-  background: rgba(255,255,255,0.05);
+  background: var(--bg-hover);
   border: 1px solid var(--bd-default);
   border-radius: var(--r-sm);
   color: var(--txt-1); outline: none;
@@ -451,7 +610,7 @@ body::after {
   font-family: 'DM Sans', sans-serif; font-size: 14px;
   padding: 9px 12px; outline: none; width: 100%;
   transition: border-color 0.15s;
-  color-scheme: dark;
+  color-scheme: inherit;
 }
 .slot-picker-input:focus { border-color: var(--org); }
 .slot-picker-input option {
@@ -525,6 +684,7 @@ body::after {
   gap: 8px; padding: 14px;
   background: rgba(0,0,0,0.2);
 }
+
 .slot-btn {
   padding: 12px 8px;
   border: 1px solid var(--bd-default); border-radius: var(--r-sm);
@@ -541,13 +701,13 @@ body::after {
   text-transform: uppercase; letter-spacing: 0.8px;
   color: var(--txt-3); margin-bottom: 4px;
 }
-.slot-btn.selected .slot-day { color: rgba(255,255,255,0.7); }
+.slot-btn.selected .slot-day { color: rgba(255,255,255,0.8); }
 .slot-time { display: block; font-family: 'Space Grotesk', sans-serif; font-size: 14px; font-weight: 700; }
 .slot-empty { grid-column: 1/-1; padding: 28px; text-align: center; color: var(--txt-3); font-size: 13px; }
 
 .slot-badge { display: inline-block; font-size: 9px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 6px; border-radius: 99px; margin-bottom: 5px; }
 .slot-badge-slot { background: rgba(255,72,0,0.18); color: var(--org); }
-.slot-badge-free { background: rgba(255,255,255,0.06); color: var(--txt-3); }
+.slot-badge-free { background: var(--bg-hover); color: var(--txt-3); }
 
 /* loading */
 .slot-loading { grid-column: 1/-1; display: flex; align-items: center; gap: 10px; padding: 24px; color: var(--txt-3); font-size: 13px; }
@@ -674,7 +834,7 @@ body::after {
 .timer-label span { font-weight: 600; color: #FFD450; }
 .timer-track {
   height: 4px; border-radius: 2px;
-  background: rgba(255,255,255,0.07);
+  background: var(--bg-raised);
 }
 .timer-fill {
   height: 4px; border-radius: 2px;
@@ -820,7 +980,7 @@ body::after {
 .data-table tbody td.center { text-align: center; }
 
 /* Zebra + hover */
-.data-table tbody tr:nth-child(even) td { background: rgba(255,255,255,0.015); }
+.data-table tbody tr:nth-child(even) td { background: rgba(0,0,0,0.015); }
 .data-table tbody tr:hover td { background: rgba(255,72,0,0.04) !important; }
 .data-table tbody tr:last-child td { border-bottom: none; }
 
@@ -847,7 +1007,7 @@ body::after {
   border-color: rgba(61,219,168,0.35);
 }
 .seg-toggle-track.off {
-  background: rgba(255,255,255,0.04);
+  background: var(--bg-raised);
   border-color: var(--bd-subtle);
 }
 .seg-toggle-thumb {
@@ -928,7 +1088,7 @@ body::after {
 .bar-cell { display: flex; align-items: center; gap: 10px; }
 .bar-track {
   flex: 1; height: 4px; border-radius: 2px;
-  background: rgba(255,255,255,0.07);
+  background: var(--bg-raised);
   min-width: 40px; max-width: 80px;
 }
 .bar-fill { height: 4px; border-radius: 2px; background: var(--org); box-shadow: 0 0 6px rgba(255,72,0,0.4); transition: width 600ms ease; }
@@ -948,7 +1108,7 @@ body::after {
 .sub-count.has-val { color: var(--org); }
 .sub-mini-bar {
   height: 3px; border-radius: 2px; margin-top: 5px;
-  background: rgba(255,255,255,0.06);
+  background: var(--bg-hover);
 }
 .sub-mini-fill {
   height: 3px; border-radius: 2px;
@@ -1025,13 +1185,13 @@ body::after {
 .seg-filter-btn:hover {
   border-color: var(--seg-color, var(--org));
   color: var(--seg-color, var(--org));
-  background: rgba(255,255,255,0.04);
+  background: var(--bg-raised);
 }
 .seg-filter-btn.active {
   background: var(--seg-color, var(--org));
   color: #0D0D1A;
   border-color: var(--seg-color, var(--org));
-  box-shadow: 0 0 10px rgba(255,255,255,0.1);
+  box-shadow: none;
 }
 .seg-filter-btn:first-of-type.active {
   background: var(--bg-raised); color: var(--txt-1);
@@ -1245,6 +1405,7 @@ body::after {
           <option value="closer">👁 Closer</option>
         </select>
       </div>
+      <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Alternar tema">🌙</button>
       <button class="hdr-logout" onclick="doLogout()">Sair</button>
     </div>
   </header>
@@ -1304,6 +1465,51 @@ body::after {
           <input class="field-input" type="email" id="clientEmailInput" placeholder="ex: cliente@empresa.com" autocomplete="off">
           <div class="field-err" id="clientEmailError" role="alert">Campo obrigatório</div>
         </div>
+
+        <div class="field" id="competitorField">
+          <label class="field-label" for="competitorInput">Concorrente</label>
+          <select class="field-input" id="competitorInput" onchange="onCompetitorChange()">
+            <option value="">Selecione o concorrente</option>
+                <option value="Amazon">Amazon</option>
+                <option value="Assiny">Assiny</option>
+                <option value="Asaas">Asaas</option>
+                <option value="Blitzpay">Blitzpay</option>
+                <option value="Cielo">Cielo</option>
+                <option value="Cakto">Cakto</option>
+                <option value="Direct Sales">Direct Sales</option>
+                <option value="EAD Plataforma">EAD Plataforma</option>
+                <option value="Ebanx">Ebanx</option>
+                <option value="Edools">Edools</option>
+                <option value="Eduzz">Eduzz</option>
+                <option value="Eventbrite">Eventbrite</option>
+                <option value="First Launch">First Launch</option>
+                <option value="Greenn">Greenn</option>
+                <option value="HeroSpark">HeroSpark</option>
+                <option value="Hotmart">Hotmart</option>
+                <option value="Hubla">Hubla</option>
+                <option value="InfinitePay">InfinitePay</option>
+                <option value="Kirvano">Kirvano</option>
+                <option value="Kiwify">Kiwify</option>
+                <option value="Lastlink">Lastlink</option>
+                <option value="Mercado Pago">Mercado Pago</option>
+                <option value="Monetizze">Monetizze</option>
+                <option value="Pagar.me">Pagar.me</option>
+                <option value="PagSeguro">PagSeguro</option>
+                <option value="PayPal">PayPal</option>
+                <option value="Perfect Pay">Perfect Pay</option>
+                <option value="Stripe">Stripe</option>
+                <option value="Sympla">Sympla</option>
+                <option value="Ticto">Ticto</option>
+                <option value="Udemy BR">Udemy BR</option>
+                <option value="Vindi">Vindi</option>
+                <option value="Voomp">Voomp</option>
+                <option value="Woocommerce">Woocommerce</option>
+                <option value="XGrowth">XGrowth</option>
+                <option value="Other">Other</option>
+          </select>
+          <div class="field-err" id="competitorError" role="alert">Campo obrigatório</div>
+        </div>
+
         <div class="field">
           <label class="field-label" for="valInput">Amount 12m</label>
           <div class="value-wrap">
@@ -1384,7 +1590,7 @@ body::after {
 
       <!-- Algorithm animation overlay -->
       <div id="algoAnim" style="display:none">
-        <div class="card" style="padding:16px 12px 12px; overflow:hidden;">
+        <div style="padding:16px 12px 12px; overflow:hidden; background:#0E0E1A; border-radius:14px; border:1px solid rgba(255,72,0,0.15); box-shadow:0 4px 24px rgba(0,0,0,0.4);">
           <canvas id="algoCanvas" width="620" height="260" style="display:block;width:620px;max-width:100%;height:auto;margin:0 auto"></canvas>
         </div>
       </div>
@@ -1557,6 +1763,7 @@ body::after {
         <button class="filter-btn active" id="dashTabHistorico" onclick="switchDashTab('historico',this)">Histórico</button>
         <button class="filter-btn" id="dashTabCapacidade" onclick="switchDashTab('capacidade',this)">Capacidade</button>
         <button class="filter-btn" id="dashTabSecurity" onclick="switchDashTab('security',this)">Security</button>
+        <button class="filter-btn" id="dashTabCampaigns" onclick="switchDashTab('campaigns',this)">Campanhas</button>
       </div>
 
       <!-- Seção Histórico -->
@@ -1841,6 +2048,23 @@ body::after {
         </div>
       </div><!-- /dashSecurity -->
 
+      <!-- Seção Campanhas -->
+      <div id="dashCampaigns" style="display:none">
+        <div style="max-width:960px;margin:0 auto;padding:0 16px 32px;">
+
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+            <div>
+              <div style="font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:700;color:var(--txt-1);">Gestão de Campanhas</div>
+              <div style="font-size:12px;color:var(--txt-3);margin-top:2px;">Ative concorrentes para criar filas paralelas de distribuição</div>
+            </div>
+            <button class="btn btn-ghost" onclick="loadCampaigns()" style="font-size:13px;">↻ Atualizar</button>
+          </div>
+
+          <div id="campaignsGrid"></div>
+
+        </div>
+      </div><!-- /dashCampaigns -->
+
     </div><!-- /adminView -->
 
   </main>
@@ -1969,6 +2193,9 @@ const API = {
   capacity:      'https://hotmart.app.n8n.cloud/webhook/dashboard-capacity',
   skip:          'https://hotmart.app.n8n.cloud/webhook/skip',
   security:      'https://hotmart.app.n8n.cloud/webhook/dashboard-security',
+  campaignsGet:  'https://hotmart.app.n8n.cloud/webhook/campaigns-get',
+  campaignsSet:  'https://hotmart.app.n8n.cloud/webhook/campaigns-set',
+  closerInfo:    'https://hotmart.app.n8n.cloud/webhook/closer-info',
 };
 
 const SEGS = {
@@ -2089,11 +2316,13 @@ async function loadMercado() {
 
     if (role === 'closer') {
       // Busca segment do closer no Redis
-      const rClose = await fetch('https://chief-bird-145382.upstash.io/hget/closer:' + session.email + '/segment', {
-        headers: { 'Authorization': 'Bearer gQAAAAAAAjfmAAIgcDIzNGU0MjkyMjFhYzQ0MTc5Yjc5ZDAzNjFkZmRkNDFkNw' }
+      const rClose = await fetch(API.closerInfo, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: session.email })
       });
       const rCloseData = await rClose.json();
-      const segment = rCloseData.result || 'SMB';
+      const segment = rCloseData.segment || 'SMB';
       document.getElementById('mercadoSubtitle').textContent = 'Leads disponíveis para ' + segment;
       const r = await fetch(API.poolList, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ segment }) });
       const txt = await r.text();
@@ -2218,10 +2447,12 @@ function switchDashTab(tab, btn) {
   document.getElementById('dashHistorico').style.display  = tab === 'historico'  ? '' : 'none';
   document.getElementById('dashCapacidade').style.display = tab === 'capacidade' ? '' : 'none';
   document.getElementById('dashSecurity').style.display   = tab === 'security'   ? '' : 'none';
+  document.getElementById('dashCampaigns').style.display  = tab === 'campaigns'  ? '' : 'none';
   document.querySelectorAll('#adminView .filter-btn').forEach(function(b){ b.classList.remove('active'); });
   if (btn) btn.classList.add('active');
   if (tab === 'capacidade') loadCapacity();
   if (tab === 'security')   loadSecurity();
+  if (tab === 'campaigns')  loadCampaigns();
 }
 
 // ── Dashboard Capacidade ──────────────────────
@@ -2307,7 +2538,7 @@ async function loadCapacity() {
       segOrder.forEach(function(seg) {
         var segClosers = d.closers.filter(function(c) { return c.segment === seg; });
         if (segClosers.length === 0) return;
-        rows += '<tr><td colspan="7" style="padding:10px 12px 6px;font-size:11px;font-weight:700;color:' + segColors[seg] + ';text-transform:uppercase;letter-spacing:0.08em;background:rgba(255,255,255,0.02);">' + segLabels[seg] + '</td></tr>';
+        rows += '<tr><td colspan="7" style="padding:10px 12px 6px;font-size:11px;font-weight:700;color:' + segColors[seg] + ';text-transform:uppercase;letter-spacing:0.08em;background:var(--bg-hover);">' + segLabels[seg] + '</td></tr>';
         segClosers.forEach(function(c) {
           const cells = days.map(function(day) {
             const n = c.days[day] || 0;
@@ -2393,6 +2624,10 @@ async function goStep2() {
   const lid=document.getElementById('leadIdInput').value.trim();
   if (!lid) { document.getElementById('leadIdError').style.display='block'; document.getElementById('leadIdInput').classList.add('error'); return; }
   document.getElementById('leadIdError').style.display='none'; document.getElementById('leadIdInput').classList.remove('error');
+  const competitor = document.getElementById('competitorInput').value.trim();
+  if (!competitor) { document.getElementById('competitorError').style.display='block'; document.getElementById('competitorInput').classList.add('error'); return; }
+  document.getElementById('competitorError').style.display='none'; document.getElementById('competitorInput').classList.remove('error');
+  st.competitor = competitor;
   const cem=document.getElementById('clientEmailInput').value.trim();
   const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cem);
   if (!cem || !emailOk) {
@@ -2543,7 +2778,8 @@ async function fetchCloser() {
       clientValue: st.rawValue,
       segmentKey: st.segKey,
       subgroupKey: st.subKey,
-      mode: (st.useSpecificSlot && st.specificSlotStart) ? 'specific_date' : 'schedule'
+      mode: (st.useSpecificSlot && st.specificSlotStart) ? 'specific_date' : 'schedule',
+      competitor: st.competitor || ''
     };
     if (payload.mode === 'specific_date') payload.slotStart = st.specificSlotStart;
     const r=await fetch(API.algorithm,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
@@ -2561,6 +2797,7 @@ async function fetchCloser() {
     }
     st.noAvailability = false;
     st.closerId=d.closerId; st.closerName=d.closerName||''; st.queue=d.queue||[];
+    st.campaignActive = d.campaignActive || false;
     console.log('[DEBUG] useSpecificSlot:', st.useSpecificSlot, 'specificSlotStart:', st.specificSlotStart);
     if (st.useSpecificSlot && st.specificSlotStart) {
       console.log('[DEBUG] chamando doReserveSpecific');
@@ -2836,19 +3073,21 @@ async function doConfirmFinal(){
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        closerId:    st.closerId,
-        slotId:      st.selectedSlotId,
-        slotStart:   st.selectedSlotStart,
-        slotEnd:     st.selectedSlotEnd,
-        tempEventId: st.tempEventId,
-        leadId:      st.leadId,
-        clientEmail: st.clientEmail,
-        clientValue: st.rawValue,
-        segmentKey:  st.segKey,
-        subgroupKey: st.subKey,
-        sdrEmail:    session ? session.email : '',
-        ts:          new Date().toISOString(),
-        mode:        st.useSpecificSlot ? 'specific_date' : 'schedule'
+        closerId:      st.closerId,
+        slotId:        st.selectedSlotId,
+        slotStart:     st.selectedSlotStart,
+        slotEnd:       st.selectedSlotEnd,
+        tempEventId:   st.tempEventId,
+        leadId:        st.leadId,
+        clientEmail:   st.clientEmail,
+        clientValue:   st.rawValue,
+        segmentKey:    st.segKey,
+        subgroupKey:   st.subKey,
+        sdrEmail:      session ? session.email : '',
+        ts:            new Date().toISOString(),
+        mode:          st.useSpecificSlot ? 'specific_date' : 'schedule',
+        competitor:    st.competitor || '',
+        campaignActive: st.campaignActive || false
       })
     });
     const raw = await res.json();
@@ -2920,11 +3159,12 @@ function showSuccess(data){
 
 /* ── Reset ──────────────────────────────────── */
 function resetAll(){
-  st={rawValue:0,leadId:null,clientEmail:null,segKey:null,subKey:null,subLabel:null,
+  st={rawValue:0,leadId:null,clientEmail:null,segKey:null,subKey:null,subLabel:null,competitor:null,campaignActive:false,
       closerId:null,queue:[],refused:[],weekOffset:0,
       selectedSlotId:null,selectedSlotLabel:null,selectedSlotStart:null,selectedSlotEnd:null,
       tempEventId:null};
   ['leadIdInput','clientEmailInput'].forEach(function(id){ document.getElementById(id).value=''; document.getElementById(id).classList.remove('error'); });
+  var compEl = document.getElementById('competitorInput'); if(compEl) { compEl.value=''; compEl.classList.remove('error'); }
   document.getElementById('valInput').value='';
   document.getElementById('leadIdError').style.display='none';
   document.getElementById('clientEmailError').style.display='none';
@@ -3068,7 +3308,7 @@ function renderChart(series, period) {
           backgroundColor: 'rgba(13,13,26,0.95)',
           borderColor: 'rgba(255,72,0,0.3)',
           borderWidth: 1,
-          titleColor: '#F0EDF8',
+          titleColor: document.body.classList.contains('light') ? '#1A1828' : '#F0EDF8',
           bodyColor: '#FF4800',
           padding: 10,
           callbacks: {
@@ -3191,11 +3431,26 @@ function renderDashboard(data){
           '<span class="seg-toggle-label">'+(isActive?'Ativo':'Inativo')+'</span>' +
         '</label>';
 
-      return '<tr>' +
+      var normalRow = '<tr>' +
         '<td><span class="closer-cell-name">'+(c.name||c.email)+'</span><span class="closer-cell-email">'+c.email+'</span></td>' +
         '<td>'+toggleHtml+'</td>' +
         '<td><div class="bar-cell"><div class="bar-track"><div class="bar-fill" style="width:'+barPct+'%"></div></div><span class="bar-num">'+c.opps_total+'</span></div></td>' +
         subCells+'</tr>';
+
+      var campRow = '';
+      if ((c.campaign_total||0) > 0) {
+        var campSubCells = cfg.subs.map(function(sk){
+          var v=(c.camp_subgroups||{})[sk]||0;
+          return '<td class="center"><span class="sub-count '+(v===0?'zero':'has-val')+'" style="color:var(--blue);font-size:13px;">'+v+'</span></td>';
+        }).join('');
+        campRow = '<tr style="background:rgba(68,208,255,0.04);">' +
+          '<td style="padding:6px 20px;"><span style="font-size:11px;color:var(--blue);font-weight:600;">↳ Campanhas</span></td>' +
+          '<td></td>' +
+          '<td><div class="bar-cell"><span class="bar-num" style="color:var(--blue);font-size:14px;">'+c.campaign_total+'</span></div></td>' +
+          campSubCells+'</tr>';
+      }
+
+      return normalRow + campRow;
     }).join('');
   });
 
@@ -3216,6 +3471,195 @@ function renderDashboard(data){
       '<td>'+(function(m){ var labels={schedule:'<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:99px;background:rgba(255,255,255,0.06);color:var(--txt-3)">Agenda</span>',specific_date:'<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:99px;background:rgba(255,92,0,0.12);color:var(--org)">Horário fixo</span>',pool:'<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:99px;background:rgba(72,180,255,0.12);color:#48b4ff">Mercado</span>'}; return labels[m]||'<span style="font-size:10px;color:var(--txt-3)">'+m+'</span>'; })(h.mode||'schedule')+'</td>'+
       '</tr>';
   }).join('');
+}
+
+
+
+/* ── Theme toggle ────────────────────────────── */
+(function() {
+  var saved = localStorage.getItem('ca_theme');
+  if (saved === 'light') {
+    document.body.classList.add('light');
+    var btn = document.getElementById('themeToggle');
+    if (btn) btn.textContent = '☀️';
+  }
+})();
+
+function toggleTheme() {
+  var isLight = document.body.classList.toggle('light');
+  var btn = document.getElementById('themeToggle');
+  if (btn) btn.textContent = isLight ? '☀️' : '🌙';
+  try { localStorage.setItem('ca_theme', isLight ? 'light' : 'dark'); } catch(e) {}
+}
+
+/* ── Competitor change ───────────────────────── */
+function onCompetitorChange() {
+  var val = document.getElementById('competitorInput').value;
+  if (val) {
+    document.getElementById('competitorError').style.display = 'none';
+    document.getElementById('competitorInput').classList.remove('error');
+  }
+  st.competitor = val;
+}
+
+/* ── Dashboard Campanhas ─────────────────────── */
+async function loadCampaigns() {
+  var grid = document.getElementById('campaignsGrid');
+  grid.innerHTML = '<div style="color:var(--txt-3);padding:16px;">Carregando...</div>';
+  try {
+    const [rCamp, rDash] = await Promise.all([
+      fetch(API.campaignsGet),
+      fetch(API.dashboard + '?period=all')
+    ]);
+    const campData = await rCamp.json();
+    const dashData = await rDash.json();
+    const campaigns = campData.campaigns || [];
+    const closers   = dashData.closers   || [];
+    renderCampaignsGrid(campaigns, closers);
+  } catch(e) {
+    grid.innerHTML = '<div style="color:var(--red);padding:16px;">Erro: ' + e.message + '</div>';
+  }
+}
+
+function renderCampaignsGrid(campaigns, closers) {
+  closers = closers || [];
+  var grid = document.getElementById('campaignsGrid');
+
+  var active    = campaigns.filter(function(c){ return c.active; });
+  var available = campaigns.filter(function(c){ return !c.active; });
+
+  var html = '';
+
+  // Botão + Adicionar campanha
+  html += '<div style="margin-bottom:16px;display:flex;align-items:center;gap:10px;">';
+  html += '<select id="campAddSelect" class="cap-select" style="min-width:200px;">';
+  html += '<option value="">Selecionar concorrente...</option>';
+  available.forEach(function(c) {
+    html += '<option value="' + c.name + '">' + c.name + '</option>';
+  });
+  html += '</select>';
+  html += '<button class="btn btn-primary" onclick="addCampaign()" style="font-size:13px;padding:8px 16px;">+ Adicionar campanha</button>';
+  html += '</div>';
+
+  if (active.length === 0) {
+    html += '<div style="color:var(--txt-3);font-size:13px;padding:16px 0;">Nenhuma campanha ativa. Adicione um concorrente acima.</div>';
+  }
+
+  active.forEach(function(camp) {
+    var safeId  = 'camp_tog_' + camp.name.replace(/[^a-zA-Z0-9]/g, '_');
+    var compKey = camp.name.toLowerCase().replace(/[^a-z0-9]/g, '_');
+
+    // Filtra closers que têm opps nessa campanha
+    var campClosers = closers.filter(function(c) {
+      return (c.campaign_total || 0) > 0 &&
+        Object.keys(c.camp_subgroups || {}).some(function(sub) {
+          return (c.camp_subgroups[sub] || 0) > 0;
+        });
+    });
+
+    html += '<div style="background:var(--bg-card);border:1px solid var(--bd-strong);border-radius:var(--r);padding:16px 20px;margin-bottom:12px;">';
+    html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">';
+    html += '<div style="font-family:Space Grotesk,sans-serif;font-size:15px;font-weight:700;color:var(--txt-1);">' + camp.name + '</div>';
+    html += '<label class="seg-toggle">';
+    html += '<div class="seg-toggle-track on" id="' + safeId + '" onclick="toggleCampaign(\`' + camp.name + '\`,\`' + safeId + '\`)">';
+    html += '<div class="seg-toggle-thumb"></div>';
+    html += '</div>';
+    html += '<span class="seg-toggle-label">Ativa</span>';
+    html += '</label>';
+    html += '</div>';
+
+    // Tabela de distribuição
+    if (campClosers.length > 0) {
+      html += '<div style="background:var(--bg-raised);border:1px solid var(--bd-default);border-radius:var(--r-sm);overflow:hidden;">';
+      html += '<table style="width:100%;border-collapse:collapse;font-size:12px;">';
+      html += '<thead><tr>';
+      html += '<th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;color:var(--txt-3);text-transform:uppercase;letter-spacing:0.06em;border-bottom:1px solid var(--bd-default);">Closer</th>';
+      html += '<th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;color:var(--txt-3);text-transform:uppercase;letter-spacing:0.06em;border-bottom:1px solid var(--bd-default);">Segmento</th>';
+      html += '<th style="padding:8px 12px;text-align:center;font-size:10px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:0.06em;border-bottom:1px solid var(--bd-default);">Total</th>';
+      // Subgrupos únicos com opps na campanha
+      var allSubs = ['SMB-1','SMB-2','SMB-3','MID-1','MID-2','MID-3','ENT-1','ENT-2','ENT-3'];
+      var activeSubs = allSubs.filter(function(sub) {
+        return campClosers.some(function(c){ return (c.camp_subgroups||{})[sub] > 0; });
+      });
+      activeSubs.forEach(function(sub) {
+        html += '<th style="padding:8px 12px;text-align:center;font-size:10px;font-weight:700;color:var(--txt-3);text-transform:uppercase;letter-spacing:0.06em;border-bottom:1px solid var(--bd-default);">' + sub + '</th>';
+      });
+      html += '</tr></thead><tbody>';
+      campClosers.forEach(function(c, idx) {
+        var borderB = idx < campClosers.length - 1 ? '1px solid var(--bd-subtle)' : 'none';
+        html += '<tr style="border-bottom:' + borderB + '">';
+        html += '<td style="padding:8px 12px;color:var(--txt-1);font-weight:500;">' + c.name + '</td>';
+        html += '<td style="padding:8px 12px;color:var(--txt-3);">' + c.segment + '</td>';
+        html += '<td style="padding:8px 12px;text-align:center;color:var(--blue);font-weight:700;">' + (c.campaign_total||0) + '</td>';
+        activeSubs.forEach(function(sub) {
+          var v = (c.camp_subgroups||{})[sub] || 0;
+          html += '<td style="padding:8px 12px;text-align:center;color:' + (v > 0 ? 'var(--blue)' : 'var(--txt-3)') + ';font-weight:' + (v > 0 ? '700' : '400') + ';">' + v + '</td>';
+        });
+        html += '</tr>';
+      });
+      html += '</tbody></table></div>';
+    } else {
+      html += '<div style="font-size:12px;color:var(--txt-3);padding:8px 0;">Nenhuma opp atribuída via campanha ainda.</div>';
+    }
+
+    html += '</div>';
+  });
+
+  grid.innerHTML = html;
+}
+
+async function addCampaign() {
+  var sel = document.getElementById('campAddSelect');
+  var name = sel ? sel.value : '';
+  if (!name) { showToast('Selecione um concorrente.', 'info'); return; }
+  try {
+    const r = await fetch(API.campaignsSet, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: name, active: true })
+    });
+    const d = await r.json();
+    if (d.success) {
+      showToast('Campanha ' + name + ' adicionada.', 'success');
+      loadCampaigns();
+    } else {
+      showToast('Erro ao adicionar campanha.', 'error');
+    }
+  } catch(e) {
+    showToast('Erro: ' + e.message, 'error');
+  }
+}
+
+async function toggleCampaign(name, trackId) {
+  var track = document.getElementById(trackId);
+  if (!track) return;
+  var isOn  = track.classList.contains('on');
+  var label = track.parentElement.nextElementSibling;
+  track.classList.add('loading');
+  try {
+    const r = await fetch(API.campaignsSet, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: name, active: !isOn })
+    });
+    const d = await r.json();
+    if (d.success) {
+      if (!isOn) {
+        track.classList.remove('off'); track.classList.add('on');
+        if (label) label.textContent = 'Ativa';
+        showToast('Campanha ' + name + ' ativada.', 'success');
+      } else {
+        track.classList.remove('on'); track.classList.add('off');
+        if (label) label.textContent = 'Inativa';
+        showToast('Campanha ' + name + ' desativada.', 'info');
+      }
+    } else {
+      showToast('Erro ao atualizar campanha.', 'error');
+    }
+  } catch(e) {
+    showToast('Erro: ' + e.message, 'error');
+  }
+  track.classList.remove('loading');
 }
 
 /* ── Toast helper ───────────────────────────── */
@@ -3359,6 +3803,11 @@ function dperson(ctx,px,py,sz,alpha,col,ring){ctx.save();ctx.globalAlpha=cl2(alp
 function fv(v){if(v>=1000000)return'R$ '+(v/1000000).toLocaleString('pt-BR',{maximumFractionDigits:1})+'M';if(v>=1000)return'R$ '+(v/1000).toFixed(0)+'k';return'R$ '+v;}
 
 window.startAlgoAnimation=function(segKey,subKey,value,onDone){
+  var isLight = document.body.classList.contains('light');
+  var textColor = isLight ? '#1A1828' : '#F0EDF8';
+  var subTextColor = isLight ? '#4A4760' : '#A8A4BF';
+  var bgCard = isLight ? 'rgba(240,238,248,0.6)' : 'rgba(0,0,0,0)';
+
   if(aRaf)cancelAnimationFrame(aRaf);
   var cv2=document.getElementById('algoCanvas');if(!cv2)return;
   var ctx=cv2.getContext('2d');
@@ -3388,7 +3837,7 @@ window.startAlgoAnimation=function(segKey,subKey,value,onDone){
   function rend2(){
     ctx.clearRect(0,0,AW,AH);
     rr2(ctx,SX2,SY2,SW2,SH2,7);ctx.fillStyle='rgba(255,72,0,0.09)';ctx.fill();ctx.strokeStyle='#FF4800';ctx.lineWidth=1.5;ctx.stroke();
-    ctx.font='500 10px var(--font-sans,sans-serif)';ctx.fillStyle='#FF4800';ctx.textAlign='center';
+    ctx.font='500 10px var(--font-sans,sans-serif)';ctx.fillStyle=c;ctx.textAlign='center';
     ctx.fillText('Amount 12m',SX2+SW2/2,SY2+SH2/2-8);ctx.fillText(fv(value),SX2+SW2/2,SY2+SH2/2+7);
     if(P2.segFade>0){
       ctx.save();ctx.globalAlpha=P2.segFade;rr2(ctx,GX2,GY2,GW2,GH2,7);ctx.fillStyle=c+'1A';ctx.fill();ctx.strokeStyle=c;ctx.lineWidth=1.5;ctx.stroke();
