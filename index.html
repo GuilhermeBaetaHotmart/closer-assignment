@@ -1556,6 +1556,7 @@ body::after {
       <div style="display:flex;gap:8px;padding:0 16px 16px;max-width:960px;margin:0 auto;">
         <button class="filter-btn active" id="dashTabHistorico" onclick="switchDashTab('historico',this)">Histórico</button>
         <button class="filter-btn" id="dashTabCapacidade" onclick="switchDashTab('capacidade',this)">Capacidade</button>
+        <button class="filter-btn" id="dashTabSecurity" onclick="switchDashTab('security',this)">Security</button>
       </div>
 
       <!-- Seção Histórico -->
@@ -1782,6 +1783,64 @@ body::after {
         </div>
       </div><!-- /dashCapacidade -->
 
+      <!-- Seção Security -->
+      <div id="dashSecurity" style="display:none">
+        <div style="max-width:960px;margin:0 auto;padding:0 16px 32px;">
+
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+            <div>
+              <div style="font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:700;color:var(--txt-1);">Monitoramento de Pulos</div>
+              <div style="font-size:12px;color:var(--txt-3);margin-top:2px;">Pulos por usuário e log de pulos desnecessários</div>
+            </div>
+            <button class="btn btn-ghost" onclick="loadSecurity()" style="font-size:13px;">↻ Atualizar</button>
+          </div>
+
+          <!-- KPIs Security -->
+          <div class="kpi-grid" style="margin-bottom:24px;" id="securityKpis">
+            <div class="kpi-card"><div class="kpi-value" id="secTotalSkips">—</div><div class="kpi-label">Total de pulos</div></div>
+            <div class="kpi-card"><div class="kpi-value" id="secUnnecessary">—</div><div class="kpi-label">Pulos desnecessários</div></div>
+            <div class="kpi-card"><div class="kpi-value" id="secNecessary">—</div><div class="kpi-label">Pulos necessários</div></div>
+            <div class="kpi-card"><div class="kpi-value" id="secPct">—</div><div class="kpi-label">% desnecessários</div></div>
+          </div>
+
+          <!-- Tabela por usuário -->
+          <div style="font-size:14px;font-weight:700;color:var(--txt-1);margin-bottom:12px;">Por usuário</div>
+          <div class="table-wrap" style="margin-bottom:28px;">
+            <table class="data-table">
+              <thead><tr>
+                <th>Usuário</th>
+                <th class="center">Total pulos</th>
+                <th class="center">Necessários</th>
+                <th class="center">Desnecessários</th>
+                <th class="center">% desnecessários</th>
+              </tr></thead>
+              <tbody id="securityUsersBody">
+                <tr><td colspan="5" class="table-empty">Carregando...</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Log de pulos desnecessários -->
+          <div style="font-size:14px;font-weight:700;color:var(--txt-1);margin-bottom:12px;">Log de pulos desnecessários</div>
+          <div class="history-wrap">
+            <table class="history-table">
+              <thead><tr>
+                <th>Data / Hora</th>
+                <th>SDR</th>
+                <th>Closer pulado</th>
+                <th>Cliente</th>
+                <th>Horário</th>
+                <th>Motivo</th>
+              </tr></thead>
+              <tbody id="securityLogsBody">
+                <tr><td colspan="6" class="table-empty">Carregando...</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        </div>
+      </div><!-- /dashSecurity -->
+
     </div><!-- /adminView -->
 
   </main>
@@ -1909,6 +1968,7 @@ const API = {
   poolAccept:    'https://hotmart.app.n8n.cloud/webhook/pool-accept',
   capacity:      'https://hotmart.app.n8n.cloud/webhook/dashboard-capacity',
   skip:          'https://hotmart.app.n8n.cloud/webhook/skip',
+  security:      'https://hotmart.app.n8n.cloud/webhook/dashboard-security',
 };
 
 const SEGS = {
@@ -2157,9 +2217,11 @@ function setAdminViewMode(mode) {
 function switchDashTab(tab, btn) {
   document.getElementById('dashHistorico').style.display  = tab === 'historico'  ? '' : 'none';
   document.getElementById('dashCapacidade').style.display = tab === 'capacidade' ? '' : 'none';
+  document.getElementById('dashSecurity').style.display   = tab === 'security'   ? '' : 'none';
   document.querySelectorAll('#adminView .filter-btn').forEach(function(b){ b.classList.remove('active'); });
   if (btn) btn.classList.add('active');
   if (tab === 'capacidade') loadCapacity();
+  if (tab === 'security')   loadSecurity();
 }
 
 // ── Dashboard Capacidade ──────────────────────
