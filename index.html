@@ -2180,7 +2180,8 @@ async function loadCapacity() {
         fetch(API.capacity, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ segment:'MID', weekOffset }) }),
         fetch(API.capacity, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ segment:'ENT', weekOffset }) })
       ]);
-      const [dSMB, dMID, dENT] = await Promise.all([rSMB.json(), rMID.json(), rENT.json()]);
+      const safeJson = async function(r) { try { const t = await r.text(); return t ? JSON.parse(t) : {}; } catch(e) { return {}; } };
+      const [dSMB, dMID, dENT] = await Promise.all([safeJson(rSMB), safeJson(rMID), safeJson(rENT)]);
       const s = Array.isArray(dSMB) ? dSMB[0] : dSMB;
       const m = Array.isArray(dMID) ? dMID[0] : dMID;
       const e = Array.isArray(dENT) ? dENT[0] : dENT;
@@ -2414,6 +2415,37 @@ function clearSlotAndRetry() {
 
 async function goEmergencyPool() {
   try {
+    // Feature Segurança 2: verifica se há closer disponível antes de ir pro mercado
+    showToast('Verificando disponibilidade...', 'info', 3000);
+    const checkPayload = {
+      lead_id:     st.leadId,
+      clientValue: st.rawValue,
+      segmentKey:  st.segKey,
+      subgroupKey: st.subKey,
+      mode:        'specific_date',
+      slotStart:   st.specificSlotStart
+    };
+    const checkRes = await fetch(API.algorithm, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(checkPayload)
+    });
+    const checkData = await checkRes.json();
+
+    // Se encontrou closer disponível, bloqueia mercado e atribui
+    if (!checkData.no_availability && checkData.closerId) {
+      document.getElementById('noAvailBanner').classList.remove('show');
+      showToast('Closer disponível encontrado — redirecionando para agendamento.', 'info', 5000);
+      st.closerId   = checkData.closerId;
+      st.closerName = checkData.closerName || '';
+      st.queue      = checkData.queue || [];
+      st.noAvailability = false;
+      // Vai direto pro fluxo de reserva com horário específico
+      await doReserveSpecific();
+      return;
+    }
+
+    // Sem closer disponível — vai pro pool
     const payload = {
       leadId:      st.leadId,
       clientValue: st.rawValue,
