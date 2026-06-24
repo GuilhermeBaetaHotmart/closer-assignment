@@ -2226,6 +2226,7 @@ let session = null;
       var d = JSON.parse(saved);
       if (d && d.email && d.success) {
         session = d;
+        var savedToken = localStorage.getItem('ca_token'); if(savedToken) session.sessionToken = savedToken;
         document.getElementById('loginScreen').style.display = 'none';
         document.getElementById('appScreen').style.display = 'block';
         document.getElementById('hdrName').textContent  = d.name  || d.email;
@@ -2257,7 +2258,7 @@ async function doLogin() {
     const d = await r.json();
     if (d.success) {
       session = d;
-      try { localStorage.setItem('ca_session', JSON.stringify(d)); } catch(e) {}
+      try { localStorage.setItem('ca_session', JSON.stringify(d)); if(d.sessionToken) localStorage.setItem('ca_token', d.sessionToken); } catch(e) {}
       document.getElementById('loginScreen').style.display='none';
       document.getElementById('appScreen').style.display='block';
       document.getElementById('hdrName').textContent=d.name||email;
@@ -2469,9 +2470,9 @@ async function loadCapacity() {
     if (segment === 'ALL') {
       // Busca os 3 segmentos e agrega
       const [rSMB, rMID, rENT] = await Promise.all([
-        fetch(API.capacity, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ segment:'SMB', weekOffset }) }),
-        fetch(API.capacity, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ segment:'MID', weekOffset }) }),
-        fetch(API.capacity, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ segment:'ENT', weekOffset }) })
+        authFetch(API.capacity, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ segment:'SMB', weekOffset }) }),
+        authFetch(API.capacity, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ segment:'MID', weekOffset }) }),
+        authFetch(API.capacity, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ segment:'ENT', weekOffset }) })
       ]);
       const safeJson = async function(r) { try { const t = await r.text(); return t ? JSON.parse(t) : {}; } catch(e) { return {}; } };
       const [dSMB, dMID, dENT] = await Promise.all([safeJson(rSMB), safeJson(rMID), safeJson(rENT)]);
@@ -2493,7 +2494,7 @@ async function loadCapacity() {
         totalClosers: (s.totalClosers||0) + (m.totalClosers||0) + (e.totalClosers||0)
       };
     } else {
-      const r = await fetch(API.capacity, {
+      const r = await authFetch(API.capacity, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ segment, weekOffset })
@@ -2568,7 +2569,7 @@ async function loadCapacity() {
 
 function doLogout() {
   session=null;
-  try { localStorage.removeItem('ca_session'); } catch(e) {} resetAll();
+  try { localStorage.removeItem('ca_session'); localStorage.removeItem('ca_token'); } catch(e) {} resetAll();
   document.getElementById('appScreen').style.display='none';
   document.getElementById('loginScreen').style.display='flex';
   document.getElementById('loginEmail').value='';
@@ -3255,7 +3256,7 @@ async function loadDashboard(){
   }
 
   try {
-    const r = await fetch(API.dashboard + '?' + params);
+    const r = await authFetch(API.dashboard + '?' + params);
     const d = await r.json();
     renderDashboard(d);
   } catch(e){
@@ -3492,6 +3493,16 @@ function toggleTheme() {
   try { localStorage.setItem('ca_theme', isLight ? 'light' : 'dark'); } catch(e) {}
 }
 
+
+/* ── Authenticated fetch helper ──────────────── */
+async function authFetch(url, options) {
+  options = options || {};
+  options.headers = options.headers || {};
+  var token = session && session.sessionToken ? session.sessionToken : (localStorage.getItem('ca_token') || '');
+  if (token) options.headers['x-auth-token'] = token;
+  return fetch(url, options);
+}
+
 /* ── Competitor change ───────────────────────── */
 function onCompetitorChange() {
   var val = document.getElementById('competitorInput').value;
@@ -3509,7 +3520,7 @@ async function loadCampaigns() {
   try {
     const [rCamp, rDash] = await Promise.all([
       fetch(API.campaignsGet),
-      fetch(API.dashboard + '?period=all')
+      authFetch(API.dashboard + '?period=all')
     ]);
     const campData = await rCamp.json();
     const dashData = await rDash.json();
@@ -3613,7 +3624,7 @@ async function addCampaign() {
   var name = sel ? sel.value : '';
   if (!name) { showToast('Selecione um concorrente.', 'info'); return; }
   try {
-    const r = await fetch(API.campaignsSet, {
+    const r = await authFetch(API.campaignsSet, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name: name, active: true })
@@ -3637,7 +3648,7 @@ async function toggleCampaign(name, trackId) {
   var label = track.parentElement.nextElementSibling;
   track.classList.add('loading');
   try {
-    const r = await fetch(API.campaignsSet, {
+    const r = await authFetch(API.campaignsSet, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name: name, active: !isOn })
@@ -3682,7 +3693,7 @@ async function loadSecurity() {
   document.getElementById('securityUsersBody').innerHTML = '<tr><td colspan="5" class="table-empty"><div style="display:flex;align-items:center;justify-content:center;gap:8px"><div class="spinner"></div> Carregando...</div></td></tr>';
   document.getElementById('securityLogsBody').innerHTML  = '<tr><td colspan="6" class="table-empty"><div style="display:flex;align-items:center;justify-content:center;gap:8px"><div class="spinner"></div> Carregando...</div></td></tr>';
   try {
-    const r = await fetch(API.security);
+    const r = await authFetch(API.security);
     const d = await r.json();
     const users = d.users || [];
     const logs  = d.logs  || [];
@@ -3748,7 +3759,7 @@ async function toggleCloser(email, trackId) {
   showToast((isOn ? 'Desativando' : 'Ativando') + ' closer...', 'info', 8000);
 
   try {
-    const res = await fetch(API.toggle, {
+    const res = await authFetch(API.toggle, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email: email, active: !isOn })
