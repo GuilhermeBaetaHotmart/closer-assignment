@@ -2476,9 +2476,13 @@ async function loadCapacity() {
       ]);
       const safeJson = async function(r) { try { const t = await r.text(); return t ? JSON.parse(t) : {}; } catch(e) { return {}; } };
       const [dSMB, dMID, dENT] = await Promise.all([safeJson(rSMB), safeJson(rMID), safeJson(rENT)]);
-      const s = Array.isArray(dSMB) ? dSMB[0] : dSMB;
-      const m = Array.isArray(dMID) ? dMID[0] : dMID;
-      const e = Array.isArray(dENT) ? dENT[0] : dENT;
+      const emptySegment = { aggregated: {seg:0,ter:0,qua:0,qui:0,sex:0}, closers: [], totalClosers: 0, dayDates: {} };
+      const s = (Array.isArray(dSMB) ? dSMB[0] : dSMB) || emptySegment;
+      const m = (Array.isArray(dMID) ? dMID[0] : dMID) || emptySegment;
+      const e = (Array.isArray(dENT) ? dENT[0] : dENT) || emptySegment;
+      if (!s.aggregated) s.aggregated = emptySegment.aggregated;
+      if (!m.aggregated) m.aggregated = emptySegment.aggregated;
+      if (!e.aggregated) e.aggregated = emptySegment.aggregated;
       const days = ['seg','ter','qua','qui','sex'];
       const agg = { seg:0, ter:0, qua:0, qui:0, sex:0 };
       days.forEach(function(day) {
