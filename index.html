@@ -3523,7 +3523,7 @@ async function loadCampaigns() {
   grid.innerHTML = '<div style="color:var(--txt-3);padding:16px;">Carregando...</div>';
   try {
     const [rCamp, rDash] = await Promise.all([
-      fetch(API.campaignsGet),
+      authFetch(API.campaignsGet),
       authFetch(API.dashboard + '?period=all')
     ]);
     const campData = await rCamp.json();
