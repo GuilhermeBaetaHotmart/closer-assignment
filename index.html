@@ -2082,23 +2082,8 @@ body::after {
           <div style="font-size:14px;font-weight:700;color:var(--txt-1);margin-bottom:12px;">Defaults por segmento</div>
           <div id="timeDefaultsGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:32px;"></div>
 
-          <!-- Overrides por closer -->
-          <div style="font-size:14px;font-weight:700;color:var(--txt-1);margin-bottom:12px;">Closers</div>
-          <div class="table-wrap">
-            <table class="data-table">
-              <thead><tr>
-                <th>Closer</th>
-                <th>Segmento</th>
-                <th class="center">Prep (min)</th>
-                <th class="center">Reunião (min)</th>
-                <th class="center">Total</th>
-                <th class="center">Ação</th>
-              </tr></thead>
-              <tbody id="timeClosersBody">
-                <tr><td colspan="6" class="table-empty">Carregando...</td></tr>
-              </tbody>
-            </table>
-          </div>
+          <!-- Overrides por closer — separado por segmento -->
+          <div id="timeClosersSections"></div>
 
         </div>
       </div><!-- /dashTime -->
@@ -3567,9 +3552,9 @@ var timeConfigCache = null;
 
 async function loadTimeConfig() {
   var grid = document.getElementById('timeDefaultsGrid');
-  var body = document.getElementById('timeClosersBody');
+  var sections = document.getElementById('timeClosersSections');
   grid.innerHTML = '<div style="color:var(--txt-3);padding:16px;grid-column:1/-1;">Carregando...</div>';
-  body.innerHTML = '<tr><td colspan="6" class="table-empty">Carregando...</td></tr>';
+  sections.innerHTML = '<div style="color:var(--txt-3);padding:16px;">Carregando...</div>';
 
   try {
     const r = await authFetch(API.timeConfigGet);
@@ -3579,7 +3564,7 @@ async function loadTimeConfig() {
     renderTimeClosers(d.closers || []);
   } catch(e) {
     grid.innerHTML = '<div style="color:var(--red);padding:16px;grid-column:1/-1;">Erro: ' + e.message + '</div>';
-    body.innerHTML = '<tr><td colspan="6" class="table-empty">Erro: ' + e.message + '</td></tr>';
+    sections.innerHTML = '<div style="color:var(--red);padding:16px;">Erro: ' + e.message + '</div>';
   }
 }
 
@@ -3606,24 +3591,55 @@ function renderTimeDefaults(defaults) {
 }
 
 function renderTimeClosers(closers) {
-  var body = document.getElementById('timeClosersBody');
-  if (!closers.length) {
-    body.innerHTML = '<tr><td colspan="6" class="table-empty">Nenhum closer cadastrado.</td></tr>';
-    return;
-  }
-  body.innerHTML = closers.map(function(c) {
-    var safeId = c.email.replace(/[^a-zA-Z0-9]/g, '_');
-    var overrideBadge = c.has_override
-      ? '<span style="font-size:10px;font-weight:600;color:var(--org);background:var(--org-tint);padding:2px 8px;border-radius:99px;">Override</span>'
-      : '<span style="font-size:10px;color:var(--txt-3);">Default</span>';
-    return '<tr>' +
-      '<td><span class="closer-cell-name">' + c.name + '</span><span class="closer-cell-email">' + c.email + '</span></td>' +
-      '<td>' + c.segment + '</td>' +
-      '<td class="center" id="timeView_prep_' + safeId + '">' + c.effective_prep_time + '</td>' +
-      '<td class="center" id="timeView_meeting_' + safeId + '">' + c.effective_meeting_time + '</td>' +
-      '<td class="center">' + (c.effective_prep_time + c.effective_meeting_time) + ' min ' + overrideBadge + '</td>' +
-      '<td class="center"><button class="btn-remove-pool" style="padding:5px 12px;font-size:12px;" onclick="editCloserOverride(\'' + c.email + '\',\'' + safeId + '\',' + c.effective_prep_time + ',' + c.effective_meeting_time + ')">Editar</button></td>' +
-      '</tr>';
+  var sections = document.getElementById('timeClosersSections');
+  var segOrder = ['SMB', 'MID', 'ENT'];
+  var segLabels = { SMB: 'SMB', MID: 'Mid Market', ENT: 'Enterprise' };
+  var segColors = { SMB: 'var(--yellow)', MID: 'var(--blue)', ENT: 'var(--lilac)' };
+
+  sections.innerHTML = segOrder.map(function(seg) {
+    var segClosers = closers.filter(function(c) { return c.segment === seg; });
+
+    var rowsHtml;
+    if (!segClosers.length) {
+      rowsHtml = '<tr><td colspan="5" class="table-empty">Nenhum closer cadastrado neste segmento.</td></tr>';
+    } else {
+      rowsHtml = segClosers.map(function(c) {
+        var safeId = c.email.replace(/[^a-zA-Z0-9]/g, '_');
+        var overrideBadge = c.has_override
+          ? '<span style="font-size:10px;font-weight:600;color:var(--org);background:var(--org-tint);padding:2px 8px;border-radius:99px;">Override</span>'
+          : '<span style="font-size:10px;color:var(--txt-3);">Default</span>';
+        return '<tr>' +
+          '<td><span class="closer-cell-name">' + c.name + '</span><span class="closer-cell-email">' + c.email + '</span></td>' +
+          '<td class="center" id="timeView_prep_' + safeId + '">' + c.effective_prep_time + '</td>' +
+          '<td class="center" id="timeView_meeting_' + safeId + '">' + c.effective_meeting_time + '</td>' +
+          '<td class="center">' + (c.effective_prep_time + c.effective_meeting_time) + ' min ' + overrideBadge + '</td>' +
+          '<td class="center"><button class="btn-remove-pool" style="padding:5px 12px;font-size:12px;" onclick="editCloserOverride(\'' + c.email + '\',\'' + safeId + '\',' + c.effective_prep_time + ',' + c.effective_meeting_time + ')">Editar</button></td>' +
+          '</tr>';
+      }).join('');
+    }
+
+    return '<div class="dash-section">' +
+      '<div class="dash-section-header">' +
+        '<div>' +
+          '<div class="dash-section-title" style="display:flex;align-items:center;gap:8px">' +
+            '<span style="width:10px;height:10px;border-radius:2px;background:' + segColors[seg] + ';display:inline-block;flex-shrink:0"></span>' +
+            segLabels[seg] +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="table-wrap">' +
+        '<table class="data-table">' +
+          '<thead><tr>' +
+            '<th>Closer</th>' +
+            '<th class="center">Prep (min)</th>' +
+            '<th class="center">Reunião (min)</th>' +
+            '<th class="center">Total</th>' +
+            '<th class="center">Ação</th>' +
+          '</tr></thead>' +
+          '<tbody>' + rowsHtml + '</tbody>' +
+        '</table>' +
+      '</div>' +
+    '</div>';
   }).join('');
 }
 
