@@ -2837,7 +2837,7 @@ async function fetchSlots() {
       var weekdayFull = displayStart.toLocaleDateString('pt-BR',Object.assign({},opts,{weekday:'long'})).toLowerCase();
       var weekdayShort = displayStart.toLocaleDateString('pt-BR',Object.assign({},opts,{weekday:'short'}));
       var hourBRT = parseInt(displayStart.toLocaleTimeString('pt-BR',Object.assign({},opts,{hour:'2-digit',hour12:false})));
-      if (hourBRT < 10 || hourBRT >= 17) return null;
+      if (hourBRT < 10 || hourBRT > 17) return null;
       var period = hourBRT < 12 ? 'manha' : 'tarde';
       var dayKey = weekdayFull.startsWith('seg') ? 'seg' :
                    weekdayFull.startsWith('ter') ? 'ter' :
