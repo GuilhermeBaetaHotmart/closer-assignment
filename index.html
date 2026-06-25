@@ -2727,7 +2727,7 @@ async function goEmergencyPool() {
       mode:        'specific_date',
       slotStart:   st.specificSlotStart
     };
-    const checkRes = await fetch(API.algorithm, {
+    const checkRes = await authFetch(API.algorithm, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(checkPayload)
@@ -2787,7 +2787,7 @@ async function fetchCloser() {
       competitor: st.competitor || ''
     };
     if (payload.mode === 'specific_date') payload.slotStart = st.specificSlotStart;
-    const r=await fetch(API.algorithm,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const r=await authFetch(API.algorithm,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
     const d=await r.json(); if(d.error) throw new Error(d.error);
     if (d.no_availability || d.fallback === 'emergency') {
       st.noAvailability = true;
@@ -2820,7 +2820,7 @@ async function fetchCloser() {
 async function fetchSlots() {
   setLoading(); updateCalHeader();
   try {
-    const r=await fetch(API.slots,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({closerId:st.closerId,weekOffset:st.weekOffset})});
+    const r=await authFetch(API.slots,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({closerId:st.closerId,weekOffset:st.weekOffset})});
     const raw=await r.json();
     const d = Array.isArray(raw) ? raw[0] : raw;
     if(d.error) throw new Error(d.error);
@@ -2978,7 +2978,7 @@ async function doReserveSpecific() {
     hour: '2-digit', minute: '2-digit'
   });
   try {
-    const res = await fetch(API.reserve, {
+    const res = await authFetch(API.reserve, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -3007,7 +3007,7 @@ async function doReserve(){
   const btn = document.getElementById('btnConfirm');
   btn.disabled = true; btn.textContent = 'Reservando...';
   try {
-    const res = await fetch(API.reserve, {
+    const res = await authFetch(API.reserve, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -3077,7 +3077,7 @@ async function doConfirmFinal(){
   btn.disabled = true; btn.textContent = 'Confirmando...';
   if (reservationTimer) clearInterval(reservationTimer);
   try {
-    const res = await fetch(API.confirm, {
+    const res = await authFetch(API.confirm, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -3114,7 +3114,7 @@ async function doCancelReserve(){
   btn.disabled = true; btn.textContent = 'Cancelando...';
   if (reservationTimer) clearInterval(reservationTimer);
   try {
-    const res = await fetch(API.cancelReserve, {
+    const res = await authFetch(API.cancelReserve, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
