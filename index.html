@@ -2825,15 +2825,18 @@ async function fetchSlots() {
     const d = Array.isArray(raw) ? raw[0] : raw;
     if(d.error) throw new Error(d.error);
     var allSlots = (d.slots||[]).map(function(s){
-      var start = new Date(s.slotStart);
+      // displayStart é o horário de reunião (sem o tempo de preparação); start/end (slotStart/slotEnd)
+      // são o bloco total reservado de fato, usados no /reserve.
+      var displayStartRaw = s.displayStart || s.slotStart;
+      var displayStart = new Date(displayStartRaw);
       var end   = new Date(s.slotEnd);
       var opts  = {timeZone:'America/Sao_Paulo'};
-      var dateStr = start.toLocaleDateString('pt-BR',Object.assign({},opts,{day:'2-digit',month:'2-digit'}));
-      var timeStr = start.toLocaleTimeString('pt-BR',Object.assign({},opts,{hour:'2-digit',minute:'2-digit',hour12:false}));
+      var dateStr = displayStart.toLocaleDateString('pt-BR',Object.assign({},opts,{day:'2-digit',month:'2-digit'}));
+      var timeStr = displayStart.toLocaleTimeString('pt-BR',Object.assign({},opts,{hour:'2-digit',minute:'2-digit',hour12:false}));
       var endStr  = end.toLocaleTimeString('pt-BR',Object.assign({},opts,{hour:'2-digit',minute:'2-digit',hour12:false}));
-      var weekdayFull = start.toLocaleDateString('pt-BR',Object.assign({},opts,{weekday:'long'})).toLowerCase();
-      var weekdayShort = start.toLocaleDateString('pt-BR',Object.assign({},opts,{weekday:'short'}));
-      var hourBRT = parseInt(start.toLocaleTimeString('pt-BR',Object.assign({},opts,{hour:'2-digit',hour12:false})));
+      var weekdayFull = displayStart.toLocaleDateString('pt-BR',Object.assign({},opts,{weekday:'long'})).toLowerCase();
+      var weekdayShort = displayStart.toLocaleDateString('pt-BR',Object.assign({},opts,{weekday:'short'}));
+      var hourBRT = parseInt(displayStart.toLocaleTimeString('pt-BR',Object.assign({},opts,{hour:'2-digit',hour12:false})));
       if (hourBRT < 10 || hourBRT >= 17) return null;
       var period = hourBRT < 12 ? 'manha' : 'tarde';
       var dayKey = weekdayFull.startsWith('seg') ? 'seg' :
