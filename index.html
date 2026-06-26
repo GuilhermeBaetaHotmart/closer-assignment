@@ -2297,6 +2297,38 @@ async function doLogin() {
   btn.disabled=false; txt.textContent='Entrar';
 }
 
+// ── Campo Concorrente dinâmico (só campanhas ativas) ──
+async function loadActiveCompetitorsField() {
+  var field = document.getElementById('competitorField');
+  var select = document.getElementById('competitorInput');
+  if (!field || !select) return;
+
+  try {
+    const r = await authFetch(API.campaignsGet);
+    const d = await r.json();
+    const campaigns = d.campaigns || [];
+    const active = campaigns.filter(function(c) { return c.active; });
+
+    if (!active.length) {
+      field.style.display = 'none';
+      select.removeAttribute('required');
+      st.competitor = null;
+      return;
+    }
+
+    field.style.display = '';
+    var html = '<option value="">Selecione o concorrente</option>';
+    active.forEach(function(c) {
+      html += '<option value="' + c.name + '">' + c.name + '</option>';
+    });
+    html += '<option value="Other">Outro</option>';
+    select.innerHTML = html;
+  } catch(e) {
+    // Em caso de erro, mantém o campo oculto por segurança (evita exigir campo que pode estar quebrado)
+    field.style.display = 'none';
+  }
+}
+
 // ── Setup de role após login ──────────────────
 function setupRole(d) {
   const role = d.role;
@@ -2328,6 +2360,8 @@ function setupRole(d) {
     document.getElementById('adminViewMode').style.display = '';
     switchTab('sdr');
   }
+
+  loadActiveCompetitorsField();
 }
 
 // ── Mercado ───────────────────────────────────
@@ -2656,10 +2690,11 @@ async function goStep2() {
   const lid=document.getElementById('leadIdInput').value.trim();
   if (!lid) { document.getElementById('leadIdError').style.display='block'; document.getElementById('leadIdInput').classList.add('error'); return; }
   document.getElementById('leadIdError').style.display='none'; document.getElementById('leadIdInput').classList.remove('error');
+  var competitorFieldVisible = document.getElementById('competitorField').style.display !== 'none';
   const competitor = document.getElementById('competitorInput').value.trim();
-  if (!competitor) { document.getElementById('competitorError').style.display='block'; document.getElementById('competitorInput').classList.add('error'); return; }
+  if (competitorFieldVisible && !competitor) { document.getElementById('competitorError').style.display='block'; document.getElementById('competitorInput').classList.add('error'); return; }
   document.getElementById('competitorError').style.display='none'; document.getElementById('competitorInput').classList.remove('error');
-  st.competitor = competitor;
+  st.competitor = competitorFieldVisible ? competitor : null;
   const cem=document.getElementById('clientEmailInput').value.trim();
   const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cem);
   if (!cem || !emailOk) {
