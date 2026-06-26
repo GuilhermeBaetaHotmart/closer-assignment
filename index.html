@@ -3324,6 +3324,8 @@ function resetAll(){
   document.getElementById('refusedLog').style.display='none';
   document.getElementById('btnConfirm').disabled=true;
   document.getElementById('btnConfirm').textContent='Confirmar agendamento';
+  var btnFinal = document.querySelector('.btn-confirm-final');
+  if (btnFinal) { btnFinal.disabled = false; btnFinal.textContent = 'Cliente confirmou'; }
   document.getElementById('queueInfo').textContent='';
   document.querySelector('.steps').style.display='';
   [['b1','l1',1],['b2','l2',2],['b3','l3',3]].forEach(function(arr){
