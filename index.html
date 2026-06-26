@@ -1570,41 +1570,10 @@ body::after {
             </div>
             <div class="slot-picker-field">
               <label for="slotTime">Horário (BRT)</label>
-              <select class="slot-picker-input" id="slotTime" onchange="validateSlotPicker()">
-                <option value="">Selecione</option>
-                <option value="10:00">10:00</option>
-                <option value="10:15">10:15</option>
-                <option value="10:30">10:30</option>
-                <option value="10:45">10:45</option>
-                <option value="11:00">11:00</option>
-                <option value="11:15">11:15</option>
-                <option value="11:30">11:30</option>
-                <option value="11:45">11:45</option>
-                <option value="12:00">12:00</option>
-                <option value="12:15">12:15</option>
-                <option value="12:30">12:30</option>
-                <option value="12:45">12:45</option>
-                <option value="13:00">13:00</option>
-                <option value="13:15">13:15</option>
-                <option value="13:30">13:30</option>
-                <option value="13:45">13:45</option>
-                <option value="14:00">14:00</option>
-                <option value="14:15">14:15</option>
-                <option value="14:30">14:30</option>
-                <option value="14:45">14:45</option>
-                <option value="15:00">15:00</option>
-                <option value="15:15">15:15</option>
-                <option value="15:30">15:30</option>
-                <option value="15:45">15:45</option>
-                <option value="16:00">16:00</option>
-                <option value="16:15">16:15</option>
-                <option value="16:30">16:30</option>
-                <option value="16:45">16:45</option>
-                <option value="17:00">17:00</option>
-              </select>
+              <input class="slot-picker-input" type="time" id="slotTime" step="900" onchange="validateSlotPicker()">
             </div>
           </div>
-          <div class="slot-picker-hint">Horários disponíveis: 10h–17h (seg–sex)</div>
+          <div class="slot-picker-hint">Horários dentro da janela 08h–17h serão verificados com os closers. Fora dela, o lead vai direto ao Mercado.</div>
         </div>
 
         <!-- Banner sem disponibilidade -->
@@ -2832,10 +2801,31 @@ function toggleSlotPicker() {
 function validateSlotPicker() {
   const date = document.getElementById('slotDate').value;
   const time = document.getElementById('slotTime').value;
+  const banner = document.getElementById('noAvailBanner');
+  const noAvailTitle = document.getElementById('noAvailTitle');
+
   if (date && time) {
     st.specificSlotStart = date + 'T' + time + ':00-03:00';
+
+    // Verifica se está fora da janela 08h–17h BRT
+    const [h, m] = time.split(':').map(Number);
+    const totalMin = h * 60 + m;
+    const windowStart = 8 * 60;   // 08:00
+    const windowEnd   = 17 * 60;  // 17:00
+
+    if (totalMin < windowStart || totalMin >= windowEnd) {
+      // Fora da janela — mostra banner de mercado automaticamente
+      noAvailTitle.textContent = 'Horário fora da janela de atendimento (08h–17h) — lead irá ao Mercado';
+      banner.classList.add('show');
+    } else {
+      // Dentro da janela — esconde banner
+      banner.classList.remove('show');
+      noAvailTitle.textContent = 'Nenhum closer disponível neste horário';
+    }
   } else {
     st.specificSlotStart = null;
+    banner.classList.remove('show');
+    noAvailTitle.textContent = 'Nenhum closer disponível neste horário';
   }
 }
 
