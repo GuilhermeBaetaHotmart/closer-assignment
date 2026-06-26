@@ -2129,47 +2129,42 @@ body::after {
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
             <div>
               <div style="font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:700;color:var(--txt-1);">Regras de Escalação</div>
-              <div style="font-size:12px;color:var(--txt-3);margin-top:2px;">Líderes adicionados automaticamente como convidados quando o valor do cliente está dentro do intervalo configurado</div>
+              <div style="font-size:12px;color:var(--txt-3);margin-top:2px;">Líderes adicionados automaticamente como convidados quando o valor do cliente está dentro do intervalo</div>
             </div>
             <button class="btn btn-ghost" onclick="loadEscalationConfig()" style="font-size:13px;">↻ Atualizar</button>
           </div>
 
-          <div class="table-wrap">
-            <table class="data-table">
-              <thead><tr>
-                <th>Líder</th>
-                <th class="center">Valor mínimo (R$)</th>
-                <th class="center">Valor máximo (R$)</th>
-                <th class="center">Ação</th>
-              </tr></thead>
-              <tbody id="escalationLeadersBody">
-                <tr><td colspan="4" class="table-empty">Carregando...</td></tr>
-              </tbody>
-            </table>
+          <!-- Gantt de intervalos -->
+          <div id="escalationGantt" style="background:var(--bg-card);border:1px solid var(--bd-subtle);border-radius:var(--r);padding:20px;margin-bottom:20px;">
+            <div style="font-size:11px;color:var(--txt-3);margin-bottom:12px;">Carregando...</div>
           </div>
 
-          <div style="margin-top:20px;display:flex;align-items:center;justify-content:space-between;background:var(--bg-card);border:1px solid var(--bd-subtle);border-radius:var(--r);padding:16px;">
-            <div>
-              <label style="font-size:11px;color:var(--txt-3);">E-mail do líder
-                <input type="text" id="escNewEmail" placeholder="ex: nome.sobrenome@hotmart.com" class="field-input" style="margin-top:4px;padding:8px 10px;font-size:13px;width:240px;">
-              </label>
-            </div>
-            <div>
-              <label style="font-size:11px;color:var(--txt-3);">Nome
-                <input type="text" id="escNewName" placeholder="ex: Nome" class="field-input" style="margin-top:4px;padding:8px 10px;font-size:13px;width:120px;">
-              </label>
-            </div>
-            <div style="flex:1;min-width:280px;">
-              <label style="font-size:11px;color:var(--txt-3);">Faixa de valor (R$)</label>
-              <div class="dual-range">
-                <div class="dual-range-track"></div>
-                <div class="dual-range-fill" id="escNewFill"></div>
-                <input type="range" id="escNewMin" min="1000000" max="50000000" step="1000000" value="10000000" oninput="syncDualRange('escNew')">
-                <input type="range" id="escNewMax" min="1000000" max="50000000" step="1000000" value="50000000" oninput="syncDualRange('escNew')">
+          <!-- Formulário adicionar líder -->
+          <div style="background:var(--bg-card);border:1px solid var(--bd-subtle);border-radius:var(--r);padding:16px;">
+            <div style="font-size:13px;font-weight:600;color:var(--txt-1);margin-bottom:14px;">Adicionar líder</div>
+            <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+              <div>
+                <label style="font-size:11px;color:var(--txt-3);">E-mail
+                  <input type="text" id="escNewEmail" placeholder="nome@hotmart.com" class="field-input" style="margin-top:4px;padding:8px 10px;font-size:13px;width:220px;">
+                </label>
               </div>
-              <div class="dual-range-labels"><span id="escNewMinLabel">R$ 10M</span><span id="escNewMaxLabel">R$ 50M+</span></div>
+              <div>
+                <label style="font-size:11px;color:var(--txt-3);">Nome
+                  <input type="text" id="escNewName" placeholder="Nome" class="field-input" style="margin-top:4px;padding:8px 10px;font-size:13px;width:120px;">
+                </label>
+              </div>
+              <div style="flex:1;min-width:260px;">
+                <label style="font-size:11px;color:var(--txt-3);">Faixa de valor</label>
+                <div class="dual-range" style="margin-top:6px;">
+                  <div class="dual-range-track"></div>
+                  <div class="dual-range-fill" id="escNewFill"></div>
+                  <input type="range" id="escNewMin" min="1000000" max="50000000" step="1000000" value="10000000" oninput="syncDualRange('escNew')">
+                  <input type="range" id="escNewMax" min="1000000" max="50000000" step="1000000" value="50000000" oninput="syncDualRange('escNew')">
+                </div>
+                <div class="dual-range-labels"><span id="escNewMinLabel">R$ 10M</span><span id="escNewMaxLabel">R$ 50M+</span></div>
+              </div>
+              <button class="btn btn-primary" onclick="addEscalationLeader()" style="font-size:13px;white-space:nowrap;">+ Adicionar</button>
             </div>
-            <button class="btn btn-primary" onclick="addEscalationLeader()" style="font-size:13px;">+ Adicionar líder</button>
           </div>
 
         </div>
@@ -3723,46 +3718,105 @@ async function loadEscalationConfig() {
 }
 
 function renderEscalationLeaders(leaders) {
-  var body = document.getElementById('escalationLeadersBody');
+  var gantt = document.getElementById('escalationGantt');
   if (!leaders.length) {
-    body.innerHTML = '<tr><td colspan="4" class="table-empty">Nenhum líder cadastrado.</td></tr>';
+    gantt.innerHTML = '<div style="font-size:12px;color:var(--txt-3);">Nenhum líder cadastrado.</div>';
     return;
   }
-  body.innerHTML = leaders.map(function(l) {
-    var safeId = l.email.replace(/[^a-zA-Z0-9]/g, '_');
-    var maxLabel = l.max >= MAX_RANGE_VAL ? fmtBRL(l.max) + ' (sem limite)' : fmtBRL(l.max);
-    return '<tr>' +
-      '<td><span class="closer-cell-name">' + l.name + '</span><span class="closer-cell-email">' + l.email + '</span></td>' +
-      '<td class="center" id="escView_min_' + safeId + '">' + fmtBRL(l.min) + '</td>' +
-      '<td class="center" id="escView_max_' + safeId + '">' + maxLabel + '</td>' +
-      '<td class="center" id="escView_action_' + safeId + '">' +
-        '<button class="btn-remove-pool" style="padding:5px 12px;font-size:12px;" onclick="editEscalationLeader(\'' + l.email + '\',\'' + safeId + '\',' + l.min + ',' + l.max + ')">Editar</button> ' +
-        '<button class="btn-remove-pool" style="padding:5px 10px;font-size:12px;" onclick="removeEscalationLeader(\'' + l.email + '\')">Remover</button>' +
-      '</td>' +
-      '</tr>';
+
+  var SCALE = MAX_RANGE_VAL; // 50M = 100%
+
+  // Calcula sobreposições por posição percentual para colorir faixas em vermelho
+  // Cada líder tem uma barra; a sobreposição entre dois líderes é detectada e destacada
+  function pct(v) { return Math.min((v / SCALE) * 100, 100); }
+  function fmtM(v) { return v >= SCALE ? '50M+' : (v/1000000).toFixed(0) + 'M'; }
+
+  var colors = ['var(--org)', '#5b9cf6', '#a78bfa', '#34d399', '#f59e0b'];
+
+  // Tick marks do eixo
+  var ticks = [0, 10, 20, 30, 40, 50];
+  var ticksHtml = '<div style="position:relative;height:20px;margin-bottom:4px;">';
+  ticks.forEach(function(t) {
+    var p = pct(t * 1000000);
+    ticksHtml += '<span style="position:absolute;left:' + p + '%;transform:translateX(-50%);font-size:10px;color:var(--txt-3);font-family:\'JetBrains Mono\',monospace;">' + (t === 50 ? '50M+' : t + 'M') + '</span>';
+  });
+  ticksHtml += '</div>';
+
+  // Linhas de guia
+  var guidesHtml = '<div style="position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;">';
+  ticks.forEach(function(t) {
+    guidesHtml += '<div style="position:absolute;top:0;bottom:0;left:' + pct(t*1000000) + '%;width:1px;background:var(--bd-subtle);opacity:0.5;"></div>';
+  });
+  guidesHtml += '</div>';
+
+  var rows = leaders.map(function(l, idx) {
+    var minPct = pct(Math.min(l.min, SCALE));
+    var maxPct = pct(Math.min(l.max, SCALE));
+    var width = Math.max(maxPct - minPct, 1);
+    var color = colors[idx % colors.length];
+    var maxLabel = l.max >= MAX_RANGE_VAL ? '50M+ (sem limite)' : fmtBRL(l.max);
+
+    // Detecta sobreposição com outros líderes
+    var overlaps = [];
+    leaders.forEach(function(other, j) {
+      if (j === idx) return;
+      var overlapMin = Math.max(l.min, other.min);
+      var overlapMax = Math.min(l.max, other.max);
+      if (overlapMin < overlapMax) {
+        overlaps.push({ minPct: pct(Math.min(overlapMin, SCALE)), maxPct: pct(Math.min(overlapMax, SCALE)) });
+      }
+    });
+
+    var overlapMarkers = overlaps.map(function(ov) {
+      return '<div style="position:absolute;top:0;bottom:0;left:' + (ov.minPct - minPct) + '%;width:' + (ov.maxPct - ov.minPct) + '%;background:rgba(255,72,0,0.35);border-radius:4px;"></div>';
+    }).join('');
+
+    return '<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;" id="escRow_' + l.email.replace(/[^a-zA-Z0-9]/g,'_') + '">' +
+      '<div style="width:90px;flex-shrink:0;">' +
+        '<div style="font-size:12px;font-weight:600;color:var(--txt-1);">' + l.name + '</div>' +
+        '<div style="font-size:10px;color:var(--txt-3);">' + fmtM(l.min) + ' – ' + fmtM(l.max) + '</div>' +
+      '</div>' +
+      '<div style="flex:1;position:relative;height:28px;">' +
+        guidesHtml +
+        '<div style="position:absolute;top:6px;left:' + minPct + '%;width:' + width + '%;height:16px;background:' + color + ';border-radius:4px;opacity:0.85;overflow:visible;">' +
+          overlapMarkers +
+        '</div>' +
+      '</div>' +
+      '<div style="display:flex;gap:6px;flex-shrink:0;">' +
+        '<button class="btn-remove-pool" style="padding:4px 10px;font-size:11px;" onclick="editEscalationLeader(\'' + l.email + '\',\'' + l.email.replace(/[^a-zA-Z0-9]/g,'_') + '\',' + l.min + ',' + l.max + ')">Editar</button>' +
+        '<button class="btn-remove-pool" style="padding:4px 8px;font-size:11px;" onclick="removeEscalationLeader(\'' + l.email + '\')">✕</button>' +
+      '</div>' +
+    '</div>';
   }).join('');
+
+  gantt.innerHTML =
+    '<div style="font-size:11px;color:var(--txt-3);margin-bottom:8px;">Interseções em <span style="color:var(--org);font-weight:600;">laranja</span> indicam que ambos os líderes são acionados simultaneamente nessa faixa.</div>' +
+    ticksHtml +
+    '<div style="position:relative;">' + rows + '</div>';
 }
 
 function editEscalationLeader(email, safeId, currentMin, currentMax) {
-  var minCell = document.getElementById('escView_min_' + safeId);
-  var maxCell = document.getElementById('escView_max_' + safeId);
-  var actionCell = document.getElementById('escView_action_' + safeId);
+  var row = document.getElementById('escRow_' + safeId);
+  if (!row) return;
 
-  // Clampa para a escala do slider (1M-50M); valores >= 50M na escala viram "50M+"
   var sliderMin = Math.min(Math.max(currentMin, 1000000), MAX_RANGE_VAL);
   var sliderMax = Math.min(Math.max(currentMax, 1000000), MAX_RANGE_VAL);
 
-  var html = '<div class="dual-range" style="width:220px;display:inline-block;">' +
-    '<div class="dual-range-track"></div>' +
-    '<div class="dual-range-fill" id="escEdit_' + safeId + 'Fill"></div>' +
-    '<input type="range" id="escEdit_' + safeId + 'Min" min="1000000" max="50000000" step="1000000" value="' + sliderMin + '" oninput="syncDualRange(\'escEdit_' + safeId + '\')">' +
-    '<input type="range" id="escEdit_' + safeId + 'Max" min="1000000" max="50000000" step="1000000" value="' + sliderMax + '" oninput="syncDualRange(\'escEdit_' + safeId + '\')">' +
-  '</div><div class="dual-range-labels" style="width:220px;"><span id="escEdit_' + safeId + 'MinLabel"></span><span id="escEdit_' + safeId + 'MaxLabel"></span></div>';
-
-  minCell.innerHTML = html;
-  minCell.setAttribute('colspan', '2');
-  maxCell.style.display = 'none';
-  actionCell.innerHTML = '<button class="btn-accept" style="padding:5px 12px;font-size:12px;" onclick="saveEscalationLeader(\'' + email + '\',\'' + safeId + '\')">Salvar</button>';
+  row.innerHTML =
+    '<div style="width:90px;flex-shrink:0;font-size:12px;font-weight:600;color:var(--txt-1);">' + email.split('@')[0] + '</div>' +
+    '<div style="flex:1;">' +
+      '<div class="dual-range">' +
+        '<div class="dual-range-track"></div>' +
+        '<div class="dual-range-fill" id="escEdit_' + safeId + 'Fill"></div>' +
+        '<input type="range" id="escEdit_' + safeId + 'Min" min="1000000" max="50000000" step="1000000" value="' + sliderMin + '" oninput="syncDualRange(\'escEdit_' + safeId + '\')">' +
+        '<input type="range" id="escEdit_' + safeId + 'Max" min="1000000" max="50000000" step="1000000" value="' + sliderMax + '" oninput="syncDualRange(\'escEdit_' + safeId + '\')">' +
+      '</div>' +
+      '<div class="dual-range-labels"><span id="escEdit_' + safeId + 'MinLabel"></span><span id="escEdit_' + safeId + 'MaxLabel"></span></div>' +
+    '</div>' +
+    '<div style="display:flex;gap:6px;flex-shrink:0;">' +
+      '<button class="btn-accept" style="padding:4px 10px;font-size:11px;" onclick="saveEscalationLeader(\'' + email + '\',\'' + safeId + '\')">Salvar</button>' +
+      '<button class="btn-remove-pool" style="padding:4px 8px;font-size:11px;" onclick="loadEscalationConfig()">✕</button>' +
+    '</div>';
 
   syncDualRange('escEdit_' + safeId);
 }
