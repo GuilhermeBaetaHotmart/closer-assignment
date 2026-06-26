@@ -2134,9 +2134,9 @@ body::after {
             <button class="btn btn-ghost" onclick="loadEscalationConfig()" style="font-size:13px;">↻ Atualizar</button>
           </div>
 
-          <!-- Gantt de intervalos -->
-          <div id="escalationGantt" style="background:var(--bg-card);border:1px solid var(--bd-subtle);border-radius:var(--r);padding:20px;margin-bottom:20px;">
-            <div style="font-size:11px;color:var(--txt-3);margin-bottom:12px;">Carregando...</div>
+          <!-- Tabela + Gantt renderizados juntos -->
+          <div id="escalationGantt" style="margin-bottom:20px;">
+            <div style="font-size:11px;color:var(--txt-3);">Carregando...</div>
           </div>
 
           <!-- Formulário adicionar líder -->
@@ -2153,9 +2153,15 @@ body::after {
                   <input type="text" id="escNewName" placeholder="Nome" class="field-input" style="margin-top:4px;padding:8px 10px;font-size:13px;width:120px;">
                 </label>
               </div>
-              <div style="flex:1;min-width:260px;">
-                <label style="font-size:11px;color:var(--txt-3);">Faixa de valor — <span id="escNewLbl" style="color:var(--txt-1);font-weight:600;">R$10M – R$50M+</span></label>
-                <div id="escNewSliderWrap" style="margin-top:6px;"></div>
+              <div>
+                <label style="font-size:11px;color:var(--txt-3);">Mínimo (R$)
+                  <input type="number" id="escNewMin" placeholder="ex: 10000000" class="field-input" style="margin-top:4px;padding:8px 10px;font-size:13px;width:150px;">
+                </label>
+              </div>
+              <div>
+                <label style="font-size:11px;color:var(--txt-3);">Máximo (R$)
+                  <input type="number" id="escNewMax" placeholder="ex: 100000000" class="field-input" style="margin-top:4px;padding:8px 10px;font-size:13px;width:150px;">
+                </label>
               </div>
               <button class="btn btn-primary" onclick="addEscalationLeader()" style="font-size:13px;white-space:nowrap;">+ Adicionar</button>
             </div>
@@ -3665,149 +3671,6 @@ function onCompetitorChange() {
 /* ── Dual-range slider helper ──────────────────── */
 const MAX_RANGE_VAL = 50000000;
 const ESC_COLORS = ['var(--org)', '#5b9cf6', '#a78bfa', '#34d399', '#f59e0b'];
-var escLeadersCache = [];
-
-function escFmtM(m) { return m >= 50 ? 'R$50M+' : 'R$' + m + 'M'; }
-
-function escSyncSlider(prefix) {
-  var a = document.getElementById(prefix + 'A');
-  var b = document.getElementById(prefix + 'B');
-  var f = document.getElementById(prefix + 'F');
-  var la = document.getElementById(prefix + 'LA');
-  var lb = document.getElementById(prefix + 'LB');
-  if (!a || !b) return;
-  var mn = parseInt(a.value), mx = parseInt(b.value);
-  if (event && event.target === a && mn > mx) { mx = mn; b.value = mx; }
-  else if (event && event.target === b && mx < mn) { mn = mx; a.value = mn; }
-  var pA = (mn - 1) / 49 * 100, pB = (mx - 1) / 49 * 100;
-  if (f) { f.style.left = pA + '%'; f.style.width = (pB - pA) + '%'; }
-  if (la) la.textContent = escFmtM(mn);
-  if (lb) lb.textContent = escFmtM(mx);
-  var lbl = document.getElementById(prefix + 'Lbl');
-  if (lbl) lbl.textContent = escFmtM(mn) + ' – ' + escFmtM(mx);
-}
-
-function escBuildSlider(containerId, prefix, initMin, initMax) {
-  var el = document.getElementById(containerId);
-  if (!el) return;
-  el.innerHTML =
-    '<div style="position:relative;height:28px;">' +
-      '<div style="position:absolute;top:12px;left:0;right:0;height:4px;background:var(--bg-raised);border-radius:2px;"></div>' +
-      '<div id="' + prefix + 'F" style="position:absolute;top:12px;height:4px;background:var(--org);border-radius:2px;pointer-events:none;"></div>' +
-      '<input type="range" min="1" max="50" step="1" value="' + initMin + '" id="' + prefix + 'A" oninput="escSyncSlider(\'' + prefix + '\')" style="position:absolute;top:0;left:0;width:100%;background:transparent;">' +
-      '<input type="range" min="1" max="50" step="1" value="' + initMax + '" id="' + prefix + 'B" oninput="escSyncSlider(\'' + prefix + '\')" style="position:absolute;top:0;left:0;width:100%;background:transparent;">' +
-    '</div>' +
-    '<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--txt-3);margin-top:2px;">' +
-      '<span id="' + prefix + 'LA">' + escFmtM(initMin) + '</span>' +
-      '<span id="' + prefix + 'LB">' + escFmtM(initMax) + '</span>' +
-    '</div>';
-  escSyncSlider(prefix);
-}
-
-function escOverlapSegs(idx, pMin, pMax) {
-  var segs = [];
-  escLeadersCache.forEach(function(l, i) {
-    if (i === idx) return;
-    var oMin = Math.min(l.min, 50), oMax = Math.min(l.max, 50);
-    var sMin = Math.max(pMin, oMin), sMax = Math.min(pMax, oMax);
-    if (sMin < sMax) segs.push({ sMin: sMin, sMax: sMax });
-  });
-  return segs;
-}
-
-function escRenderBars() {
-  var gantt = document.getElementById('escalationGantt');
-  if (!gantt) return;
-  if (!escLeadersCache.length) {
-    gantt.innerHTML = '<div style="font-size:12px;color:var(--txt-3);">Nenhum líder cadastrado.</div>';
-    return;
-  }
-  var ticks = [0, 10, 20, 30, 40, 50];
-  var ticksHtml = '<div style="position:relative;height:18px;margin-bottom:6px;padding-left:100px;">';
-  ticks.forEach(function(t) {
-    ticksHtml += '<span style="position:absolute;left:' + (t / 50 * 100) + '%;transform:translateX(-50%);font-size:10px;color:var(--txt-3);">' + (t === 50 ? '50M+' : t + 'M') + '</span>';
-  });
-  ticksHtml += '</div>';
-
-  var rows = escLeadersCache.map(function(l, idx) {
-    var pMin = Math.min(l.min, 50), pMax = Math.min(l.max, 50);
-    var color = ESC_COLORS[idx % ESC_COLORS.length];
-    var segs = escOverlapSegs(idx, pMin, pMax);
-    var hasOv = segs.length > 0;
-    var ovHtml = segs.map(function(s) {
-      var left = ((s.sMin - pMin) / (pMax - pMin)) * 100;
-      var w = ((s.sMax - s.sMin) / (pMax - pMin)) * 100;
-      return '<div style="position:absolute;top:0;bottom:0;left:' + left + '%;width:' + w + '%;background:rgba(255,72,0,0.38);border-radius:3px;pointer-events:none;"></div>';
-    }).join('');
-    var safeId = 'esc_' + idx;
-
-    return '<div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:14px;">' +
-      '<div style="width:92px;flex-shrink:0;padding-top:4px;">' +
-        '<div style="font-size:12px;font-weight:600;color:var(--txt-1);">' + l.name + (hasOv ? ' <span style="font-size:10px;font-weight:600;color:var(--org);background:rgba(255,100,0,.12);padding:1px 6px;border-radius:99px;">sobreposição</span>' : '') + '</div>' +
-        '<div style="font-size:10px;color:var(--txt-3);margin-top:1px;">' + l.email.split('@')[0] + '</div>' +
-      '</div>' +
-      '<div style="flex:1;">' +
-        '<div style="position:relative;height:12px;margin-bottom:6px;">' +
-          ticks.map(function(t) { return '<div style="position:absolute;top:0;bottom:0;left:' + (t/50*100) + '%;width:0.5px;background:var(--bd-subtle);"></div>'; }).join('') +
-          '<div style="position:absolute;top:0;left:' + (pMin/50*100) + '%;width:' + ((pMax-pMin)/50*100) + '%;height:100%;background:' + color + ';border-radius:3px;opacity:0.82;overflow:hidden;">' + ovHtml + '</div>' +
-        '</div>' +
-        '<div id="escSlider_' + safeId + '"></div>' +
-      '</div>' +
-      '<button class="btn-remove-pool" onclick="escRemove(\'' + l.email + '\')" style="flex-shrink:0;padding:4px 8px;font-size:11px;margin-top:2px;">✕</button>' +
-    '</div>';
-  }).join('');
-
-  gantt.innerHTML =
-    '<div style="font-size:11px;color:var(--txt-3);margin-bottom:10px;">Interseções em <span style="color:var(--org);font-weight:600;">laranja</span> = ambos os líderes são acionados simultaneamente.</div>' +
-    ticksHtml + rows;
-
-  escLeadersCache.forEach(function(l, idx) {
-    var safeId = 'esc_' + idx;
-    var pMin = Math.min(l.min, 50), pMax = Math.min(l.max, 50);
-    escBuildSlider('escSlider_' + safeId, 'escL' + idx, pMin, pMax);
-    (function(capturedIdx) {
-      var aEl = document.getElementById('escL' + capturedIdx + 'A');
-      var bEl = document.getElementById('escL' + capturedIdx + 'B');
-      function onInput() {
-        var mn = parseInt(aEl.value), mx = parseInt(bEl.value);
-        escSyncSlider('escL' + capturedIdx);
-        escLeadersCache[capturedIdx].min = mn;
-        escLeadersCache[capturedIdx].max = mx;
-        escRenderBars();
-      }
-      if (aEl) aEl.addEventListener('change', function() { escSave(capturedIdx); });
-      if (bEl) bEl.addEventListener('change', function() { escSave(capturedIdx); });
-    })(idx);
-  });
-}
-
-async function escSave(idx) {
-  var l = escLeadersCache[idx];
-  if (!l) return;
-  var maxVal = l.max >= 50 ? 100000000 : l.max * 1000000;
-  var minVal = l.min * 1000000;
-  try {
-    const r = await authFetch(API.escalationConfigSet, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: l.email, name: l.name, min: minVal, max: maxVal })
-    });
-    const d = await r.json();
-    if (d.success) showToast('Regra de ' + l.name + ' atualizada.', 'success');
-  } catch(e) { showToast('Erro ao salvar.', 'error'); }
-}
-
-async function escRemove(email) {
-  try {
-    const r = await authFetch(API.escalationConfigSet, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: email, remove: true })
-    });
-    const d = await r.json();
-    if (d.success) { showToast('Líder removido.', 'info'); loadEscalationConfig(); }
-  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
-}
 
 /* ── Dashboard Regras de Escalação ─────────────── */
 async function loadEscalationConfig() {
@@ -3816,38 +3679,147 @@ async function loadEscalationConfig() {
   try {
     const r = await authFetch(API.escalationConfigGet);
     const d = await r.json();
-    escLeadersCache = (d.leaders || []).map(function(l) {
-      return { email: l.email, name: l.name, min: Math.round(l.min / 1000000), max: Math.min(Math.round(l.max / 1000000), 50) };
-    });
-    escRenderBars();
-    escBuildSlider('escNewSliderWrap', 'escNew', 10, 50);
+    renderEscalationLeaders(d.leaders || []);
   } catch(e) {
     if (gantt) gantt.innerHTML = '<div style="font-size:12px;color:var(--red);">Erro: ' + e.message + '</div>';
   }
 }
 
+function renderEscalationLeaders(leaders) {
+  var gantt = document.getElementById('escalationGantt');
+  if (!gantt) return;
+  if (!leaders.length) {
+    gantt.innerHTML = '<div style="font-size:12px;color:var(--txt-3);">Nenhum líder cadastrado.</div>';
+    return;
+  }
+
+  // ── Tabela de líderes ──────────────────────────
+  var tableHtml = '<div class="table-wrap" style="margin-bottom:20px;"><table class="data-table"><thead><tr>' +
+    '<th>Líder</th><th class="center">Mínimo</th><th class="center">Máximo</th><th class="center">Ação</th>' +
+    '</tr></thead><tbody>' +
+    leaders.map(function(l, idx) {
+      var safeId = 'esc_' + idx;
+      var maxLabel = l.max >= MAX_RANGE_VAL ? fmtBRL(l.max) + ' (sem limite)' : fmtBRL(l.max);
+      return '<tr id="escRow_' + safeId + '">' +
+        '<td><span class="closer-cell-name">' + l.name + '</span><span class="closer-cell-email">' + l.email + '</span></td>' +
+        '<td class="center" id="escMin_' + safeId + '">' + fmtBRL(l.min) + '</td>' +
+        '<td class="center" id="escMax_' + safeId + '">' + maxLabel + '</td>' +
+        '<td class="center" id="escAct_' + safeId + '">' +
+          '<button class="btn-remove-pool" style="padding:5px 12px;font-size:12px;" onclick="editEscalationLeader(' + idx + ',\'' + l.email + '\',' + l.min + ',' + l.max + ')">Editar</button> ' +
+          '<button class="btn-remove-pool" style="padding:5px 10px;font-size:12px;" onclick="removeEscalationLeader(\'' + l.email + '\')">Remover</button>' +
+        '</td>' +
+      '</tr>';
+    }).join('') +
+    '</tbody></table></div>';
+
+  // ── Gantt de sobreposição ──────────────────────
+  var ticks = [0, 10, 20, 30, 40, 50];
+  var SCALE = 50;
+  function pM(v) { return Math.min(v / 1000000, SCALE); }
+  function fmtM(v) { return v >= MAX_RANGE_VAL ? '50M+' : Math.round(v/1000000) + 'M'; }
+
+  var ticksHtml = '<div style="position:relative;height:18px;margin-bottom:6px;padding-left:80px;">';
+  ticks.forEach(function(t) {
+    ticksHtml += '<span style="position:absolute;left:' + (t/SCALE*100) + '%;transform:translateX(-50%);font-size:10px;color:var(--txt-3);">' + (t===50?'50M+':t+'M') + '</span>';
+  });
+  ticksHtml += '</div>';
+
+  var barsHtml = leaders.map(function(l, idx) {
+    var pMin = pM(l.min), pMax = pM(l.max);
+    var color = ESC_COLORS[idx % ESC_COLORS.length];
+    var segs = [];
+    leaders.forEach(function(other, j) {
+      if (j === idx) return;
+      var sMin = Math.max(pMin, pM(other.min)), sMax = Math.min(pMax, pM(other.max));
+      if (sMin < sMax) segs.push({sMin: sMin, sMax: sMax});
+    });
+    var ovHtml = segs.map(function(s) {
+      var left = ((s.sMin - pMin) / (pMax - pMin)) * 100;
+      var w = ((s.sMax - s.sMin) / (pMax - pMin)) * 100;
+      return '<div style="position:absolute;top:0;bottom:0;left:' + left + '%;width:' + w + '%;background:rgba(255,72,0,0.38);border-radius:3px;pointer-events:none;"></div>';
+    }).join('');
+
+    return '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">' +
+      '<div style="width:72px;flex-shrink:0;font-size:12px;font-weight:600;color:var(--txt-1);">' + l.name + '</div>' +
+      '<div style="flex:1;position:relative;height:14px;">' +
+        ticks.map(function(t) { return '<div style="position:absolute;top:0;bottom:0;left:' + (t/SCALE*100) + '%;width:0.5px;background:var(--bd-subtle);"></div>'; }).join('') +
+        '<div style="position:absolute;top:0;left:' + (pMin/SCALE*100) + '%;width:' + ((pMax-pMin)/SCALE*100) + '%;height:100%;background:' + color + ';border-radius:3px;opacity:0.82;overflow:hidden;">' + ovHtml + '</div>' +
+      '</div>' +
+      '<div style="width:80px;flex-shrink:0;font-size:10px;color:var(--txt-3);text-align:right;">' + fmtM(l.min) + ' – ' + fmtM(l.max) + '</div>' +
+    '</div>';
+  }).join('');
+
+  var ganttHtml = '<div style="background:var(--bg-raised);border:1px solid var(--bd-subtle);border-radius:var(--r);padding:16px;">' +
+    '<div style="font-size:12px;font-weight:600;color:var(--txt-1);margin-bottom:10px;">Mapa de sobreposição</div>' +
+    '<div style="font-size:11px;color:var(--txt-3);margin-bottom:12px;">Trechos em <span style="color:var(--org);font-weight:600;">laranja</span> indicam acionamento simultâneo de dois ou mais líderes.</div>' +
+    ticksHtml + barsHtml +
+  '</div>';
+
+  gantt.innerHTML = tableHtml + ganttHtml;
+}
+
+function editEscalationLeader(idx, email, currentMin, currentMax) {
+  var safeId = 'esc_' + idx;
+  var minCell = document.getElementById('escMin_' + safeId);
+  var maxCell = document.getElementById('escMax_' + safeId);
+  var actCell = document.getElementById('escAct_' + safeId);
+  if (!minCell) return;
+  minCell.innerHTML = '<input type="number" id="escEditMin_' + safeId + '" value="' + currentMin + '" style="width:110px;text-align:center;background:var(--bg-raised);border:1px solid var(--bd-default);border-radius:6px;color:var(--txt-1);padding:4px;font-size:12px;">';
+  maxCell.innerHTML = '<input type="number" id="escEditMax_' + safeId + '" value="' + currentMax + '" style="width:110px;text-align:center;background:var(--bg-raised);border:1px solid var(--bd-default);border-radius:6px;color:var(--txt-1);padding:4px;font-size:12px;">';
+  actCell.innerHTML = '<button class="btn-accept" style="padding:5px 12px;font-size:12px;" onclick="saveEscalationLeader(\'' + email + '\',\'' + safeId + '\')">Salvar</button>';
+}
+
+async function saveEscalationLeader(email, safeId) {
+  var min = parseInt(document.getElementById('escEditMin_' + safeId).value);
+  var max = parseInt(document.getElementById('escEditMax_' + safeId).value);
+  if (isNaN(min) || isNaN(max)) { showToast('Valores inválidos.', 'error'); return; }
+  try {
+    const r = await authFetch(API.escalationConfigSet, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ email: email, min: min, max: max })
+    });
+    const d = await r.json();
+    if (d.success) { showToast('Regra atualizada.', 'success'); loadEscalationConfig(); }
+    else showToast('Erro ao salvar.', 'error');
+  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+}
+
+async function removeEscalationLeader(email) {
+  try {
+    const r = await authFetch(API.escalationConfigSet, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ email: email, remove: true })
+    });
+    const d = await r.json();
+    if (d.success) { showToast('Líder removido.', 'info'); loadEscalationConfig(); }
+    else showToast('Erro ao remover.', 'error');
+  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+}
+
 async function addEscalationLeader() {
   var email = document.getElementById('escNewEmail').value.trim();
   var name = document.getElementById('escNewName').value.trim();
-  var mn = parseInt(document.getElementById('escNewA') ? document.getElementById('escNewA').value : 10);
-  var mx = parseInt(document.getElementById('escNewB') ? document.getElementById('escNewB').value : 50);
-  if (!email || !name) { showToast('Preencha e-mail e nome.', 'error'); return; }
-  var maxVal = mx >= 50 ? 100000000 : mx * 1000000;
+  var min = parseInt(document.getElementById('escNewMin').value);
+  var max = parseInt(document.getElementById('escNewMax').value);
+  if (!email || !name || isNaN(min) || isNaN(max)) { showToast('Preencha todos os campos.', 'error'); return; }
   try {
     const r = await authFetch(API.escalationConfigSet, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: email, name: name, min: mn * 1000000, max: maxVal })
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ email: email, name: name, min: min, max: max })
     });
     const d = await r.json();
     if (d.success) {
       showToast('Líder adicionado.', 'success');
       document.getElementById('escNewEmail').value = '';
       document.getElementById('escNewName').value = '';
+      document.getElementById('escNewMin').value = '';
+      document.getElementById('escNewMax').value = '';
       loadEscalationConfig();
-    } else { showToast('Erro ao adicionar.', 'error'); }
+    } else showToast('Erro ao adicionar.', 'error');
   } catch(e) { showToast('Erro: ' + e.message, 'error'); }
 }
+
+
 
 
 
