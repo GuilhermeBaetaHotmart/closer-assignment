@@ -512,6 +512,39 @@ body::after {
   display: block; font-size: 12px; font-weight: 600;
   color: var(--txt-2); margin-bottom: 7px; letter-spacing: 0.2px;
 }
+
+/* ── Dual-range slider (min/max) ─────────────── */
+.dual-range {
+  position: relative; width: 100%; height: 36px; margin-top: 6px;
+}
+.dual-range input[type="range"] {
+  position: absolute; top: 14px; left: 0; width: 100%;
+  -webkit-appearance: none; appearance: none;
+  height: 4px; background: transparent; pointer-events: none; margin: 0;
+}
+.dual-range input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; pointer-events: auto;
+  width: 16px; height: 16px; border-radius: 50%;
+  background: var(--org); border: 2px solid var(--bg-base);
+  cursor: pointer; box-shadow: 0 0 0 1px var(--bd-strong);
+}
+.dual-range input[type="range"]::-moz-range-thumb {
+  pointer-events: auto; width: 16px; height: 16px; border-radius: 50%;
+  background: var(--org); border: 2px solid var(--bg-base); cursor: pointer;
+}
+.dual-range-track {
+  position: absolute; top: 16px; left: 0; width: 100%; height: 4px;
+  background: var(--bg-raised); border-radius: 2px;
+}
+.dual-range-fill {
+  position: absolute; top: 16px; height: 4px;
+  background: var(--org); border-radius: 2px;
+}
+.dual-range-labels {
+  display: flex; justify-content: space-between;
+  font-size: 11px; color: var(--txt-2); margin-top: 4px; font-family: 'JetBrains Mono', monospace;
+}
+
 .field-input {
   width: 100%; padding: 12px 15px;
   font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 400;
@@ -2126,15 +2159,15 @@ body::after {
                 <input type="text" id="escNewName" placeholder="ex: Nome" class="field-input" style="margin-top:4px;padding:8px 10px;font-size:13px;width:120px;">
               </label>
             </div>
-            <div>
-              <label style="font-size:11px;color:var(--txt-3);">Mínimo (R$)
-                <input type="number" id="escNewMin" placeholder="0" class="field-input" style="margin-top:4px;padding:8px 10px;font-size:13px;width:140px;">
-              </label>
-            </div>
-            <div>
-              <label style="font-size:11px;color:var(--txt-3);">Máximo (R$)
-                <input type="number" id="escNewMax" placeholder="100000000" class="field-input" style="margin-top:4px;padding:8px 10px;font-size:13px;width:140px;">
-              </label>
+            <div style="flex:1;min-width:280px;">
+              <label style="font-size:11px;color:var(--txt-3);">Faixa de valor (R$)</label>
+              <div class="dual-range">
+                <div class="dual-range-track"></div>
+                <div class="dual-range-fill" id="escNewFill"></div>
+                <input type="range" id="escNewMin" min="1000000" max="50000000" step="1000000" value="10000000" oninput="syncDualRange('escNew')">
+                <input type="range" id="escNewMax" min="1000000" max="50000000" step="1000000" value="50000000" oninput="syncDualRange('escNew')">
+              </div>
+              <div class="dual-range-labels"><span id="escNewMinLabel">R$ 10M</span><span id="escNewMaxLabel">R$ 50M+</span></div>
             </div>
             <button class="btn btn-primary" onclick="addEscalationLeader()" style="font-size:13px;">+ Adicionar líder</button>
           </div>
@@ -3640,6 +3673,41 @@ function onCompetitorChange() {
   st.competitor = val;
 }
 
+/* ── Dual-range slider helper ──────────────────── */
+const MAX_RANGE_VAL = 50000000;
+
+function fmtRangeLabel(v) {
+  var m = v / 1000000;
+  return v >= MAX_RANGE_VAL ? 'R$ ' + m + 'M+' : 'R$ ' + m + 'M';
+}
+
+function syncDualRange(prefix) {
+  var minEl = document.getElementById(prefix + 'Min');
+  var maxEl = document.getElementById(prefix + 'Max');
+  var fillEl = document.getElementById(prefix + 'Fill');
+  var minLabelEl = document.getElementById(prefix + 'MinLabel');
+  var maxLabelEl = document.getElementById(prefix + 'MaxLabel');
+
+  var min = parseInt(minEl.value);
+  var max = parseInt(maxEl.value);
+
+  // Garante que min nunca passa do max
+  if (min > max) {
+    if (event && event.target === minEl) { max = min; maxEl.value = max; }
+    else { min = max; minEl.value = min; }
+  }
+
+  var range = parseInt(minEl.max) - parseInt(minEl.min);
+  var minPct = ((min - parseInt(minEl.min)) / range) * 100;
+  var maxPct = ((max - parseInt(minEl.min)) / range) * 100;
+
+  fillEl.style.left = minPct + '%';
+  fillEl.style.width = (maxPct - minPct) + '%';
+
+  minLabelEl.textContent = fmtRangeLabel(min);
+  maxLabelEl.textContent = fmtRangeLabel(max);
+}
+
 /* ── Dashboard Regras de Escalação ─────────────── */
 async function loadEscalationConfig() {
   var body = document.getElementById('escalationLeadersBody');
@@ -3662,10 +3730,11 @@ function renderEscalationLeaders(leaders) {
   }
   body.innerHTML = leaders.map(function(l) {
     var safeId = l.email.replace(/[^a-zA-Z0-9]/g, '_');
+    var maxLabel = l.max >= MAX_RANGE_VAL ? fmtBRL(l.max) + ' (sem limite)' : fmtBRL(l.max);
     return '<tr>' +
       '<td><span class="closer-cell-name">' + l.name + '</span><span class="closer-cell-email">' + l.email + '</span></td>' +
       '<td class="center" id="escView_min_' + safeId + '">' + fmtBRL(l.min) + '</td>' +
-      '<td class="center" id="escView_max_' + safeId + '">' + fmtBRL(l.max) + '</td>' +
+      '<td class="center" id="escView_max_' + safeId + '">' + maxLabel + '</td>' +
       '<td class="center" id="escView_action_' + safeId + '">' +
         '<button class="btn-remove-pool" style="padding:5px 12px;font-size:12px;" onclick="editEscalationLeader(\'' + l.email + '\',\'' + safeId + '\',' + l.min + ',' + l.max + ')">Editar</button> ' +
         '<button class="btn-remove-pool" style="padding:5px 10px;font-size:12px;" onclick="removeEscalationLeader(\'' + l.email + '\')">Remover</button>' +
@@ -3679,15 +3748,30 @@ function editEscalationLeader(email, safeId, currentMin, currentMax) {
   var maxCell = document.getElementById('escView_max_' + safeId);
   var actionCell = document.getElementById('escView_action_' + safeId);
 
-  minCell.innerHTML = '<input type="number" id="escEdit_min_' + safeId + '" value="' + currentMin + '" style="width:130px;text-align:center;background:var(--bg-raised);border:1px solid var(--bd-default);border-radius:6px;color:var(--txt-1);padding:4px;">';
-  maxCell.innerHTML = '<input type="number" id="escEdit_max_' + safeId + '" value="' + currentMax + '" style="width:130px;text-align:center;background:var(--bg-raised);border:1px solid var(--bd-default);border-radius:6px;color:var(--txt-1);padding:4px;">';
+  // Clampa para a escala do slider (1M-50M); valores >= 50M na escala viram "50M+"
+  var sliderMin = Math.min(Math.max(currentMin, 1000000), MAX_RANGE_VAL);
+  var sliderMax = Math.min(Math.max(currentMax, 1000000), MAX_RANGE_VAL);
+
+  var html = '<div class="dual-range" style="width:220px;display:inline-block;">' +
+    '<div class="dual-range-track"></div>' +
+    '<div class="dual-range-fill" id="escEdit_' + safeId + 'Fill"></div>' +
+    '<input type="range" id="escEdit_' + safeId + 'Min" min="1000000" max="50000000" step="1000000" value="' + sliderMin + '" oninput="syncDualRange(\'escEdit_' + safeId + '\')">' +
+    '<input type="range" id="escEdit_' + safeId + 'Max" min="1000000" max="50000000" step="1000000" value="' + sliderMax + '" oninput="syncDualRange(\'escEdit_' + safeId + '\')">' +
+  '</div><div class="dual-range-labels" style="width:220px;"><span id="escEdit_' + safeId + 'MinLabel"></span><span id="escEdit_' + safeId + 'MaxLabel"></span></div>';
+
+  minCell.innerHTML = html;
+  minCell.setAttribute('colspan', '2');
+  maxCell.style.display = 'none';
   actionCell.innerHTML = '<button class="btn-accept" style="padding:5px 12px;font-size:12px;" onclick="saveEscalationLeader(\'' + email + '\',\'' + safeId + '\')">Salvar</button>';
+
+  syncDualRange('escEdit_' + safeId);
 }
 
 async function saveEscalationLeader(email, safeId) {
-  var min = document.getElementById('escEdit_min_' + safeId).value;
-  var max = document.getElementById('escEdit_max_' + safeId).value;
-  if (!min || !max) { showToast('Mínimo e máximo são obrigatórios.', 'error'); return; }
+  var min = parseInt(document.getElementById('escEdit_' + safeId + 'Min').value);
+  var max = parseInt(document.getElementById('escEdit_' + safeId + 'Max').value);
+  // No slider, o teto (50M) representa "50M+" sem limite — gravamos um valor alto o suficiente
+  if (max >= MAX_RANGE_VAL) max = 100000000;
   try {
     const r = await authFetch(API.escalationConfigSet, {
       method: 'POST',
@@ -3728,11 +3812,12 @@ async function removeEscalationLeader(email) {
 async function addEscalationLeader() {
   var email = document.getElementById('escNewEmail').value.trim();
   var name = document.getElementById('escNewName').value.trim();
-  var min = document.getElementById('escNewMin').value;
-  var max = document.getElementById('escNewMax').value;
+  var min = parseInt(document.getElementById('escNewMin').value);
+  var max = parseInt(document.getElementById('escNewMax').value);
+  if (max >= MAX_RANGE_VAL) max = 100000000;
 
-  if (!email || !name || !min || !max) {
-    showToast('Preencha todos os campos para adicionar um líder.', 'error');
+  if (!email || !name) {
+    showToast('Preencha e-mail e nome para adicionar um líder.', 'error');
     return;
   }
 
@@ -3747,8 +3832,9 @@ async function addEscalationLeader() {
       showToast('Líder adicionado.', 'success');
       document.getElementById('escNewEmail').value = '';
       document.getElementById('escNewName').value = '';
-      document.getElementById('escNewMin').value = '';
-      document.getElementById('escNewMax').value = '';
+      document.getElementById('escNewMin').value = 10000000;
+      document.getElementById('escNewMax').value = 50000000;
+      syncDualRange('escNew');
       loadEscalationConfig();
     } else {
       showToast('Erro ao adicionar líder.', 'error');
