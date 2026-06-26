@@ -2154,13 +2154,14 @@ body::after {
                 </label>
               </div>
               <div>
-                <label style="font-size:11px;color:var(--txt-3);">Mínimo (R$)
-                  <input type="number" id="escNewMin" placeholder="ex: 10000000" class="field-input" style="margin-top:4px;padding:8px 10px;font-size:13px;width:150px;">
+                <label style="font-size:11px;color:var(--txt-3);">Mínimo (M)
+                  <input type="number" id="escNewMin" min="0" max="50" placeholder="ex: 10" class="field-input" style="margin-top:4px;padding:8px 10px;font-size:13px;width:150px;">
+                </label>
                 </label>
               </div>
               <div>
-                <label style="font-size:11px;color:var(--txt-3);">Máximo (R$)
-                  <input type="number" id="escNewMax" placeholder="ex: 100000000" class="field-input" style="margin-top:4px;padding:8px 10px;font-size:13px;width:150px;">
+                <label style="font-size:11px;color:var(--txt-3);">Máximo (M, 50 = sem limite)
+                  <input type="number" id="escNewMax" min="0" max="50" placeholder="ex: 50 (sem limite)" class="field-input" style="margin-top:4px;padding:8px 10px;font-size:13px;width:150px;">
                 </label>
               </div>
               <button class="btn btn-primary" onclick="addEscalationLeader()" style="font-size:13px;white-space:nowrap;">+ Adicionar</button>
@@ -3764,15 +3765,19 @@ function editEscalationLeader(idx, email, currentMin, currentMax) {
   var maxCell = document.getElementById('escMax_' + safeId);
   var actCell = document.getElementById('escAct_' + safeId);
   if (!minCell) return;
-  minCell.innerHTML = '<input type="number" id="escEditMin_' + safeId + '" value="' + currentMin + '" style="width:110px;text-align:center;background:var(--bg-raised);border:1px solid var(--bd-default);border-radius:6px;color:var(--txt-1);padding:4px;font-size:12px;">';
-  maxCell.innerHTML = '<input type="number" id="escEditMax_' + safeId + '" value="' + currentMax + '" style="width:110px;text-align:center;background:var(--bg-raised);border:1px solid var(--bd-default);border-radius:6px;color:var(--txt-1);padding:4px;font-size:12px;">';
+  var minM = Math.round(currentMin / 1000000);
+  var maxM = currentMax >= 100000000 ? 50 : Math.round(currentMax / 1000000);
+  minCell.innerHTML = '<input type="number" min="0" max="50" id="escEditMin_' + safeId + '" value="' + minM + '" style="width:80px;text-align:center;background:var(--bg-raised);border:1px solid var(--bd-default);border-radius:6px;color:var(--txt-1);padding:4px;font-size:12px;"> M';
+  maxCell.innerHTML = '<input type="number" min="0" max="50" id="escEditMax_' + safeId + '" value="' + maxM + '" style="width:80px;text-align:center;background:var(--bg-raised);border:1px solid var(--bd-default);border-radius:6px;color:var(--txt-1);padding:4px;font-size:12px;"> M <span style="font-size:10px;color:var(--txt-3);">(50 = sem limite)</span>';
   actCell.innerHTML = '<button class="btn-accept" style="padding:5px 12px;font-size:12px;" onclick="saveEscalationLeader(\'' + email + '\',\'' + safeId + '\')">Salvar</button>';
 }
 
 async function saveEscalationLeader(email, safeId) {
-  var min = parseInt(document.getElementById('escEditMin_' + safeId).value);
-  var max = parseInt(document.getElementById('escEditMax_' + safeId).value);
-  if (isNaN(min) || isNaN(max)) { showToast('Valores inválidos.', 'error'); return; }
+  var minM = parseInt(document.getElementById('escEditMin_' + safeId).value);
+  var maxM = parseInt(document.getElementById('escEditMax_' + safeId).value);
+  if (isNaN(minM) || isNaN(maxM)) { showToast('Valores inválidos.', 'error'); return; }
+  var min = minM * 1000000;
+  var max = maxM >= 50 ? 100000000 : maxM * 1000000;
   try {
     const r = await authFetch(API.escalationConfigSet, {
       method: 'POST', headers: {'Content-Type':'application/json'},
@@ -3799,13 +3804,15 @@ async function removeEscalationLeader(email) {
 async function addEscalationLeader() {
   var email = document.getElementById('escNewEmail').value.trim();
   var name = document.getElementById('escNewName').value.trim();
-  var min = parseInt(document.getElementById('escNewMin').value);
-  var max = parseInt(document.getElementById('escNewMax').value);
-  if (!email || !name || isNaN(min) || isNaN(max)) { showToast('Preencha todos os campos.', 'error'); return; }
+  var minM = parseInt(document.getElementById('escNewMin').value);
+  var maxM = parseInt(document.getElementById('escNewMax').value);
+  if (!email || !name || isNaN(minM) || isNaN(maxM)) { showToast('Preencha todos os campos.', 'error'); return; }
+  var minVal = minM * 1000000;
+  var maxVal = maxM >= 50 ? 100000000 : maxM * 1000000;
   try {
     const r = await authFetch(API.escalationConfigSet, {
       method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ email: email, name: name, min: min, max: max })
+      body: JSON.stringify({ email: email, name: name, min: minVal, max: maxVal })
     });
     const d = await r.json();
     if (d.success) {
