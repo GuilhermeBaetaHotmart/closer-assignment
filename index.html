@@ -2140,31 +2140,17 @@ body::after {
           </div>
 
           <!-- Formulário adicionar líder -->
-          <div style="background:var(--bg-card);border:1px solid var(--bd-subtle);border-radius:var(--r);padding:16px;">
-            <div style="font-size:13px;font-weight:600;color:var(--txt-1);margin-bottom:14px;">Adicionar líder</div>
-            <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
-              <div>
-                <label style="font-size:11px;color:var(--txt-3);">E-mail
-                  <input type="text" id="escNewEmail" placeholder="nome@hotmart.com" class="field-input" style="margin-top:4px;padding:8px 10px;font-size:13px;width:220px;">
-                </label>
+          <div style="background:var(--bg-card);border:1px solid var(--bd-subtle);border-radius:var(--r);padding:14px 16px;">
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:nowrap;">
+              <input type="text" id="escNewEmail" placeholder="E-mail" class="field-input" style="padding:8px 10px;font-size:13px;flex:2;min-width:0;">
+              <input type="text" id="escNewName" placeholder="Nome" class="field-input" style="padding:8px 10px;font-size:13px;width:110px;flex-shrink:0;">
+              <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
+                <input type="number" id="escNewMin" min="0" max="50" placeholder="Min M" class="field-input" style="padding:8px 10px;font-size:13px;width:80px;">
+                <span style="font-size:12px;color:var(--txt-3);">–</span>
+                <input type="number" id="escNewMax" min="0" max="50" placeholder="Max M" class="field-input" style="padding:8px 10px;font-size:13px;width:80px;">
+                <span style="font-size:10px;color:var(--txt-3);white-space:nowrap;">50 = ∞</span>
               </div>
-              <div>
-                <label style="font-size:11px;color:var(--txt-3);">Nome
-                  <input type="text" id="escNewName" placeholder="Nome" class="field-input" style="margin-top:4px;padding:8px 10px;font-size:13px;width:120px;">
-                </label>
-              </div>
-              <div>
-                <label style="font-size:11px;color:var(--txt-3);">Mínimo (M)
-                  <input type="number" id="escNewMin" min="0" max="50" placeholder="ex: 10" class="field-input" style="margin-top:4px;padding:8px 10px;font-size:13px;width:150px;">
-                </label>
-                </label>
-              </div>
-              <div>
-                <label style="font-size:11px;color:var(--txt-3);">Máximo (M, 50 = sem limite)
-                  <input type="number" id="escNewMax" min="0" max="50" placeholder="ex: 50 (sem limite)" class="field-input" style="margin-top:4px;padding:8px 10px;font-size:13px;width:150px;">
-                </label>
-              </div>
-              <button class="btn btn-primary" onclick="addEscalationLeader()" style="font-size:13px;white-space:nowrap;">+ Adicionar</button>
+              <button class="btn btn-primary" onclick="addEscalationLeader()" style="font-size:13px;white-space:nowrap;flex-shrink:0;">+ Adicionar</button>
             </div>
           </div>
 
@@ -3727,7 +3713,6 @@ function renderEscalationLeaders(leaders) {
 
   var barsHtml = leaders.map(function(l, idx) {
     var pMin = pM(l.min), pMax = pM(l.max);
-    var color = ESC_COLORS[idx % ESC_COLORS.length];
     var segs = [];
     leaders.forEach(function(other, j) {
       if (j === idx) return;
@@ -3737,14 +3722,14 @@ function renderEscalationLeaders(leaders) {
     var ovHtml = segs.map(function(s) {
       var left = ((s.sMin - pMin) / (pMax - pMin)) * 100;
       var w = ((s.sMax - s.sMin) / (pMax - pMin)) * 100;
-      return '<div style="position:absolute;top:0;bottom:0;left:' + left + '%;width:' + w + '%;background:rgba(255,72,0,0.38);border-radius:3px;pointer-events:none;"></div>';
+      return '<div style="position:absolute;top:0;bottom:0;left:' + left + '%;width:' + w + '%;background:var(--org);border-radius:3px;pointer-events:none;"></div>';
     }).join('');
 
     return '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">' +
       '<div style="width:72px;flex-shrink:0;font-size:12px;font-weight:600;color:var(--txt-1);">' + l.name + '</div>' +
       '<div style="flex:1;position:relative;height:14px;">' +
         ticks.map(function(t) { return '<div style="position:absolute;top:0;bottom:0;left:' + (t/SCALE*100) + '%;width:0.5px;background:var(--bd-subtle);"></div>'; }).join('') +
-        '<div style="position:absolute;top:0;left:' + (pMin/SCALE*100) + '%;width:' + ((pMax-pMin)/SCALE*100) + '%;height:100%;background:' + color + ';border-radius:3px;opacity:0.82;overflow:hidden;">' + ovHtml + '</div>' +
+        '<div style="position:absolute;top:0;left:' + (pMin/SCALE*100) + '%;width:' + ((pMax-pMin)/SCALE*100) + '%;height:100%;background:var(--txt-3);border-radius:3px;opacity:0.5;overflow:hidden;">' + ovHtml + '</div>' +
       '</div>' +
       '<div style="width:80px;flex-shrink:0;font-size:10px;color:var(--txt-3);text-align:right;">' + fmtM(l.min) + ' – ' + fmtM(l.max) + '</div>' +
     '</div>';
