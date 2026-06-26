@@ -2447,7 +2447,7 @@ async function loadMercado() {
 
     if (role === 'closer') {
       // Busca segment do closer no Redis
-      const rClose = await fetch(API.closerInfo, {
+      const rClose = await authFetch(API.closerInfo, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: session.email })
@@ -2455,14 +2455,14 @@ async function loadMercado() {
       const rCloseData = await rClose.json();
       const segment = rCloseData.segment || 'SMB';
       document.getElementById('mercadoSubtitle').textContent = 'Leads disponíveis para ' + segment;
-      const r = await fetch(API.poolList, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ segment }) });
+      const r = await authFetch(API.poolList, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ segment }) });
       const txt = await r.text();
       const d = txt ? JSON.parse(txt) : {};
       leads = (d.leads || d[0] && d[0].leads) || [];
     } else {
       // SDR ou admin — filtra por sdrEmail ou mostra tudo
       const payload = { segment: 'ENT' };
-      const r = await fetch(API.poolList, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+      const r = await authFetch(API.poolList, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
       const txt = await r.text();
       const d = txt ? JSON.parse(txt) : {};
       leads = (d.leads || d[0] && d[0].leads) || [];
@@ -2515,7 +2515,7 @@ async function loadMercado() {
 
 async function acceptLead(leadId) {
   try {
-    const r = await fetch(API.poolAccept, {
+    const r = await authFetch(API.poolAccept, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ leadId, closerId: session.email, closerName: session.name })
@@ -2534,7 +2534,7 @@ async function acceptLead(leadId) {
 
 async function removeLead(leadId, segment) {
   try {
-    const r = await fetch(API.poolRemove, {
+    const r = await authFetch(API.poolRemove, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ leadId, segment })
@@ -2890,7 +2890,7 @@ async function goEmergencyPool() {
       slotStart:   st.specificSlotStart || '',
       sdrEmail:    session ? session.email : ''
     };
-    const r = await fetch(API.poolAdd, {
+    const r = await authFetch(API.poolAdd, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
@@ -3069,7 +3069,7 @@ async function rejectAgenda(){
   if(!st.queue.length){ alert('Não há mais closers disponíveis neste segmento.'); return; }
   // Registra o pulo antes de trocar o closer
   try {
-    await fetch(API.skip, {
+    await authFetch(API.skip, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
