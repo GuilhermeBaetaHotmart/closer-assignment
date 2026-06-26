@@ -2154,14 +2154,8 @@ body::after {
                 </label>
               </div>
               <div style="flex:1;min-width:260px;">
-                <label style="font-size:11px;color:var(--txt-3);">Faixa de valor</label>
-                <div class="dual-range" style="margin-top:6px;">
-                  <div class="dual-range-track"></div>
-                  <div class="dual-range-fill" id="escNewFill"></div>
-                  <input type="range" id="escNewMin" min="1000000" max="50000000" step="1000000" value="10000000" oninput="syncDualRange('escNew')">
-                  <input type="range" id="escNewMax" min="1000000" max="50000000" step="1000000" value="50000000" oninput="syncDualRange('escNew')">
-                </div>
-                <div class="dual-range-labels"><span id="escNewMinLabel">R$ 10M</span><span id="escNewMaxLabel">R$ 50M+</span></div>
+                <label style="font-size:11px;color:var(--txt-3);">Faixa de valor — <span id="escNewLbl" style="color:var(--txt-1);font-weight:600;">R$10M – R$50M+</span></label>
+                <div id="escNewSliderWrap" style="margin-top:6px;"></div>
               </div>
               <button class="btn btn-primary" onclick="addEscalationLeader()" style="font-size:13px;white-space:nowrap;">+ Adicionar</button>
             </div>
@@ -3670,181 +3664,140 @@ function onCompetitorChange() {
 
 /* ── Dual-range slider helper ──────────────────── */
 const MAX_RANGE_VAL = 50000000;
+const ESC_COLORS = ['var(--org)', '#5b9cf6', '#a78bfa', '#34d399', '#f59e0b'];
+var escLeadersCache = [];
 
-function fmtRangeLabel(v) {
-  var m = v / 1000000;
-  return v >= MAX_RANGE_VAL ? 'R$ ' + m + 'M+' : 'R$ ' + m + 'M';
+function escFmtM(m) { return m >= 50 ? 'R$50M+' : 'R$' + m + 'M'; }
+
+function escSyncSlider(prefix) {
+  var a = document.getElementById(prefix + 'A');
+  var b = document.getElementById(prefix + 'B');
+  var f = document.getElementById(prefix + 'F');
+  var la = document.getElementById(prefix + 'LA');
+  var lb = document.getElementById(prefix + 'LB');
+  if (!a || !b) return;
+  var mn = parseInt(a.value), mx = parseInt(b.value);
+  if (event && event.target === a && mn > mx) { mx = mn; b.value = mx; }
+  else if (event && event.target === b && mx < mn) { mn = mx; a.value = mn; }
+  var pA = (mn - 1) / 49 * 100, pB = (mx - 1) / 49 * 100;
+  if (f) { f.style.left = pA + '%'; f.style.width = (pB - pA) + '%'; }
+  if (la) la.textContent = escFmtM(mn);
+  if (lb) lb.textContent = escFmtM(mx);
+  var lbl = document.getElementById(prefix + 'Lbl');
+  if (lbl) lbl.textContent = escFmtM(mn) + ' – ' + escFmtM(mx);
 }
 
-function syncDualRange(prefix) {
-  var minEl = document.getElementById(prefix + 'Min');
-  var maxEl = document.getElementById(prefix + 'Max');
-  var fillEl = document.getElementById(prefix + 'Fill');
-  var minLabelEl = document.getElementById(prefix + 'MinLabel');
-  var maxLabelEl = document.getElementById(prefix + 'MaxLabel');
-
-  var min = parseInt(minEl.value);
-  var max = parseInt(maxEl.value);
-
-  // Garante que min nunca passa do max
-  if (min > max) {
-    if (event && event.target === minEl) { max = min; maxEl.value = max; }
-    else { min = max; minEl.value = min; }
-  }
-
-  var range = parseInt(minEl.max) - parseInt(minEl.min);
-  var minPct = ((min - parseInt(minEl.min)) / range) * 100;
-  var maxPct = ((max - parseInt(minEl.min)) / range) * 100;
-
-  fillEl.style.left = minPct + '%';
-  fillEl.style.width = (maxPct - minPct) + '%';
-
-  minLabelEl.textContent = fmtRangeLabel(min);
-  maxLabelEl.textContent = fmtRangeLabel(max);
+function escBuildSlider(containerId, prefix, initMin, initMax) {
+  var el = document.getElementById(containerId);
+  if (!el) return;
+  el.innerHTML =
+    '<div style="position:relative;height:28px;">' +
+      '<div style="position:absolute;top:12px;left:0;right:0;height:4px;background:var(--bg-raised);border-radius:2px;"></div>' +
+      '<div id="' + prefix + 'F" style="position:absolute;top:12px;height:4px;background:var(--org);border-radius:2px;pointer-events:none;"></div>' +
+      '<input type="range" min="1" max="50" step="1" value="' + initMin + '" id="' + prefix + 'A" oninput="escSyncSlider(\'' + prefix + '\')" style="position:absolute;top:0;left:0;width:100%;background:transparent;">' +
+      '<input type="range" min="1" max="50" step="1" value="' + initMax + '" id="' + prefix + 'B" oninput="escSyncSlider(\'' + prefix + '\')" style="position:absolute;top:0;left:0;width:100%;background:transparent;">' +
+    '</div>' +
+    '<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--txt-3);margin-top:2px;">' +
+      '<span id="' + prefix + 'LA">' + escFmtM(initMin) + '</span>' +
+      '<span id="' + prefix + 'LB">' + escFmtM(initMax) + '</span>' +
+    '</div>';
+  escSyncSlider(prefix);
 }
 
-/* ── Dashboard Regras de Escalação ─────────────── */
-async function loadEscalationConfig() {
-  var body = document.getElementById('escalationLeadersBody');
-  body.innerHTML = '<tr><td colspan="4" class="table-empty">Carregando...</td></tr>';
-
-  try {
-    const r = await authFetch(API.escalationConfigGet);
-    const d = await r.json();
-    renderEscalationLeaders(d.leaders || []);
-  } catch(e) {
-    body.innerHTML = '<tr><td colspan="4" class="table-empty">Erro: ' + e.message + '</td></tr>';
-  }
+function escOverlapSegs(idx, pMin, pMax) {
+  var segs = [];
+  escLeadersCache.forEach(function(l, i) {
+    if (i === idx) return;
+    var oMin = Math.min(l.min, 50), oMax = Math.min(l.max, 50);
+    var sMin = Math.max(pMin, oMin), sMax = Math.min(pMax, oMax);
+    if (sMin < sMax) segs.push({ sMin: sMin, sMax: sMax });
+  });
+  return segs;
 }
 
-function renderEscalationLeaders(leaders) {
+function escRenderBars() {
   var gantt = document.getElementById('escalationGantt');
-  if (!leaders.length) {
+  if (!gantt) return;
+  if (!escLeadersCache.length) {
     gantt.innerHTML = '<div style="font-size:12px;color:var(--txt-3);">Nenhum líder cadastrado.</div>';
     return;
   }
-
-  var SCALE = MAX_RANGE_VAL; // 50M = 100%
-
-  // Calcula sobreposições por posição percentual para colorir faixas em vermelho
-  // Cada líder tem uma barra; a sobreposição entre dois líderes é detectada e destacada
-  function pct(v) { return Math.min((v / SCALE) * 100, 100); }
-  function fmtM(v) { return v >= SCALE ? '50M+' : (v/1000000).toFixed(0) + 'M'; }
-
-  var colors = ['var(--org)', '#5b9cf6', '#a78bfa', '#34d399', '#f59e0b'];
-
-  // Tick marks do eixo
   var ticks = [0, 10, 20, 30, 40, 50];
-  var ticksHtml = '<div style="position:relative;height:20px;margin-bottom:4px;">';
+  var ticksHtml = '<div style="position:relative;height:18px;margin-bottom:6px;padding-left:100px;">';
   ticks.forEach(function(t) {
-    var p = pct(t * 1000000);
-    ticksHtml += '<span style="position:absolute;left:' + p + '%;transform:translateX(-50%);font-size:10px;color:var(--txt-3);font-family:\'JetBrains Mono\',monospace;">' + (t === 50 ? '50M+' : t + 'M') + '</span>';
+    ticksHtml += '<span style="position:absolute;left:' + (t / 50 * 100) + '%;transform:translateX(-50%);font-size:10px;color:var(--txt-3);">' + (t === 50 ? '50M+' : t + 'M') + '</span>';
   });
   ticksHtml += '</div>';
 
-  // Linhas de guia
-  var guidesHtml = '<div style="position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;">';
-  ticks.forEach(function(t) {
-    guidesHtml += '<div style="position:absolute;top:0;bottom:0;left:' + pct(t*1000000) + '%;width:1px;background:var(--bd-subtle);opacity:0.5;"></div>';
-  });
-  guidesHtml += '</div>';
-
-  var rows = leaders.map(function(l, idx) {
-    var minPct = pct(Math.min(l.min, SCALE));
-    var maxPct = pct(Math.min(l.max, SCALE));
-    var width = Math.max(maxPct - minPct, 1);
-    var color = colors[idx % colors.length];
-    var maxLabel = l.max >= MAX_RANGE_VAL ? '50M+ (sem limite)' : fmtBRL(l.max);
-
-    // Detecta sobreposição com outros líderes
-    var overlaps = [];
-    leaders.forEach(function(other, j) {
-      if (j === idx) return;
-      var overlapMin = Math.max(l.min, other.min);
-      var overlapMax = Math.min(l.max, other.max);
-      if (overlapMin < overlapMax) {
-        overlaps.push({ minPct: pct(Math.min(overlapMin, SCALE)), maxPct: pct(Math.min(overlapMax, SCALE)) });
-      }
-    });
-
-    var overlapMarkers = overlaps.map(function(ov) {
-      return '<div style="position:absolute;top:0;bottom:0;left:' + (ov.minPct - minPct) + '%;width:' + (ov.maxPct - ov.minPct) + '%;background:rgba(255,72,0,0.35);border-radius:4px;"></div>';
+  var rows = escLeadersCache.map(function(l, idx) {
+    var pMin = Math.min(l.min, 50), pMax = Math.min(l.max, 50);
+    var color = ESC_COLORS[idx % ESC_COLORS.length];
+    var segs = escOverlapSegs(idx, pMin, pMax);
+    var hasOv = segs.length > 0;
+    var ovHtml = segs.map(function(s) {
+      var left = ((s.sMin - pMin) / (pMax - pMin)) * 100;
+      var w = ((s.sMax - s.sMin) / (pMax - pMin)) * 100;
+      return '<div style="position:absolute;top:0;bottom:0;left:' + left + '%;width:' + w + '%;background:rgba(255,72,0,0.38);border-radius:3px;pointer-events:none;"></div>';
     }).join('');
+    var safeId = 'esc_' + idx;
 
-    return '<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;" id="escRow_' + l.email.replace(/[^a-zA-Z0-9]/g,'_') + '">' +
-      '<div style="width:90px;flex-shrink:0;">' +
-        '<div style="font-size:12px;font-weight:600;color:var(--txt-1);">' + l.name + '</div>' +
-        '<div style="font-size:10px;color:var(--txt-3);">' + fmtM(l.min) + ' – ' + fmtM(l.max) + '</div>' +
+    return '<div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:14px;">' +
+      '<div style="width:92px;flex-shrink:0;padding-top:4px;">' +
+        '<div style="font-size:12px;font-weight:600;color:var(--txt-1);">' + l.name + (hasOv ? ' <span style="font-size:10px;font-weight:600;color:var(--org);background:rgba(255,100,0,.12);padding:1px 6px;border-radius:99px;">sobreposição</span>' : '') + '</div>' +
+        '<div style="font-size:10px;color:var(--txt-3);margin-top:1px;">' + l.email.split('@')[0] + '</div>' +
       '</div>' +
-      '<div style="flex:1;position:relative;height:28px;">' +
-        guidesHtml +
-        '<div style="position:absolute;top:6px;left:' + minPct + '%;width:' + width + '%;height:16px;background:' + color + ';border-radius:4px;opacity:0.85;overflow:visible;">' +
-          overlapMarkers +
+      '<div style="flex:1;">' +
+        '<div style="position:relative;height:12px;margin-bottom:6px;">' +
+          ticks.map(function(t) { return '<div style="position:absolute;top:0;bottom:0;left:' + (t/50*100) + '%;width:0.5px;background:var(--bd-subtle);"></div>'; }).join('') +
+          '<div style="position:absolute;top:0;left:' + (pMin/50*100) + '%;width:' + ((pMax-pMin)/50*100) + '%;height:100%;background:' + color + ';border-radius:3px;opacity:0.82;overflow:hidden;">' + ovHtml + '</div>' +
         '</div>' +
+        '<div id="escSlider_' + safeId + '"></div>' +
       '</div>' +
-      '<div style="display:flex;gap:6px;flex-shrink:0;">' +
-        '<button class="btn-remove-pool" style="padding:4px 10px;font-size:11px;" onclick="editEscalationLeader(\'' + l.email + '\',\'' + l.email.replace(/[^a-zA-Z0-9]/g,'_') + '\',' + l.min + ',' + l.max + ')">Editar</button>' +
-        '<button class="btn-remove-pool" style="padding:4px 8px;font-size:11px;" onclick="removeEscalationLeader(\'' + l.email + '\')">✕</button>' +
-      '</div>' +
+      '<button class="btn-remove-pool" onclick="escRemove(\'' + l.email + '\')" style="flex-shrink:0;padding:4px 8px;font-size:11px;margin-top:2px;">✕</button>' +
     '</div>';
   }).join('');
 
   gantt.innerHTML =
-    '<div style="font-size:11px;color:var(--txt-3);margin-bottom:8px;">Interseções em <span style="color:var(--org);font-weight:600;">laranja</span> indicam que ambos os líderes são acionados simultaneamente nessa faixa.</div>' +
-    ticksHtml +
-    '<div style="position:relative;">' + rows + '</div>';
+    '<div style="font-size:11px;color:var(--txt-3);margin-bottom:10px;">Interseções em <span style="color:var(--org);font-weight:600;">laranja</span> = ambos os líderes são acionados simultaneamente.</div>' +
+    ticksHtml + rows;
+
+  escLeadersCache.forEach(function(l, idx) {
+    var safeId = 'esc_' + idx;
+    var pMin = Math.min(l.min, 50), pMax = Math.min(l.max, 50);
+    escBuildSlider('escSlider_' + safeId, 'escL' + idx, pMin, pMax);
+    (function(capturedIdx) {
+      var aEl = document.getElementById('escL' + capturedIdx + 'A');
+      var bEl = document.getElementById('escL' + capturedIdx + 'B');
+      function onInput() {
+        var mn = parseInt(aEl.value), mx = parseInt(bEl.value);
+        escSyncSlider('escL' + capturedIdx);
+        escLeadersCache[capturedIdx].min = mn;
+        escLeadersCache[capturedIdx].max = mx;
+        escRenderBars();
+      }
+      if (aEl) aEl.addEventListener('change', function() { escSave(capturedIdx); });
+      if (bEl) bEl.addEventListener('change', function() { escSave(capturedIdx); });
+    })(idx);
+  });
 }
 
-function editEscalationLeader(email, safeId, currentMin, currentMax) {
-  var row = document.getElementById('escRow_' + safeId);
-  if (!row) return;
-
-  var sliderMin = Math.min(Math.max(currentMin, 1000000), MAX_RANGE_VAL);
-  var sliderMax = Math.min(Math.max(currentMax, 1000000), MAX_RANGE_VAL);
-
-  row.innerHTML =
-    '<div style="width:90px;flex-shrink:0;font-size:12px;font-weight:600;color:var(--txt-1);">' + email.split('@')[0] + '</div>' +
-    '<div style="flex:1;">' +
-      '<div class="dual-range">' +
-        '<div class="dual-range-track"></div>' +
-        '<div class="dual-range-fill" id="escEdit_' + safeId + 'Fill"></div>' +
-        '<input type="range" id="escEdit_' + safeId + 'Min" min="1000000" max="50000000" step="1000000" value="' + sliderMin + '" oninput="syncDualRange(\'escEdit_' + safeId + '\')">' +
-        '<input type="range" id="escEdit_' + safeId + 'Max" min="1000000" max="50000000" step="1000000" value="' + sliderMax + '" oninput="syncDualRange(\'escEdit_' + safeId + '\')">' +
-      '</div>' +
-      '<div class="dual-range-labels"><span id="escEdit_' + safeId + 'MinLabel"></span><span id="escEdit_' + safeId + 'MaxLabel"></span></div>' +
-    '</div>' +
-    '<div style="display:flex;gap:6px;flex-shrink:0;">' +
-      '<button class="btn-accept" style="padding:4px 10px;font-size:11px;" onclick="saveEscalationLeader(\'' + email + '\',\'' + safeId + '\')">Salvar</button>' +
-      '<button class="btn-remove-pool" style="padding:4px 8px;font-size:11px;" onclick="loadEscalationConfig()">✕</button>' +
-    '</div>';
-
-  syncDualRange('escEdit_' + safeId);
-}
-
-async function saveEscalationLeader(email, safeId) {
-  var min = parseInt(document.getElementById('escEdit_' + safeId + 'Min').value);
-  var max = parseInt(document.getElementById('escEdit_' + safeId + 'Max').value);
-  // No slider, o teto (50M) representa "50M+" sem limite — gravamos um valor alto o suficiente
-  if (max >= MAX_RANGE_VAL) max = 100000000;
+async function escSave(idx) {
+  var l = escLeadersCache[idx];
+  if (!l) return;
+  var maxVal = l.max >= 50 ? 100000000 : l.max * 1000000;
+  var minVal = l.min * 1000000;
   try {
     const r = await authFetch(API.escalationConfigSet, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: email, min: min, max: max })
+      body: JSON.stringify({ email: l.email, name: l.name, min: minVal, max: maxVal })
     });
     const d = await r.json();
-    if (d.success) {
-      showToast('Regra atualizada.', 'success');
-      loadEscalationConfig();
-    } else {
-      showToast('Erro ao salvar.', 'error');
-    }
-  } catch(e) {
-    showToast('Erro: ' + e.message, 'error');
-  }
+    if (d.success) showToast('Regra de ' + l.name + ' atualizada.', 'success');
+  } catch(e) { showToast('Erro ao salvar.', 'error'); }
 }
 
-async function removeEscalationLeader(email) {
+async function escRemove(email) {
   try {
     const r = await authFetch(API.escalationConfigSet, {
       method: 'POST',
@@ -3852,51 +3805,51 @@ async function removeEscalationLeader(email) {
       body: JSON.stringify({ email: email, remove: true })
     });
     const d = await r.json();
-    if (d.success) {
-      showToast('Líder removido.', 'info');
-      loadEscalationConfig();
-    } else {
-      showToast('Erro ao remover.', 'error');
-    }
+    if (d.success) { showToast('Líder removido.', 'info'); loadEscalationConfig(); }
+  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+}
+
+/* ── Dashboard Regras de Escalação ─────────────── */
+async function loadEscalationConfig() {
+  var gantt = document.getElementById('escalationGantt');
+  if (gantt) gantt.innerHTML = '<div style="font-size:11px;color:var(--txt-3);">Carregando...</div>';
+  try {
+    const r = await authFetch(API.escalationConfigGet);
+    const d = await r.json();
+    escLeadersCache = (d.leaders || []).map(function(l) {
+      return { email: l.email, name: l.name, min: Math.round(l.min / 1000000), max: Math.min(Math.round(l.max / 1000000), 50) };
+    });
+    escRenderBars();
+    escBuildSlider('escNewSliderWrap', 'escNew', 10, 50);
   } catch(e) {
-    showToast('Erro: ' + e.message, 'error');
+    if (gantt) gantt.innerHTML = '<div style="font-size:12px;color:var(--red);">Erro: ' + e.message + '</div>';
   }
 }
 
 async function addEscalationLeader() {
   var email = document.getElementById('escNewEmail').value.trim();
   var name = document.getElementById('escNewName').value.trim();
-  var min = parseInt(document.getElementById('escNewMin').value);
-  var max = parseInt(document.getElementById('escNewMax').value);
-  if (max >= MAX_RANGE_VAL) max = 100000000;
-
-  if (!email || !name) {
-    showToast('Preencha e-mail e nome para adicionar um líder.', 'error');
-    return;
-  }
-
+  var mn = parseInt(document.getElementById('escNewA') ? document.getElementById('escNewA').value : 10);
+  var mx = parseInt(document.getElementById('escNewB') ? document.getElementById('escNewB').value : 50);
+  if (!email || !name) { showToast('Preencha e-mail e nome.', 'error'); return; }
+  var maxVal = mx >= 50 ? 100000000 : mx * 1000000;
   try {
     const r = await authFetch(API.escalationConfigSet, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: email, name: name, min: min, max: max })
+      body: JSON.stringify({ email: email, name: name, min: mn * 1000000, max: maxVal })
     });
     const d = await r.json();
     if (d.success) {
       showToast('Líder adicionado.', 'success');
       document.getElementById('escNewEmail').value = '';
       document.getElementById('escNewName').value = '';
-      document.getElementById('escNewMin').value = 10000000;
-      document.getElementById('escNewMax').value = 50000000;
-      syncDualRange('escNew');
       loadEscalationConfig();
-    } else {
-      showToast('Erro ao adicionar líder.', 'error');
-    }
-  } catch(e) {
-    showToast('Erro: ' + e.message, 'error');
-  }
+    } else { showToast('Erro ao adicionar.', 'error'); }
+  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
 }
+
+
 
 /* ── Dashboard Tempo de Reunião ───────────────── */
 var timeConfigCache = null;
