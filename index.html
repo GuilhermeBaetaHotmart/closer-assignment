@@ -1765,6 +1765,7 @@ body::after {
         <button class="filter-btn" id="dashTabSecurity" onclick="switchDashTab('security',this)">Security</button>
         <button class="filter-btn" id="dashTabCampaigns" onclick="switchDashTab('campaigns',this)">Campanhas</button>
         <button class="filter-btn" id="dashTabTime" onclick="switchDashTab('time',this)">Tempo</button>
+        <button class="filter-btn" id="dashTabEscalation" onclick="switchDashTab('escalation',this)">Escalação</button>
       </div>
 
       <!-- Seção Histórico -->
@@ -2088,6 +2089,59 @@ body::after {
         </div>
       </div><!-- /dashTime -->
 
+      <!-- Seção Escalação -->
+      <div id="dashEscalation" style="display:none">
+        <div style="max-width:960px;margin:0 auto;padding:0 16px 32px;">
+
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+            <div>
+              <div style="font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:700;color:var(--txt-1);">Regras de Escalação</div>
+              <div style="font-size:12px;color:var(--txt-3);margin-top:2px;">Líderes adicionados automaticamente como convidados quando o valor do cliente está dentro do intervalo configurado</div>
+            </div>
+            <button class="btn btn-ghost" onclick="loadEscalationConfig()" style="font-size:13px;">↻ Atualizar</button>
+          </div>
+
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr>
+                <th>Líder</th>
+                <th class="center">Valor mínimo (R$)</th>
+                <th class="center">Valor máximo (R$)</th>
+                <th class="center">Ação</th>
+              </tr></thead>
+              <tbody id="escalationLeadersBody">
+                <tr><td colspan="4" class="table-empty">Carregando...</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div style="margin-top:20px;display:flex;align-items:center;justify-content:space-between;background:var(--bg-card);border:1px solid var(--bd-subtle);border-radius:var(--r);padding:16px;">
+            <div>
+              <label style="font-size:11px;color:var(--txt-3);">E-mail do líder
+                <input type="text" id="escNewEmail" placeholder="ex: nome.sobrenome@hotmart.com" class="field-input" style="margin-top:4px;padding:8px 10px;font-size:13px;width:240px;">
+              </label>
+            </div>
+            <div>
+              <label style="font-size:11px;color:var(--txt-3);">Nome
+                <input type="text" id="escNewName" placeholder="ex: Nome" class="field-input" style="margin-top:4px;padding:8px 10px;font-size:13px;width:120px;">
+              </label>
+            </div>
+            <div>
+              <label style="font-size:11px;color:var(--txt-3);">Mínimo (R$)
+                <input type="number" id="escNewMin" placeholder="0" class="field-input" style="margin-top:4px;padding:8px 10px;font-size:13px;width:140px;">
+              </label>
+            </div>
+            <div>
+              <label style="font-size:11px;color:var(--txt-3);">Máximo (R$)
+                <input type="number" id="escNewMax" placeholder="100000000" class="field-input" style="margin-top:4px;padding:8px 10px;font-size:13px;width:140px;">
+              </label>
+            </div>
+            <button class="btn btn-primary" onclick="addEscalationLeader()" style="font-size:13px;">+ Adicionar líder</button>
+          </div>
+
+        </div>
+      </div><!-- /dashEscalation -->
+
     </div><!-- /adminView -->
 
   </main>
@@ -2221,6 +2275,8 @@ const API = {
   closerInfo:    'https://hotmart.app.n8n.cloud/webhook/closer-info',
   timeConfigGet: 'https://hotmart.app.n8n.cloud/webhook/time-config-get',
   timeConfigSet: 'https://hotmart.app.n8n.cloud/webhook/time-config-set',
+  escalationConfigGet: 'https://hotmart.app.n8n.cloud/webhook/escalation-config-get',
+  escalationConfigSet: 'https://hotmart.app.n8n.cloud/webhook/escalation-config-set',
 };
 
 const SEGS = {
@@ -2509,12 +2565,14 @@ function switchDashTab(tab, btn) {
   document.getElementById('dashSecurity').style.display   = tab === 'security'   ? '' : 'none';
   document.getElementById('dashCampaigns').style.display  = tab === 'campaigns'  ? '' : 'none';
   document.getElementById('dashTime').style.display       = tab === 'time'       ? '' : 'none';
+  document.getElementById('dashEscalation').style.display  = tab === 'escalation' ? '' : 'none';
   document.querySelectorAll('#adminView .filter-btn').forEach(function(b){ b.classList.remove('active'); });
   if (btn) btn.classList.add('active');
   if (tab === 'capacidade') loadCapacity();
   if (tab === 'security')   loadSecurity();
   if (tab === 'campaigns')  loadCampaigns();
   if (tab === 'time')       loadTimeConfig();
+  if (tab === 'escalation') loadEscalationConfig();
 }
 
 // ── Dashboard Capacidade ──────────────────────
@@ -3580,6 +3638,124 @@ function onCompetitorChange() {
     document.getElementById('competitorInput').classList.remove('error');
   }
   st.competitor = val;
+}
+
+/* ── Dashboard Regras de Escalação ─────────────── */
+async function loadEscalationConfig() {
+  var body = document.getElementById('escalationLeadersBody');
+  body.innerHTML = '<tr><td colspan="4" class="table-empty">Carregando...</td></tr>';
+
+  try {
+    const r = await authFetch(API.escalationConfigGet);
+    const d = await r.json();
+    renderEscalationLeaders(d.leaders || []);
+  } catch(e) {
+    body.innerHTML = '<tr><td colspan="4" class="table-empty">Erro: ' + e.message + '</td></tr>';
+  }
+}
+
+function renderEscalationLeaders(leaders) {
+  var body = document.getElementById('escalationLeadersBody');
+  if (!leaders.length) {
+    body.innerHTML = '<tr><td colspan="4" class="table-empty">Nenhum líder cadastrado.</td></tr>';
+    return;
+  }
+  body.innerHTML = leaders.map(function(l) {
+    var safeId = l.email.replace(/[^a-zA-Z0-9]/g, '_');
+    return '<tr>' +
+      '<td><span class="closer-cell-name">' + l.name + '</span><span class="closer-cell-email">' + l.email + '</span></td>' +
+      '<td class="center" id="escView_min_' + safeId + '">' + fmtBRL(l.min) + '</td>' +
+      '<td class="center" id="escView_max_' + safeId + '">' + fmtBRL(l.max) + '</td>' +
+      '<td class="center" id="escView_action_' + safeId + '">' +
+        '<button class="btn-remove-pool" style="padding:5px 12px;font-size:12px;" onclick="editEscalationLeader(\'' + l.email + '\',\'' + safeId + '\',' + l.min + ',' + l.max + ')">Editar</button> ' +
+        '<button class="btn-remove-pool" style="padding:5px 10px;font-size:12px;" onclick="removeEscalationLeader(\'' + l.email + '\')">Remover</button>' +
+      '</td>' +
+      '</tr>';
+  }).join('');
+}
+
+function editEscalationLeader(email, safeId, currentMin, currentMax) {
+  var minCell = document.getElementById('escView_min_' + safeId);
+  var maxCell = document.getElementById('escView_max_' + safeId);
+  var actionCell = document.getElementById('escView_action_' + safeId);
+
+  minCell.innerHTML = '<input type="number" id="escEdit_min_' + safeId + '" value="' + currentMin + '" style="width:130px;text-align:center;background:var(--bg-raised);border:1px solid var(--bd-default);border-radius:6px;color:var(--txt-1);padding:4px;">';
+  maxCell.innerHTML = '<input type="number" id="escEdit_max_' + safeId + '" value="' + currentMax + '" style="width:130px;text-align:center;background:var(--bg-raised);border:1px solid var(--bd-default);border-radius:6px;color:var(--txt-1);padding:4px;">';
+  actionCell.innerHTML = '<button class="btn-accept" style="padding:5px 12px;font-size:12px;" onclick="saveEscalationLeader(\'' + email + '\',\'' + safeId + '\')">Salvar</button>';
+}
+
+async function saveEscalationLeader(email, safeId) {
+  var min = document.getElementById('escEdit_min_' + safeId).value;
+  var max = document.getElementById('escEdit_max_' + safeId).value;
+  if (!min || !max) { showToast('Mínimo e máximo são obrigatórios.', 'error'); return; }
+  try {
+    const r = await authFetch(API.escalationConfigSet, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email, min: min, max: max })
+    });
+    const d = await r.json();
+    if (d.success) {
+      showToast('Regra atualizada.', 'success');
+      loadEscalationConfig();
+    } else {
+      showToast('Erro ao salvar.', 'error');
+    }
+  } catch(e) {
+    showToast('Erro: ' + e.message, 'error');
+  }
+}
+
+async function removeEscalationLeader(email) {
+  try {
+    const r = await authFetch(API.escalationConfigSet, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email, remove: true })
+    });
+    const d = await r.json();
+    if (d.success) {
+      showToast('Líder removido.', 'info');
+      loadEscalationConfig();
+    } else {
+      showToast('Erro ao remover.', 'error');
+    }
+  } catch(e) {
+    showToast('Erro: ' + e.message, 'error');
+  }
+}
+
+async function addEscalationLeader() {
+  var email = document.getElementById('escNewEmail').value.trim();
+  var name = document.getElementById('escNewName').value.trim();
+  var min = document.getElementById('escNewMin').value;
+  var max = document.getElementById('escNewMax').value;
+
+  if (!email || !name || !min || !max) {
+    showToast('Preencha todos os campos para adicionar um líder.', 'error');
+    return;
+  }
+
+  try {
+    const r = await authFetch(API.escalationConfigSet, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email, name: name, min: min, max: max })
+    });
+    const d = await r.json();
+    if (d.success) {
+      showToast('Líder adicionado.', 'success');
+      document.getElementById('escNewEmail').value = '';
+      document.getElementById('escNewName').value = '';
+      document.getElementById('escNewMin').value = '';
+      document.getElementById('escNewMax').value = '';
+      loadEscalationConfig();
+    } else {
+      showToast('Erro ao adicionar líder.', 'error');
+    }
+  } catch(e) {
+    showToast('Erro: ' + e.message, 'error');
+  }
 }
 
 /* ── Dashboard Tempo de Reunião ───────────────── */
