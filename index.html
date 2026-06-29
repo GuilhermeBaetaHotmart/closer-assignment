@@ -1573,7 +1573,7 @@ body::after {
               <input class="slot-picker-input" type="time" id="slotTime" step="900" onchange="validateSlotPicker()">
             </div>
           </div>
-          <div class="slot-picker-hint">Horários dentro da janela 08h–17h serão verificados com os closers. Fora dela, o lead vai direto ao Mercado.</div>
+          <div class="slot-picker-hint">Horários dentro da janela 10h–17h serão verificados com os closers. Fora dela, o lead vai direto ao Mercado.</div>
         </div>
 
         <!-- Banner sem disponibilidade -->
@@ -1799,9 +1799,9 @@ body::after {
         <div class="period-bar" style="margin-bottom:16px">
           <span style="font-size:11px;color:var(--txt-3);font-weight:500;margin-right:2px">Segmento:</span>
           <button class="seg-filter-btn active" onclick="setSegFilter('all',this)">Todos</button>
-          <button class="seg-filter-btn" onclick="setSegFilter('SMB',this)" style="--seg-color:#FFD450">SMB</button>
-          <button class="seg-filter-btn" onclick="setSegFilter('MID',this)" style="--seg-color:#44D0FF">Mid Market</button>
-          <button class="seg-filter-btn" onclick="setSegFilter('ENT',this)" style="--seg-color:#B48EFF">Enterprise</button>
+          <button class="seg-filter-btn" onclick="setSegFilter('SMB',this)" style="--seg-color:#FFD450">N2-N3</button>
+          <button class="seg-filter-btn" onclick="setSegFilter('MID',this)" style="--seg-color:#44D0FF">N4-N5</button>
+          <button class="seg-filter-btn" onclick="setSegFilter('ENT',this)" style="--seg-color:#B48EFF">N6+</button>
         </div>
         <div class="period-custom" id="periodCustom">
           <span class="period-label">De</span>
@@ -1867,9 +1867,9 @@ body::after {
           <table class="data-table">
             <thead><tr>
               <th>Closer</th><th>Segmento</th><th>Total Opps</th>
-              <th class="center">SMB-1<br><span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--txt-3)">100–300k</span></th>
-              <th class="center">SMB-2<br><span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--txt-3)">300–600k</span></th>
-              <th class="center">SMB-3<br><span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--txt-3)">600k+</span></th>
+              <th class="center">Grupo 1<br><span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--txt-3)">100–300k</span></th>
+              <th class="center">Grupo 2<br><span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--txt-3)">300–600k</span></th>
+              <th class="center">Grupo 3<br><span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--txt-3)">600k+</span></th>
             </tr></thead>
             <tbody id="tbodySMB"><tr><td colspan="6" class="table-empty">Carregando...</td></tr></tbody>
           </table>
@@ -1891,8 +1891,8 @@ body::after {
           <table class="data-table">
             <thead><tr>
               <th>Closer</th><th>Segmento</th><th>Total Opps</th>
-              <th class="center">MID-1<br><span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--txt-3)">1M–2M</span></th>
-              <th class="center">MID-2<br><span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--txt-3)">2M–3M</span></th>
+              <th class="center">Grupo 1<br><span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--txt-3)">1M–2M</span></th>
+              <th class="center">Grupo 2<br><span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--txt-3)">2M–3M</span></th>
               <th class="center">MID-3<br><span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--txt-3)">3M+</span></th>
             </tr></thead>
             <tbody id="tbodyMID"><tr><td colspan="6" class="table-empty">Carregando...</td></tr></tbody>
@@ -1915,9 +1915,9 @@ body::after {
           <table class="data-table">
             <thead><tr>
               <th>Closer</th><th>Segmento</th><th>Total Opps</th>
-              <th class="center">ENT-1<br><span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--txt-3)">5M–10M</span></th>
-              <th class="center">ENT-2<br><span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--txt-3)">10M–20M</span></th>
-              <th class="center">ENT-3<br><span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--txt-3)">20M+</span></th>
+              <th class="center">Grupo 1<br><span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--txt-3)">5M–10M</span></th>
+              <th class="center">Grupo 2<br><span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--txt-3)">10M–20M</span></th>
+              <th class="center">Grupo 3<br><span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--txt-3)">20M+</span></th>
             </tr></thead>
             <tbody id="tbodyENT"><tr><td colspan="6" class="table-empty">Carregando...</td></tr></tbody>
           </table>
@@ -1953,9 +1953,9 @@ body::after {
           <div class="cap-controls">
             <select class="cap-select" id="capSegment" onchange="loadCapacity()">
               <option value="ALL">Todos</option>
-              <option value="SMB">SMB</option>
-              <option value="MID">MID</option>
-              <option value="ENT">ENT</option>
+              <option value="SMB">N2-N3</option>
+              <option value="MID">N4-N5</option>
+              <option value="ENT">N6+</option>
             </select>
             <select class="cap-select" id="capWeek" onchange="loadCapacity()">
               <option value="0">Semana atual</option>
@@ -2264,20 +2264,20 @@ const API = {
 };
 
 const SEGS = {
-  SMB: { label:'SMB', cls:'seg-smb', sub:[
-    {key:'SMB-1',label:'SMB-1 (100–300k)',min:100000,max:300000},
-    {key:'SMB-2',label:'SMB-2 (300–600k)',min:300001,max:600000},
-    {key:'SMB-3',label:'SMB-3 (600k+)',  min:600001,max:999999}
+  SMB: { label:'N2-N3', cls:'seg-smb', sub:[
+    {key:'SMB-1',label:'N2-N3 - Grupo 1 (100–300k)',min:100000,max:300000},
+    {key:'SMB-2',label:'N2-N3 - Grupo 2 (300–600k)',min:300001,max:600000},
+    {key:'SMB-3',label:'N2-N3 - Grupo 3 (600k+)',  min:600001,max:999999}
   ]},
   MID: { label:'Mid Market', cls:'seg-mid', sub:[
-    {key:'MID-1',label:'MID-1 (1M–2M)', min:1000000,max:2000000},
-    {key:'MID-2',label:'MID-2 (2M–3M)', min:2000001,max:3000000},
-    {key:'MID-3',label:'MID-3 (3M+)',   min:3000001,max:4999999}
+    {key:'MID-1',label:'N4-N5 - Grupo 1 (1M–2M)', min:1000000,max:2000000},
+    {key:'MID-2',label:'N4-N5 - Grupo 2 (2M–3M)', min:2000001,max:3000000},
+    {key:'MID-3',label:'N4-N5 - Grupo 3 (3M+)',   min:3000001,max:4999999}
   ]},
   ENT: { label:'Enterprise', cls:'seg-ent', sub:[
-    {key:'ENT-1',label:'ENT-1 (5M–10M)', min:5000000, max:10000000},
-    {key:'ENT-2',label:'ENT-2 (10M–20M)',min:10000001,max:20000000},
-    {key:'ENT-3',label:'ENT-3 (20M+)',   min:20000001,max:999999999}
+    {key:'ENT-1',label:'N6+ - Grupo 1 (5M–10M)', min:5000000, max:10000000},
+    {key:'ENT-2',label:'N6+ - Grupo 2 (10M–20M)',min:10000001,max:20000000},
+    {key:'ENT-3',label:'N6+ - Grupo 3 (20M+)',   min:20000001,max:999999999}
   ]}
 };
 
@@ -2640,7 +2640,7 @@ async function loadCapacity() {
     if (segment === 'ALL') {
       // Agrupa por segmento
       var segOrder = ['SMB', 'MID', 'ENT'];
-      var segLabels = { SMB: 'SMB', MID: 'Mid Market', ENT: 'Enterprise' };
+      var segLabels = { SMB: 'N2-N3', MID: 'N4-N5', ENT: 'N6+' };
       var segColors = { SMB: 'var(--yellow)', MID: '#48b4ff', ENT: '#a064ff' };
       var rows = '';
       segOrder.forEach(function(seg) {
@@ -2810,15 +2810,13 @@ function validateSlotPicker() {
     // Verifica se está fora da janela 08h–17h BRT
     const [h, m] = time.split(':').map(Number);
     const totalMin = h * 60 + m;
-    const windowStart = 8 * 60;   // 08:00
+    const windowStart = 10 * 60;  // 10:00
     const windowEnd   = 17 * 60;  // 17:00
 
     if (totalMin < windowStart || totalMin >= windowEnd) {
-      // Fora da janela — mostra banner de mercado automaticamente
-      noAvailTitle.textContent = 'Horário fora da janela de atendimento (08h–17h) — lead irá ao Mercado';
+      noAvailTitle.textContent = 'Horário fora da janela de atendimento (10h–17h) — lead irá ao Mercado';
       banner.classList.add('show');
     } else {
-      // Dentro da janela — esconde banner
       banner.classList.remove('show');
       noAvailTitle.textContent = 'Nenhum closer disponível neste horário';
     }
@@ -3831,7 +3829,7 @@ async function loadTimeConfig() {
 
 function renderTimeDefaults(defaults) {
   var grid = document.getElementById('timeDefaultsGrid');
-  var segLabels = { SMB: 'SMB', MID: 'Mid Market', ENT: 'Enterprise' };
+  var segLabels = { SMB: 'N2-N3', MID: 'N4-N5', ENT: 'N6+' };
   var segColors = { SMB: 'var(--yellow)', MID: 'var(--blue)', ENT: 'var(--lilac)' };
 
   grid.innerHTML = Object.keys(segLabels).map(function(seg) {
@@ -3854,7 +3852,7 @@ function renderTimeDefaults(defaults) {
 function renderTimeClosers(closers) {
   var sections = document.getElementById('timeClosersSections');
   var segOrder = ['SMB', 'MID', 'ENT'];
-  var segLabels = { SMB: 'SMB', MID: 'Mid Market', ENT: 'Enterprise' };
+  var segLabels = { SMB: 'N2-N3', MID: 'N4-N5', ENT: 'N6+' };
   var segColors = { SMB: 'var(--yellow)', MID: 'var(--blue)', ENT: 'var(--lilac)' };
 
   sections.innerHTML = segOrder.map(function(seg) {
@@ -4262,9 +4260,9 @@ async function toggleCloser(email, trackId) {
 (function(){
 var aRaf=null;
 var ALGO_CFGS={
-  SMB:{color:'#FFD450',label:'SMB',      subs:['SMB-1\n100–300k','SMB-2\n300–600k','SMB-3\n600k+']},
-  MID:{color:'#44D0FF',label:'Mid Market',subs:['MID-1\n1M–2M',  'MID-2\n2M–3M',   'MID-3\n3M+']},
-  ENT:{color:'#B48EFF',label:'Enterprise',subs:['ENT-1\n5M–10M', 'ENT-2\n10–20M',  'ENT-3\n20M+']}
+  SMB:{color:'#FFD450',label:'N2-N3',subs:['Grupo 1\n100–300k','Grupo 2\n300–600k','Grupo 3\n600k+']},
+  MID:{color:'#44D0FF',label:'N4-N5',subs:['Grupo 1\n1M–2M','Grupo 2\n2M–3M','Grupo 3\n3M+']},
+  ENT:{color:'#B48EFF',label:'N6+',  subs:['Grupo 1\n5M–10M','Grupo 2\n10–20M','Grupo 3\n20M+']}
 };
 var SUB_IDX={'SMB-1':0,'SMB-2':1,'SMB-3':2,'MID-1':0,'MID-2':1,'MID-3':2,'ENT-1':0,'ENT-2':1,'ENT-3':2};
 function rr2(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.arcTo(x+w,y,x+w,y+r,r);ctx.lineTo(x+w,y+h-r);ctx.arcTo(x+w,y+h,x+w-r,y+h,r);ctx.lineTo(x+r,y+h);ctx.arcTo(x,y+h,x,y+h-r,r);ctx.lineTo(x,y+r);ctx.arcTo(x,y,x+r,y,r);ctx.closePath();}
