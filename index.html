@@ -1832,19 +1832,19 @@ body::after {
         <!-- Seg overview -->
         <div class="seg-overview">
           <div class="seg-card" style="border-top-color:#FFD450">
-            <div class="seg-card-name" style="color:#FFD450">SMB</div>
+            <div class="seg-card-name" style="color:#FFD450">N2-N3</div>
             <div class="seg-stat-row"><span class="seg-stat-k">Closers</span><span class="seg-stat-v" id="dSmbClosers">—</span></div>
             <div class="seg-stat-row"><span class="seg-stat-k">Opps totais</span><span class="seg-stat-v accent" id="dSmbOpps">—</span></div>
             <div class="seg-stat-row"><span class="seg-stat-k">Média/closer</span><span class="seg-stat-v" id="dSmbAvg">—</span></div>
           </div>
           <div class="seg-card" style="border-top-color:#44D0FF">
-            <div class="seg-card-name" style="color:#44D0FF">Mid Market</div>
+            <div class="seg-card-name" style="color:#44D0FF">N4-N5</div>
             <div class="seg-stat-row"><span class="seg-stat-k">Closers</span><span class="seg-stat-v" id="dMidClosers">—</span></div>
             <div class="seg-stat-row"><span class="seg-stat-k">Opps totais</span><span class="seg-stat-v accent" id="dMidOpps">—</span></div>
             <div class="seg-stat-row"><span class="seg-stat-k">Média/closer</span><span class="seg-stat-v" id="dMidAvg">—</span></div>
           </div>
           <div class="seg-card" style="border-top-color:#B48EFF">
-            <div class="seg-card-name" style="color:#B48EFF">Enterprise</div>
+            <div class="seg-card-name" style="color:#B48EFF">N6+</div>
             <div class="seg-stat-row"><span class="seg-stat-k">Closers</span><span class="seg-stat-v" id="dEntClosers">—</span></div>
             <div class="seg-stat-row"><span class="seg-stat-k">Opps totais</span><span class="seg-stat-v accent" id="dEntOpps">—</span></div>
             <div class="seg-stat-row"><span class="seg-stat-k">Média/closer</span><span class="seg-stat-v" id="dEntAvg">—</span></div>
@@ -1858,7 +1858,7 @@ body::after {
           <div>
             <div class="dash-section-title" style="display:flex;align-items:center;gap:8px">
               <span style="width:10px;height:10px;border-radius:2px;background:#FFD450;display:inline-block;flex-shrink:0"></span>
-              SMB — Small & Medium Business
+              N2-N3
             </div>
             <div class="dash-section-sub">R$ 100k – R$ 1M</div>
           </div>
@@ -1882,9 +1882,9 @@ body::after {
           <div>
             <div class="dash-section-title" style="display:flex;align-items:center;gap:8px">
               <span style="width:10px;height:10px;border-radius:2px;background:#44D0FF;display:inline-block;flex-shrink:0"></span>
-              Mid Market
+              N4-N5
             </div>
-            <div class="dash-section-sub">R$ 1M – R$ 5M</div>
+            <div class="dash-section-sub">R$ 1M – R$ 30M</div>
           </div>
         </div>
         <div class="table-wrap">
@@ -1893,7 +1893,7 @@ body::after {
               <th>Closer</th><th>Segmento</th><th>Total Opps</th>
               <th class="center">Grupo 1<br><span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--txt-3)">1M–2M</span></th>
               <th class="center">Grupo 2<br><span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--txt-3)">2M–3M</span></th>
-              <th class="center">MID-3<br><span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--txt-3)">3M+</span></th>
+              <th class="center">Grupo 3<br><span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--txt-3)">3M+</span></th>
             </tr></thead>
             <tbody id="tbodyMID"><tr><td colspan="6" class="table-empty">Carregando...</td></tr></tbody>
           </table>
@@ -1906,9 +1906,9 @@ body::after {
           <div>
             <div class="dash-section-title" style="display:flex;align-items:center;gap:8px">
               <span style="width:10px;height:10px;border-radius:2px;background:#B48EFF;display:inline-block;flex-shrink:0"></span>
-              Enterprise
+              N6+
             </div>
-            <div class="dash-section-sub">Acima de R$ 5M</div>
+            <div class="dash-section-sub">Acima de R$ 30M</div>
           </div>
         </div>
         <div class="table-wrap">
@@ -2265,19 +2265,19 @@ const API = {
 
 const SEGS = {
   SMB: { label:'N2-N3', cls:'seg-smb', sub:[
-    {key:'SMB-1',label:'N2-N3 - Grupo 1 (100–300k)',min:100000,max:300000},
-    {key:'SMB-2',label:'N2-N3 - Grupo 2 (300–600k)',min:300001,max:600000},
-    {key:'SMB-3',label:'N2-N3 - Grupo 3 (600k+)',  min:600001,max:999999}
+    {key:'SMB-1',label:'Grupo 1 (100–300k)',min:100000,max:300000},
+    {key:'SMB-2',label:'Grupo 2 (300–600k)',min:300001,max:600000},
+    {key:'SMB-3',label:'Grupo 3 (600k+)',  min:600001,max:999999}
   ]},
-  MID: { label:'Mid Market', cls:'seg-mid', sub:[
-    {key:'MID-1',label:'N4-N5 - Grupo 1 (1M–2M)', min:1000000,max:2000000},
-    {key:'MID-2',label:'N4-N5 - Grupo 2 (2M–3M)', min:2000001,max:3000000},
-    {key:'MID-3',label:'N4-N5 - Grupo 3 (3M+)',   min:3000001,max:4999999}
+  MID: { label:'N4-N5', cls:'seg-mid', sub:[
+    {key:'MID-1',label:'Grupo 1 (1M–2M)', min:1000000,max:2000000},
+    {key:'MID-2',label:'Grupo 2 (2M–3M)', min:2000001,max:3000000},
+    {key:'MID-3',label:'Grupo 3 (3M+)',   min:3000001,max:4999999}
   ]},
   ENT: { label:'Enterprise', cls:'seg-ent', sub:[
-    {key:'ENT-1',label:'N6+ - Grupo 1 (5M–10M)', min:5000000, max:10000000},
-    {key:'ENT-2',label:'N6+ - Grupo 2 (10M–20M)',min:10000001,max:20000000},
-    {key:'ENT-3',label:'N6+ - Grupo 3 (20M+)',   min:20000001,max:999999999}
+    {key:'ENT-1',label:'Grupo 1 (5M–10M)', min:5000000, max:10000000},
+    {key:'ENT-2',label:'Grupo 2 (10M–20M)',min:10000001,max:20000000},
+    {key:'ENT-3',label:'Grupo 3 (20M+)',   min:20000001,max:999999999}
   ]}
 };
 
