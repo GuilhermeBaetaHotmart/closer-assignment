@@ -2290,6 +2290,7 @@ let session = null;
     if (saved) {
       var d = JSON.parse(saved);
       if (d && d.email && d.success) {
+        d.role = (d.role || '').toLowerCase();
         session = d;
         var savedToken = localStorage.getItem('ca_token'); if(savedToken) session.sessionToken = savedToken;
         document.getElementById('loginScreen').style.display = 'none';
@@ -2322,6 +2323,7 @@ async function doLogin() {
     const r = await fetch(API.auth,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password:pw})});
     const d = await r.json();
     if (d.success) {
+      d.role = (d.role || '').toLowerCase();
       session = d;
       try { localStorage.setItem('ca_session', JSON.stringify(d)); if(d.sessionToken) localStorage.setItem('ca_token', d.sessionToken); } catch(e) {}
       document.getElementById('loginScreen').style.display='none';
@@ -2371,7 +2373,7 @@ async function loadActiveCompetitorsField() {
 
 // ── Setup de role após login ──────────────────
 function setupRole(d) {
-  const role = d.role;
+  const role = (d.role || '').toLowerCase();
   const tabSdr     = document.getElementById('tabSdr');
   const tabMercado = document.getElementById('tabMercado');
   const tabAdmin   = document.getElementById('tabAdmin');
@@ -2399,6 +2401,16 @@ function setupRole(d) {
     tabAdmin.style.display = '';
     document.getElementById('adminViewMode').style.display = '';
     switchTab('sdr');
+  } else if (role === 'manager') {
+    navTabs.style.display = 'block';
+    tabMercado.style.display = '';
+    tabAdmin.style.display = '';
+    switchTab('admin');
+  } else {
+    // Role desconhecida: não mostra nenhuma aba, evita ficar travado em uma view antiga
+    document.getElementById('sdrView').style.display = 'none';
+    document.getElementById('mercadoView').style.display = 'none';
+    document.getElementById('adminView').style.display = 'none';
   }
 
   loadActiveCompetitorsField();
@@ -2408,7 +2420,7 @@ function setupRole(d) {
 async function loadMercado() {
   const grid = document.getElementById('mercadoGrid');
   var viewMode = document.getElementById('adminViewMode') && document.getElementById('adminViewMode').style.display !== 'none' ? document.querySelector('.admin-mode-select') : null;
-  const role = (viewMode && viewMode.value !== 'admin') ? viewMode.value : (session ? session.role : null);
+  const role = ((viewMode && viewMode.value !== 'admin') ? viewMode.value : (session ? session.role : '')).toLowerCase();
   grid.innerHTML = '<div class="mercado-empty">Carregando...</div>';
 
   try {
@@ -2436,7 +2448,7 @@ async function loadMercado() {
       const d = txt ? JSON.parse(txt) : {};
       leads = (d.leads || d[0] && d[0].leads) || [];
       if (role === 'sdr') leads = leads.filter(function(l){ return l.sdrEmail === session.email; });
-      document.getElementById('mercadoSubtitle').textContent = role === 'admin' ? 'Todos os leads no pool' : 'Seus leads no Emergency Pool';
+      document.getElementById('mercadoSubtitle').textContent = (role === 'admin' || role === 'manager') ? 'Todos os leads no pool' : 'Seus leads no Emergency Pool';
     }
 
     if (leads.length === 0) {
