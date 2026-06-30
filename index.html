@@ -1935,10 +1935,10 @@ body::after {
         <div class="history-wrap">
           <table class="history-table">
             <thead><tr>
-              <th>Data / Hora</th><th>Closer</th><th>Segmento</th>
+              <th>Data / Hora</th><th>Closer</th><th>SDR</th><th>Segmento</th>
               <th>Subgrupo</th><th>Lead ID</th><th>Amount 12m</th><th>Horário da reunião</th><th>Tipo</th>
             </tr></thead>
-            <tbody id="historyTableBody"><tr><td colspan="8" class="table-empty">Carregando...</td></tr></tbody>
+            <tbody id="historyTableBody"><tr><td colspan="9" class="table-empty">Carregando...</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -3590,13 +3590,15 @@ function renderDashboard(data){
 
   // History
   var hb=document.getElementById('historyTableBody');
-  if(!filteredHistory.length){ hb.innerHTML='<tr><td colspan="7" class="table-empty">Nenhum agendamento registrado.</td></tr>'; return; }
+  if(!filteredHistory.length){ hb.innerHTML='<tr><td colspan="9" class="table-empty">Nenhum agendamento registrado.</td></tr>'; return; }
   hb.innerHTML=filteredHistory.map(function(h){
     var ts=h.ts&&h.ts!=='—'?new Date(h.ts).toLocaleString('pt-BR'):'—';
     var val=h.client_value&&h.client_value!=='—'?'R$ '+parseInt(h.client_value).toLocaleString('pt-BR'):'—';
+    var sdrLabel = h.sdr && h.sdr !== '—' ? h.sdr.split('@')[0].replace(/\./g,' ').replace(/\b\w/g, function(c){return c.toUpperCase();}) : '—';
     return '<tr>'+
       '<td style="font-size:11px;white-space:nowrap">'+ts+'</td>'+
       '<td><strong style="font-family:\'Space Grotesk\',sans-serif;font-size:12px">'+(h.closer_name||h.closer_email)+'</strong></td>'+
+      '<td style="font-size:11px;color:var(--txt-2)">'+sdrLabel+'</td>'+
       '<td><span class="seg-pill '+(segCls[h.segment]||'')+'">'+(h.segment||'—')+'</span></td>'+
       '<td style="font-size:11px;color:var(--txt-3)">'+(h.subgroup||'—')+'</td>'+
       '<td style="font-family:monospace;font-size:11px;color:var(--txt-3)">'+(h.lead_id||'—')+'</td>'+
