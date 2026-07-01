@@ -169,6 +169,28 @@ export function clearSlotAndRetry() {
 }
 
 export async function goEmergencyPool() {
+  // Popula state a partir dos inputs caso goStep2 não tenha rodado
+  // (cenário: SDR selecionou horário fora da janela sem passar pelo Step 2)
+  if (!st.leadId) {
+    st.leadId = document.getElementById('leadIdInput').value.trim();
+  }
+  if (!st.clientEmail) {
+    st.clientEmail = document.getElementById('clientEmailInput').value.trim();
+  }
+  if (!st.subKey) {
+    const r = classify(st.rawValue);
+    if (r) {
+      st.segKey   = r.segKey;
+      st.subKey   = r.subKey;
+      st.subLabel = r.subLabel;
+    }
+  }
+
+  if (!st.leadId || !st.subKey) {
+    showToast('Preencha o formulário completo antes de enviar ao Mercado.', 'error', 4000);
+    return;
+  }
+
   try {
     // Só verifica disponibilidade se há um horário específico selecionado
     if (st.specificSlotStart) {
