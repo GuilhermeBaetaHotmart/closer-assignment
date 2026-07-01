@@ -203,27 +203,16 @@
 
         <div id="segTag"><span class="seg-badge seg-none">Aguardando valor para classificar</span></div>
 
-        <!-- Toggle horário específico -->
-        <label class="slot-toggle" onclick="toggleSlotPicker()">
-          <div class="slot-toggle-track" id="slotToggleTrack">
-            <div class="slot-toggle-thumb"></div>
-          </div>
-          <span class="slot-toggle-label" id="slotToggleLabel">Selecionar horário específico</span>
-        </label>
-
-        <!-- Picker -->
-        <div class="slot-picker" id="slotPicker">
-          <div class="slot-picker-row">
-            <div class="slot-picker-field">
-              <label for="slotDate">Data</label>
-              <input class="slot-picker-input" type="date" id="slotDate" onchange="validateSlotPicker()">
-            </div>
-            <div class="slot-picker-field">
-              <label for="slotTime">Horário (BRT)</label>
-              <input class="slot-picker-input" type="time" id="slotTime" step="900" onchange="validateSlotPicker()">
-            </div>
-          </div>
-          <div class="slot-picker-hint">Horários dentro da janela 10h–17h serão verificados com os closers. Fora dela, o lead vai direto ao Mercado.</div>
+        <!-- Modo de agendamento — escolha ativa, sem default -->
+        <div class="mode-choice" id="modeChoice">
+          <button type="button" class="mode-card" id="modeSlots" onclick="selectSchedulingMode('slots')">
+            <span class="mode-card-title">Agendar por slots</span>
+            <span class="mode-card-desc">O algoritmo escolhe o closer e mostra as janelas livres</span>
+          </button>
+          <button type="button" class="mode-card" id="modeSpecific" onclick="selectSchedulingMode('specific')">
+            <span class="mode-card-title">Horário específico</span>
+            <span class="mode-card-desc">Você define a data e a hora exatas da reunião</span>
+          </button>
         </div>
 
         <!-- Banner sem disponibilidade -->
@@ -244,6 +233,30 @@
       <div id="algoAnim" style="display:none">
         <div style="padding:16px 12px 12px; overflow:hidden; background:#0E0E1A; border-radius:14px; border:1px solid rgba(255,72,0,0.15); box-shadow:0 4px 24px rgba(0,0,0,0.4);">
           <canvas id="algoCanvas" width="620" height="260" style="display:block;width:620px;max-width:100%;height:auto;margin:0 auto"></canvas>
+        </div>
+      </div>
+
+      <!-- Passo 2 (modo horário específico): data/hora aparecem só após o Continuar -->
+      <div class="card dimmed" id="cSpecific" style="display:none">
+        <div class="card-eyebrow">Passo 2</div>
+        <div class="card-title">Defina data e horário</div>
+        <div class="slot-picker open">
+          <div class="slot-picker-row">
+            <div class="slot-picker-field">
+              <label for="slotDate">Data</label>
+              <input class="slot-picker-input" type="date" id="slotDate" onchange="validateSlotPicker()">
+            </div>
+            <div class="slot-picker-field">
+              <label for="slotTime">Horário (BRT)</label>
+              <input class="slot-picker-input" type="time" id="slotTime" step="900" onchange="validateSlotPicker()">
+            </div>
+          </div>
+          <div class="slot-picker-hint">Horários dentro da janela 10h–17h serão verificados com os closers. Fora dela, o lead vai direto ao Mercado.</div>
+        </div>
+        <div class="specific-warn" id="specificWarn" style="display:none"></div>
+        <div class="btn-row">
+          <button class="btn btn-ghost" onclick="backToStep1()">‹ Voltar</button>
+          <button class="btn btn-primary" id="btnSpecific" onclick="submitSpecificSlot()" disabled>Continuar →</button>
         </div>
       </div>
 

@@ -48,15 +48,24 @@ export async function loadActiveCompetitorsField() {
 export function updateTag() {
   const r=classify(st.rawValue);
   const el=document.getElementById('segTag');
-  const btn=document.getElementById('btnS1');
   if (r&&st.rawValue>0) {
     const seg=SEGS[r.segKey];
     el.innerHTML='<span class="seg-badge '+seg.cls+'">'+seg.label+' &nbsp;·&nbsp; '+r.subLabel+'</span>';
-    btn.disabled=false;
   } else {
     el.innerHTML='<span class="seg-badge seg-none">Aguardando valor para classificar</span>';
-    btn.disabled=true;
   }
+  updateStep1Button();
+}
+
+// Única fonte de habilitação do "Continuar →" do Passo 1: exige valor classificável
+// E um modo de agendamento escolhido ativamente. A data/hora (modo específico) é
+// pedida só no passo seguinte, então não entra aqui.
+export function updateStep1Button() {
+  const btn = document.getElementById('btnS1');
+  const r = classify(st.rawValue);
+  const hasValue = !!(r && st.rawValue > 0);
+  const modeOk = st.schedulingMode === 'slots' || st.schedulingMode === 'specific';
+  btn.disabled = !(hasValue && modeOk);
 }
 
 export async function goStep2() {
@@ -76,6 +85,11 @@ export async function goStep2() {
     document.getElementById('clientEmailInput').classList.add('error'); return;
   }
   document.getElementById('clientEmailError').style.display='none'; document.getElementById('clientEmailInput').classList.remove('error');
+  // Guarda dura: sem modo escolhido ativamente, não avança (nunca assume schedule)
+  if (st.schedulingMode !== 'slots' && st.schedulingMode !== 'specific') {
+    showToast('Escolha como agendar: por slots ou horário específico.', 'error', 4000);
+    return;
+  }
   const r=classify(st.rawValue); if(!r) return;
   st.leadId=lid; st.clientEmail=cem; st.segKey=r.segKey; st.subKey=r.subKey; st.subLabel=r.subLabel;
   st.refused=[]; st.weekOffset=0; st.selectedSlotId=null;
@@ -84,12 +98,44 @@ export async function goStep2() {
   document.getElementById('conn1').classList.add('done');
   document.getElementById('c1').classList.add('dimmed');
 
-  // Show animation, keep c2 hidden
+  // Modo horário específico: os pickers de data/hora só aparecem agora (após o Continuar).
+  // O algoritmo só roda quando a pessoa confirmar data/hora em submitSpecificSlot().
+  if (st.schedulingMode === 'specific') {
+    document.getElementById('cSpecific').style.display='';
+    document.getElementById('cSpecific').classList.remove('dimmed');
+    return;
+  }
+
+  // Modo slots: roda o algoritmo direto e abre a grade de slots.
+  await runAlgorithm();
+}
+
+// Confirma a data/hora do modo específico e dispara o algoritmo (checa disponibilidade).
+export async function submitSpecificSlot() {
+  if (!st.specificSlotStart) {
+    showToast('Preencha data e hora do horário específico.', 'error', 4000);
+    return;
+  }
+  document.getElementById('cSpecific').style.display='none';
+  await runAlgorithm();
+}
+
+// Volta do passo de data/hora para o Passo 1 sem perder os dados já preenchidos.
+export function backToStep1() {
+  document.getElementById('cSpecific').style.display='none';
+  document.getElementById('c1').classList.remove('dimmed');
+  markActive('b1','l1');
+  document.getElementById('conn1').classList.remove('done');
+}
+
+// Executa o algoritmo (animação + fetch) e roteia o resultado. Compartilhado entre
+// o modo slots (goStep2) e o modo específico (submitSpecificSlot / clearSlotAndRetry).
+async function runAlgorithm() {
+  document.getElementById('noAvailBanner').classList.remove('show');
   document.getElementById('algoAnim').style.display='block';
   document.getElementById('c2').style.display='none';
   await new Promise(function(res){ setTimeout(res, 50); });
 
-  // Run fetch and animation in parallel — show c2 when BOTH finish
   var fetchPromise = fetchCloser();
   var animPromise = new Promise(function(res){
     startAlgoAnimation(st.segKey, st.subKey, st.rawValue, res);
@@ -98,74 +144,64 @@ export async function goStep2() {
   await Promise.all([animPromise, fetchPromise]);
   document.getElementById('algoAnim').style.display='none';
   if (st.noAvailability) {
+    document.getElementById('cSpecific').style.display='none';
     document.getElementById('c1').classList.remove('dimmed');
     document.getElementById('noAvailBanner').classList.add('show');
     document.getElementById('slotsGrid').innerHTML='';
     return;
   }
-  // modo specific_date: já foi pro Step 3 via doReserveSpecific, não abre c2
-  if (st.useSpecificSlot && st.specificSlotStart) return;
+  // modo específico: já foi pro Passo 3 via doReserveSpecific, não abre c2
+  if (st.schedulingMode === 'specific' && st.specificSlotStart) return;
   document.getElementById('c2').style.display='';
   document.getElementById('c2').classList.remove('dimmed');
   document.getElementById('anonSub').textContent=SEGS[st.segKey].label+' · '+st.subLabel;
-  // No modo specific_date não faz sentido pular para próximo closer
   var btnReject = document.getElementById('btnRejectAgenda');
-  if (btnReject) btnReject.style.display = (st.useSpecificSlot && st.specificSlotStart) ? 'none' : '';
+  if (btnReject) btnReject.style.display = (st.schedulingMode === 'specific' && st.specificSlotStart) ? 'none' : '';
 }
 
-export function toggleSlotPicker() {
-  st.useSpecificSlot = !st.useSpecificSlot;
-  const track = document.getElementById('slotToggleTrack');
-  const picker = document.getElementById('slotPicker');
-  const banner = document.getElementById('noAvailBanner');
-  track.classList.toggle('on', st.useSpecificSlot);
-  picker.classList.toggle('open', st.useSpecificSlot);
-  banner.classList.remove('show');
-  if (!st.useSpecificSlot) {
+// Escolha ativa do modo de agendamento. Sem default: enquanto st.schedulingMode
+// for null, o "Continuar →" fica bloqueado. Não persiste em lugar nenhum → F5,
+// restore e nova opp nascem sem seleção (sem legado).
+export function selectSchedulingMode(mode) {
+  st.schedulingMode = mode;
+  document.getElementById('modeSlots').classList.toggle('selected', mode === 'slots');
+  document.getElementById('modeSpecific').classList.toggle('selected', mode === 'specific');
+  document.getElementById('noAvailBanner').classList.remove('show');
+  if (mode !== 'specific') {
     document.getElementById('slotDate').value = '';
     document.getElementById('slotTime').value = '';
     st.specificSlotStart = null;
   }
+  updateStep1Button();
 }
 
 export function validateSlotPicker() {
   const date = document.getElementById('slotDate').value;
   const time = document.getElementById('slotTime').value;
-  const banner = document.getElementById('noAvailBanner');
-  const noAvailTitle = document.getElementById('noAvailTitle');
+  const warn = document.getElementById('specificWarn');
+  const btn  = document.getElementById('btnSpecific');
 
   if (date && time) {
     st.specificSlotStart = date + 'T' + time + ':00-03:00';
-
-    // Verifica se está fora da janela 08h–17h BRT
+    // Aviso se estiver fora da janela 10h–17h BRT (segue permitido → vai ao Mercado)
     const [h, m] = time.split(':').map(Number);
     const totalMin = h * 60 + m;
-    const windowStart = 10 * 60;  // 10:00
-    const windowEnd   = 17 * 60;  // 17:00
-
-    if (totalMin < windowStart || totalMin >= windowEnd) {
-      noAvailTitle.textContent = 'Horário fora da janela de atendimento (10h–17h) — lead irá ao Mercado';
-      banner.classList.add('show');
+    if (totalMin < 10 * 60 || totalMin >= 17 * 60) {
+      warn.textContent = 'Horário fora da janela de atendimento (10h–17h) — o lead irá ao Mercado.';
+      warn.style.display = 'block';
     } else {
-      banner.classList.remove('show');
-      noAvailTitle.textContent = 'Nenhum closer disponível neste horário';
+      warn.style.display = 'none';
     }
   } else {
     st.specificSlotStart = null;
-    banner.classList.remove('show');
-    noAvailTitle.textContent = 'Nenhum closer disponível neste horário';
+    warn.style.display = 'none';
   }
+  if (btn) btn.disabled = !st.specificSlotStart;
 }
 
 export function clearSlotAndRetry() {
-  st.useSpecificSlot = false;
-  st.specificSlotStart = null;
-  document.getElementById('slotToggleTrack').classList.remove('on');
-  document.getElementById('slotPicker').classList.remove('open');
-  document.getElementById('noAvailBanner').classList.remove('show');
-  document.getElementById('slotDate').value = '';
-  document.getElementById('slotTime').value = '';
-  fetchCloser();
+  selectSchedulingMode('slots');
+  runAlgorithm();
 }
 
 export async function goEmergencyPool() {
@@ -253,13 +289,13 @@ export async function fetchCloser() {
   document.getElementById('noAvailBanner').classList.remove('show');
 
   try {
-    console.log('[DEBUG fetchCloser] useSpecificSlot:', st.useSpecificSlot, '| specificSlotStart:', st.specificSlotStart);
+    console.log('[DEBUG fetchCloser] schedulingMode:', st.schedulingMode, '| specificSlotStart:', st.specificSlotStart);
     const payload = {
       lead_id: st.leadId,
       clientValue: st.rawValue,
       segmentKey: st.segKey,
       subgroupKey: st.subKey,
-      mode: (st.useSpecificSlot && st.specificSlotStart) ? 'specific_date' : 'schedule',
+      mode: st.schedulingMode === 'specific' ? 'specific_date' : 'schedule',
       competitor: st.competitor || ''
     };
     if (payload.mode === 'specific_date') payload.slotStart = st.specificSlotStart;
@@ -279,8 +315,8 @@ export async function fetchCloser() {
     st.noAvailability = false;
     st.closerId=d.closerId; st.closerName=d.closerName||''; st.queue=d.queue||[];
     st.campaignActive = d.campaignActive || false;
-    console.log('[DEBUG] useSpecificSlot:', st.useSpecificSlot, 'specificSlotStart:', st.specificSlotStart);
-    if (st.useSpecificSlot && st.specificSlotStart) {
+    console.log('[DEBUG] schedulingMode:', st.schedulingMode, 'specificSlotStart:', st.specificSlotStart);
+    if (st.schedulingMode === 'specific' && st.specificSlotStart) {
       console.log('[DEBUG] chamando doReserveSpecific');
       await doReserveSpecific();
     } else {
@@ -569,7 +605,7 @@ export async function doConfirmFinal(){
         subgroupKey:   st.subKey,
         sdrEmail:      session ? session.email : '',
         ts:            new Date().toISOString(),
-        mode:          st.useSpecificSlot ? 'specific_date' : 'schedule',
+        mode:          st.schedulingMode === 'specific' ? 'specific_date' : 'schedule',
         competitor:    st.competitor || '',
         campaignActive: st.campaignActive || false
       })
@@ -645,10 +681,19 @@ export function resetAll(){
   Object.assign(st, {rawValue:0,leadId:null,clientEmail:null,segKey:null,subKey:null,subLabel:null,competitor:null,campaignActive:false,
       closerId:null,queue:[],refused:[],weekOffset:0,
       selectedSlotId:null,selectedSlotLabel:null,selectedSlotStart:null,selectedSlotEnd:null,
-      tempEventId:null});
+      tempEventId:null,schedulingMode:null,specificSlotStart:null});
   ['leadIdInput','clientEmailInput'].forEach(function(id){ document.getElementById(id).value=''; document.getElementById(id).classList.remove('error'); });
   var compEl = document.getElementById('competitorInput'); if(compEl) { compEl.value=''; compEl.classList.remove('error'); }
   document.getElementById('valInput').value='';
+  // Zera a escolha de modo de agendamento — sem seleção, sem legado entre opps
+  document.getElementById('modeSlots').classList.remove('selected');
+  document.getElementById('modeSpecific').classList.remove('selected');
+  document.getElementById('cSpecific').style.display='none';
+  document.getElementById('slotDate').value = '';
+  document.getElementById('slotTime').value = '';
+  var sWarn = document.getElementById('specificWarn'); if (sWarn) sWarn.style.display='none';
+  var bSpec = document.getElementById('btnSpecific'); if (bSpec) bSpec.disabled = true;
+  document.getElementById('noAvailBanner').classList.remove('show');
   document.getElementById('leadIdError').style.display='none';
   document.getElementById('clientEmailError').style.display='none';
   updateTag();

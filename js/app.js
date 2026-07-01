@@ -3,9 +3,10 @@
    ══════════════════════════════════════════════ */
 
 import { session, st, setSession } from './state.js';
-import { doLogin, doLogout, setupRole, authFetch } from './auth.js';
+import { doLogin, doLogout, setupRole, authFetch, isSessionExpired, touchActivity, startInactivityWatch } from './auth.js';
 import {
-  loadActiveCompetitorsField, updateTag, goStep2, toggleSlotPicker, validateSlotPicker,
+  loadActiveCompetitorsField, updateTag, goStep2, selectSchedulingMode, validateSlotPicker,
+  submitSpecificSlot, backToStep1,
   clearSlotAndRetry, goEmergencyPool, fetchCloser, fetchSlots, renderSlots, selectSlot,
   applySlotFilters, setFilterDay, setFilterPeriod, rejectAgenda, renderRefused,
   renderQueueHint, doReserveSpecific, doReserve, showReservationState, startReservationTimer,
@@ -27,7 +28,7 @@ import './animation.js';
 /* ── Expõe no window tudo que é chamado via onclick/onchange no HTML ── */
 Object.assign(window, {
   doLogin, doLogout,
-  goStep2, toggleSlotPicker, validateSlotPicker, clearSlotAndRetry, goEmergencyPool,
+  goStep2, selectSchedulingMode, validateSlotPicker, submitSpecificSlot, backToStep1, clearSlotAndRetry, goEmergencyPool,
   selectSlot, setFilterDay, setFilterPeriod, rejectAgenda, doReserveSpecific, doReserve,
   doConfirmFinal, doCancelReserve, resetAll, onCompetitorChange,
   changeWeek: function(dir){ st.weekOffset += dir; st.filterDay = 'all'; st.filterPeriod = 'all'; fetchSlots(); },
@@ -50,6 +51,13 @@ Object.assign(window, {
     if (saved) {
       var d = JSON.parse(saved);
       if (d && d.email && d.success) {
+        // Sessão expirada por inatividade → não restaura, limpa e cai na tela de login
+        if (isSessionExpired()) {
+          localStorage.removeItem('ca_session');
+          localStorage.removeItem('ca_token');
+          localStorage.removeItem('ca_last_activity');
+          return;
+        }
         d.role = (d.role || '').toLowerCase().trim();
         setSession(d);
         var savedToken = localStorage.getItem('ca_token');
@@ -60,10 +68,16 @@ Object.assign(window, {
         document.getElementById('hdrEmail').textContent = d.email || '';
         document.getElementById('hdrAvatar').textContent = (d.name || d.email)[0].toUpperCase();
         setupRole(d);
+        touchActivity(true);
+        startInactivityWatch();
       }
     }
   } catch (e) {}
 })();
+
+// Marca atividade do usuário (click/tecla) para o timeout de inatividade
+document.addEventListener('click',   function(){ touchActivity(); }, true);
+document.addEventListener('keydown', function(){ touchActivity(); }, true);
 
 // Restaura tema
 (function restoreTheme() {
