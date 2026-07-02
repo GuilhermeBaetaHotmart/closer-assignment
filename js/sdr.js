@@ -285,6 +285,7 @@ export async function goEmergencyPool() {
     const payload = {
       leadId:      st.leadId,
       clientValue: st.rawValue,
+      clientEmail: st.clientEmail || '',
       subgroup:    st.subKey,
       slotStart:   st.specificSlotStart || '',
       sdrEmail:    session ? session.email : ''
