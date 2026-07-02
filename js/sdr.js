@@ -165,6 +165,10 @@ async function runAlgorithm() {
     document.getElementById('c1').classList.remove('dimmed');
     var verAgenda = document.getElementById('btnVerAgenda');
     if (verAgenda) verAgenda.style.display = '';   // caso normal: mantém "Ver agenda normal"
+    // No modo horário específico, clicar no botão reabre o seletor → rotula como tal
+    if (st.schedulingMode === 'specific') {
+      document.getElementById('btnS1').textContent = 'Escolher outro horário';
+    }
     document.getElementById('noAvailBanner').classList.add('show');
     document.getElementById('slotsGrid').innerHTML='';
     return;
