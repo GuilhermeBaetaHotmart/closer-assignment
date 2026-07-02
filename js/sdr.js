@@ -70,6 +70,7 @@ export function updateStep1Button() {
 }
 
 export async function goStep2() {
+  document.getElementById('btnS1').textContent = 'Continuar →';
   const lid=document.getElementById('leadIdInput').value.trim();
   if (!lid) { document.getElementById('leadIdError').style.display='block'; document.getElementById('leadIdInput').classList.add('error'); return; }
   document.getElementById('leadIdError').style.display='none'; document.getElementById('leadIdInput').classList.remove('error');
@@ -129,6 +130,7 @@ export async function submitSpecificSlot() {
     if (title) title.textContent = 'Horário fora da janela de atendimento (10h–17h) — envie ao Mercado';
     var verAgenda = document.getElementById('btnVerAgenda');
     if (verAgenda) verAgenda.style.display = 'none';   // só a opção de Mercado
+    document.getElementById('btnS1').textContent = 'Escolher outro horário';
     document.getElementById('noAvailBanner').classList.add('show');
     return;
   }
@@ -184,6 +186,7 @@ export function selectSchedulingMode(mode) {
   document.getElementById('modeSlots').classList.toggle('selected', mode === 'slots');
   document.getElementById('modeSpecific').classList.toggle('selected', mode === 'specific');
   document.getElementById('noAvailBanner').classList.remove('show');
+  document.getElementById('btnS1').textContent = 'Continuar →';
   if (mode !== 'specific') {
     document.getElementById('slotDate').value = '';
     document.getElementById('slotTime').value = '';
@@ -715,6 +718,7 @@ export function resetAll(){
   var sWarn = document.getElementById('specificWarn'); if (sWarn) sWarn.style.display='none';
   var bSpec = document.getElementById('btnSpecific'); if (bSpec) bSpec.disabled = true;
   var bVer = document.getElementById('btnVerAgenda'); if (bVer) bVer.style.display = '';
+  var bS1 = document.getElementById('btnS1'); if (bS1) bS1.textContent = 'Continuar →';
   setSlotView('compact');
   document.getElementById('noAvailBanner').classList.remove('show');
   document.getElementById('leadIdError').style.display='none';

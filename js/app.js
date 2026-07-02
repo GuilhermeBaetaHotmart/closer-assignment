@@ -47,6 +47,19 @@ Object.assign(window, {
 // Sincroniza o estado inicial do toggle admin (feature de ajuste de preparação)
 syncPrepAdjustToggleUI();
 
+// Popula o seletor de horário específico em intervalos de 15 min (08h–20h)
+(function fillSlotTimes() {
+  var sel = document.getElementById('slotTime');
+  if (!sel) return;
+  var opts = '<option value="">--:--</option>';
+  for (var min = 8 * 60; min <= 20 * 60; min += 15) {
+    var hh = String(Math.floor(min / 60)).padStart(2, '0');
+    var mm = String(min % 60).padStart(2, '0');
+    opts += '<option value="' + hh + ':' + mm + '">' + hh + ':' + mm + '</option>';
+  }
+  sel.innerHTML = opts;
+})();
+
 /* ── Inicialização ──────────────────────────── */
 
 // Restaura sessão salva no localStorage
