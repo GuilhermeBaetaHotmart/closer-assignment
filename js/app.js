@@ -32,7 +32,7 @@ Object.assign(window, {
   goStep2, selectSchedulingMode, validateSlotPicker, submitSpecificSlot, backToStep1, clearSlotAndRetry, goEmergencyPool,
   selectSlot, setFilterDay, setFilterPeriod, rejectAgenda, doReserveSpecific, doReserve,
   doConfirmFinal, doCancelReserve, resetAll, onCompetitorChange,
-  changeWeek: function(dir){ st.weekOffset += dir; st.filterDay = 'all'; st.filterPeriod = 'all'; fetchSlots(); },
+  changeWeek: function(dir){ if(st.slotsLoading) return; st.weekOffset += dir; st.filterDay = 'all'; st.filterPeriod = 'all'; fetchSlots(); },
   loadMercado, acceptLead, removeLead,
   switchTab, switchDashTab, setAdminViewMode,
   setPeriod, setSegFilter, loadDashboard,

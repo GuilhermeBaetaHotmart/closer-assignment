@@ -17,5 +17,5 @@ export let st = {
   closerId: null, queue: [], refused: [], weekOffset: 0,
   selectedSlotId: null, selectedSlotLabel: null, selectedSlotStart: null, selectedSlotEnd: null,
   schedulingMode: null, specificSlotStart: null, specificOutOfWindow: false, noAvailability: false,
-  slotView: 'compact', agendaEvents: []
+  slotView: 'compact', agendaEvents: [], slotsLoading: false
 };

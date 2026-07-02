@@ -357,6 +357,9 @@ export async function fetchCloser() {
 }
 
 export async function fetchSlots() {
+  if (st.slotsLoading) return;          // evita re-clique reiniciar o hook
+  st.slotsLoading = true;
+  setSlotsLoading(true);
   setLoading(); updateCalHeader();
   try {
     const r=await authFetch(API.slots,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({closerId:st.closerId,weekOffset:st.weekOffset})});
@@ -404,6 +407,7 @@ export async function fetchSlots() {
     applySlotFilters(); renderRefused(); renderQueueHint();
     if (st.slotView === 'full') renderAgenda();
   } catch(e) { document.getElementById('slotsGrid').innerHTML='<div class="slot-empty">Erro ao buscar agenda: '+e.message+'</div>'; }
+  finally { st.slotsLoading = false; setSlotsLoading(false); }
 }
 
 function setLoading() {
@@ -411,6 +415,13 @@ function setLoading() {
   document.getElementById('btnConfirm').disabled=true;
   document.getElementById('confirmBox').style.display='none';
   st.selectedSlotId=null;
+}
+
+// Overlay de "Carregando semana…" sobre a agenda + trava os botões de semana (anti re-clique)
+function setSlotsLoading(on) {
+  var ov = document.getElementById('calLoading');
+  if (ov) ov.classList.toggle('show', on);
+  document.querySelectorAll('.cal-nav-btn').forEach(function(b){ b.disabled = on; });
 }
 
 function updateCalHeader() {
