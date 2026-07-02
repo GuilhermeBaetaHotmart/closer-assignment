@@ -118,6 +118,20 @@ export async function submitSpecificSlot() {
     return;
   }
   document.getElementById('cSpecific').style.display='none';
+  // Fora da janela: já sabemos que não há atendimento → oferece só o Mercado, sem rodar o algoritmo
+  if (st.specificOutOfWindow) {
+    st.noAvailability = true;
+    st.closerId = null;
+    document.getElementById('c1').classList.remove('dimmed');
+    document.getElementById('c2').style.display='none';
+    document.getElementById('slotsGrid').innerHTML='';
+    var title = document.getElementById('noAvailTitle');
+    if (title) title.textContent = 'Horário fora da janela de atendimento (10h–17h) — envie ao Mercado';
+    var verAgenda = document.getElementById('btnVerAgenda');
+    if (verAgenda) verAgenda.style.display = 'none';   // só a opção de Mercado
+    document.getElementById('noAvailBanner').classList.add('show');
+    return;
+  }
   await runAlgorithm();
 }
 
@@ -147,6 +161,8 @@ async function runAlgorithm() {
   if (st.noAvailability) {
     document.getElementById('cSpecific').style.display='none';
     document.getElementById('c1').classList.remove('dimmed');
+    var verAgenda = document.getElementById('btnVerAgenda');
+    if (verAgenda) verAgenda.style.display = '';   // caso normal: mantém "Ver agenda normal"
     document.getElementById('noAvailBanner').classList.add('show');
     document.getElementById('slotsGrid').innerHTML='';
     return;
@@ -184,10 +200,11 @@ export function validateSlotPicker() {
 
   if (date && time) {
     st.specificSlotStart = date + 'T' + time + ':00-03:00';
-    // Aviso se estiver fora da janela 10h–17h BRT (segue permitido → vai ao Mercado)
+    // Fora da janela 10h–17h BRT → vai direto ao Mercado (sem rodar o algoritmo)
     const [h, m] = time.split(':').map(Number);
     const totalMin = h * 60 + m;
-    if (totalMin < 10 * 60 || totalMin >= 17 * 60) {
+    st.specificOutOfWindow = (totalMin < 10 * 60 || totalMin >= 17 * 60);
+    if (st.specificOutOfWindow) {
       warn.textContent = 'Horário fora da janela de atendimento (10h–17h) — o lead irá ao Mercado.';
       warn.style.display = 'block';
     } else {
@@ -195,6 +212,7 @@ export function validateSlotPicker() {
     }
   } else {
     st.specificSlotStart = null;
+    st.specificOutOfWindow = false;
     warn.style.display = 'none';
   }
   if (btn) btn.disabled = !st.specificSlotStart;
@@ -684,7 +702,7 @@ export function resetAll(){
   Object.assign(st, {rawValue:0,leadId:null,clientEmail:null,segKey:null,subKey:null,subLabel:null,competitor:null,campaignActive:false,
       closerId:null,queue:[],refused:[],weekOffset:0,
       selectedSlotId:null,selectedSlotLabel:null,selectedSlotStart:null,selectedSlotEnd:null,
-      tempEventId:null,schedulingMode:null,specificSlotStart:null});
+      tempEventId:null,schedulingMode:null,specificSlotStart:null,specificOutOfWindow:false});
   ['leadIdInput','clientEmailInput'].forEach(function(id){ document.getElementById(id).value=''; document.getElementById(id).classList.remove('error'); });
   var compEl = document.getElementById('competitorInput'); if(compEl) { compEl.value=''; compEl.classList.remove('error'); }
   document.getElementById('valInput').value='';
@@ -696,6 +714,7 @@ export function resetAll(){
   document.getElementById('slotTime').value = '';
   var sWarn = document.getElementById('specificWarn'); if (sWarn) sWarn.style.display='none';
   var bSpec = document.getElementById('btnSpecific'); if (bSpec) bSpec.disabled = true;
+  var bVer = document.getElementById('btnVerAgenda'); if (bVer) bVer.style.display = '';
   setSlotView('compact');
   document.getElementById('noAvailBanner').classList.remove('show');
   document.getElementById('leadIdError').style.display='none';

@@ -16,6 +16,6 @@ export let st = {
   rawValue: 0, leadId: null, clientEmail: null, segKey: null, subKey: null, subLabel: null,
   closerId: null, queue: [], refused: [], weekOffset: 0,
   selectedSlotId: null, selectedSlotLabel: null, selectedSlotStart: null, selectedSlotEnd: null,
-  schedulingMode: null, specificSlotStart: null, noAvailability: false,
+  schedulingMode: null, specificSlotStart: null, specificOutOfWindow: false, noAvailability: false,
   slotView: 'compact', agendaEvents: []
 };
