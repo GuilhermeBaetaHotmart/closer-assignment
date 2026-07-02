@@ -3,13 +3,13 @@
    ══════════════════════════════════════════════ */
 
 
-import { API, SEGS } from './api.js';
-import { session, st } from './state.js';
-import { classify, fmtBRL, getCloserPhoto, getMon } from './utils.js';
-import { authFetch } from './auth.js';
-import { toggleCloser } from './closers.js';
+import { API, SEGS } from './api.js?v=20260702-1332';
+import { session, st } from './state.js?v=20260702-1332';
+import { classify, fmtBRL, getCloserPhoto, getMon } from './utils.js?v=20260702-1332';
+import { authFetch } from './auth.js?v=20260702-1332';
+import { toggleCloser } from './closers.js?v=20260702-1332';
 
-import { showToast } from './ui.js';
+import { showToast } from './ui.js?v=20260702-1332';
 
 let currentPeriod = 'all';
 let currentSegment = 'all';

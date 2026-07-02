@@ -4,7 +4,7 @@
    ══════════════════════════════════════════════ */
 
 
-import { SEGS } from './api.js';
+import { SEGS } from './api.js?v=20260702-1332';
 
 
 /* Classifica um valor de cliente em segmento + subgrupo */
@@ -70,5 +70,13 @@ export function getCloserPhoto(email) {
   var h = 0;
   for (var i = 0; i < (email || '').length; i++) h = (h * 31 + email.charCodeAt(i)) & 0xFFFF;
   return PHOTO_POOL[h % PHOTO_POOL.length];
+}
+
+/* Extrai o ID puro do lead — aceita o ID direto OU o link do Salesforce
+   (https://.../lightning/r/Lead/<ID>/view). Uso interno fica sempre com o ID limpo. */
+export function extractLeadId(v) {
+  var s = String(v || '').trim();
+  var m = s.match(/\/Lead\/([^\/?#]+)/i);
+  return m ? m[1] : s;
 }
 

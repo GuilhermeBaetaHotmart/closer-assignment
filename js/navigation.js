@@ -3,15 +3,15 @@
    ══════════════════════════════════════════════ */
 
 
-import { session, st } from './state.js';
-import { setupRole } from './auth.js';
-import { loadDashboard } from './dashboard-core.js';
-import { loadMercado } from './mercado.js';
-import { loadCapacity } from './dashboard-capacity.js';
-import { loadSecurity } from './dashboard-security.js';
-import { loadCampaigns } from './dashboard-campaigns.js';
-import { loadTimeConfig } from './dashboard-time.js';
-import { loadEscalationConfig } from './dashboard-escalation.js';
+import { session, st } from './state.js?v=20260702-1332';
+import { setupRole } from './auth.js?v=20260702-1332';
+import { loadDashboard } from './dashboard-core.js?v=20260702-1332';
+import { loadMercado } from './mercado.js?v=20260702-1332';
+import { loadCapacity } from './dashboard-capacity.js?v=20260702-1332';
+import { loadSecurity } from './dashboard-security.js?v=20260702-1332';
+import { loadCampaigns } from './dashboard-campaigns.js?v=20260702-1332';
+import { loadTimeConfig } from './dashboard-time.js?v=20260702-1332';
+import { loadEscalationConfig } from './dashboard-escalation.js?v=20260702-1332';
 
 
 export function switchTab(tab){

@@ -3,9 +3,9 @@
    ══════════════════════════════════════════════ */
 
 
-import { API } from './api.js';
-import { authFetch } from './auth.js';
-import { showToast } from './ui.js';
+import { API } from './api.js?v=20260702-1332';
+import { authFetch } from './auth.js?v=20260702-1332';
+import { showToast } from './ui.js?v=20260702-1332';
 
 
 export async function toggleCloser(email, trackId) {

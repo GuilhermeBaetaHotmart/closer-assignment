@@ -3,13 +3,13 @@
    ══════════════════════════════════════════════ */
 
 
-import { API, SEGS } from './api.js';
-import { session, st } from './state.js';
-import { classify, fmtBRL, getCloserPhoto, getMon } from './utils.js';
-import { authFetch } from './auth.js';
-import { showToast } from './ui.js';
-import { markDone, markActive } from './animation.js';
-import { renderAgenda, setSlotView } from './agenda.js';
+import { API, SEGS } from './api.js?v=20260702-1332';
+import { session, st } from './state.js?v=20260702-1332';
+import { classify, fmtBRL, getCloserPhoto, getMon, extractLeadId } from './utils.js?v=20260702-1332';
+import { authFetch } from './auth.js?v=20260702-1332';
+import { showToast } from './ui.js?v=20260702-1332';
+import { markDone, markActive } from './animation.js?v=20260702-1332';
+import { renderAgenda, setSlotView } from './agenda.js?v=20260702-1332';
 
 let reservationExpiresAt = null;
 let reservationTimer = null;
@@ -93,7 +93,7 @@ export async function goStep2() {
     return;
   }
   const r=classify(st.rawValue); if(!r) return;
-  st.leadId=lid; st.clientEmail=cem; st.segKey=r.segKey; st.subKey=r.subKey; st.subLabel=r.subLabel;
+  st.leadId=extractLeadId(lid); st.clientEmail=cem; st.segKey=r.segKey; st.subKey=r.subKey; st.subLabel=r.subLabel;
   st.refused=[]; st.weekOffset=0; st.selectedSlotId=null;
   document.getElementById('noAvailBanner').classList.remove('show');
   markDone('b1','l1'); markActive('b2','l2');
@@ -234,7 +234,7 @@ export async function goEmergencyPool() {
   // Popula state a partir dos inputs caso goStep2 não tenha rodado
   // (cenário: SDR selecionou horário fora da janela sem passar pelo Step 2)
   if (!st.leadId) {
-    st.leadId = document.getElementById('leadIdInput').value.trim();
+    st.leadId = extractLeadId(document.getElementById('leadIdInput').value.trim());
   }
   if (!st.clientEmail) {
     st.clientEmail = document.getElementById('clientEmailInput').value.trim();

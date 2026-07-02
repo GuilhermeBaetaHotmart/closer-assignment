@@ -2,8 +2,8 @@
    app.js — Orquestrador principal
    ══════════════════════════════════════════════ */
 
-import { session, st, setSession } from './state.js';
-import { doLogin, doLogout, setupRole, authFetch, isSessionExpired, touchActivity, startInactivityWatch } from './auth.js';
+import { session, st, setSession } from './state.js?v=20260702-1332';
+import { doLogin, doLogout, setupRole, authFetch, isSessionExpired, touchActivity, startInactivityWatch } from './auth.js?v=20260702-1332';
 import {
   loadActiveCompetitorsField, updateTag, goStep2, selectSchedulingMode, validateSlotPicker,
   submitSpecificSlot, backToStep1,
@@ -11,20 +11,20 @@ import {
   applySlotFilters, setFilterDay, setFilterPeriod, rejectAgenda, renderRefused,
   renderQueueHint, doReserveSpecific, doReserve, showReservationState, startReservationTimer,
   doConfirmFinal, doCancelReserve, showSuccess, resetAll, onCompetitorChange
-} from './sdr.js';
-import { loadMercado, acceptLead, removeLead } from './mercado.js';
-import { switchTab, switchDashTab, setAdminViewMode } from './navigation.js';
-import { setPeriod, setSegFilter, loadDashboard } from './dashboard-core.js';
-import { loadCapacity } from './dashboard-capacity.js';
-import { loadSecurity } from './dashboard-security.js';
-import { loadCampaigns, addCampaign, toggleCampaign } from './dashboard-campaigns.js';
-import { loadTimeConfig, editCloserOverride, saveCloserOverride, clearCloserOverride, saveSegmentDefault } from './dashboard-time.js';
-import { loadEscalationConfig, editEscalationLeader, saveEscalationLeader, removeEscalationLeader, addEscalationLeader } from './dashboard-escalation.js';
-import { toggleCloser } from './closers.js';
-import { setSlotView, togglePrepAdjust, syncPrepAdjustToggleUI } from './agenda.js';
-import { showToast, toggleTheme } from './ui.js';
-import { fmtBRL, classify, getCloserPhoto, getMon } from './utils.js';
-import './animation.js';
+} from './sdr.js?v=20260702-1332';
+import { loadMercado, acceptLead, removeLead } from './mercado.js?v=20260702-1332';
+import { switchTab, switchDashTab, setAdminViewMode } from './navigation.js?v=20260702-1332';
+import { setPeriod, setSegFilter, loadDashboard } from './dashboard-core.js?v=20260702-1332';
+import { loadCapacity } from './dashboard-capacity.js?v=20260702-1332';
+import { loadSecurity } from './dashboard-security.js?v=20260702-1332';
+import { loadCampaigns, addCampaign, toggleCampaign } from './dashboard-campaigns.js?v=20260702-1332';
+import { loadTimeConfig, editCloserOverride, saveCloserOverride, clearCloserOverride, saveSegmentDefault } from './dashboard-time.js?v=20260702-1332';
+import { loadEscalationConfig, editEscalationLeader, saveEscalationLeader, removeEscalationLeader, addEscalationLeader } from './dashboard-escalation.js?v=20260702-1332';
+import { toggleCloser } from './closers.js?v=20260702-1332';
+import { setSlotView, togglePrepAdjust, syncPrepAdjustToggleUI } from './agenda.js?v=20260702-1332';
+import { showToast, toggleTheme } from './ui.js?v=20260702-1332';
+import { fmtBRL, classify, getCloserPhoto, getMon } from './utils.js?v=20260702-1332';
+import './animation.js?v=20260702-1332';
 
 /* ── Expõe no window tudo que é chamado via onclick/onchange no HTML ── */
 Object.assign(window, {
