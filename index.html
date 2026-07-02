@@ -289,6 +289,11 @@
             <div class="cal-hint-dot" aria-hidden="true"></div>
             Slots "Slot Reuniões" · Google Calendar
           </div>
+          <!-- Seletor de visualização (protótipo) -->
+          <div class="slot-view-toggle">
+            <button class="slot-view-btn active" id="viewCompact" onclick="setSlotView('compact')">Compacta</button>
+            <button class="slot-view-btn" id="viewFull" onclick="setSlotView('full')">Completa</button>
+          </div>
           <!-- Filtros -->
           <div class="slots-filters" id="slotsFilters">
             <div class="slots-filter-row">
@@ -312,6 +317,7 @@
             </div>
           </div>
           <div class="slots-grid" id="slotsGrid" role="list"></div>
+          <div class="agenda" id="agendaView" style="display:none"></div>
         </div>
 
         <div id="refusedLog" style="display:none" class="refused-log" role="log">
@@ -742,6 +748,20 @@
               <div style="font-size:12px;color:var(--txt-3);margin-top:2px;">Configure os tempos de preparação e reunião por segmento, com overrides individuais por closer</div>
             </div>
             <button class="btn btn-ghost" onclick="loadTimeConfig()" style="font-size:13px;">↻ Atualizar</button>
+          </div>
+
+          <!-- Feature flag: liberdade de ajuste do tempo de preparação pelo analista -->
+          <div class="prep-admin-row">
+            <div>
+              <div class="prep-admin-title">Ajuste de preparação pelo analista</div>
+              <div class="prep-admin-desc">Permite o SDR alterar o tempo de preparação na visão Completa da agenda. Desative para travar no default da segmentação.</div>
+            </div>
+            <div class="prep-admin-ctl">
+              <span id="prepAdjustState" class="prep-admin-state">Ativado</span>
+              <button class="switch on" id="prepAdjustToggle" onclick="togglePrepAdjust()" aria-label="Ativar/desativar ajuste de preparação">
+                <span class="switch-thumb"></span>
+              </button>
+            </div>
           </div>
 
           <!-- Defaults por segmento -->

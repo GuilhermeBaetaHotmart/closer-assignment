@@ -9,6 +9,7 @@ import { classify, fmtBRL, getCloserPhoto, getMon } from './utils.js';
 import { authFetch } from './auth.js';
 import { showToast } from './ui.js';
 import { markDone, markActive } from './animation.js';
+import { renderAgenda, setSlotView } from './agenda.js';
 
 let reservationExpiresAt = null;
 let reservationTimer = null;
@@ -336,6 +337,7 @@ export async function fetchSlots() {
     const raw=await r.json();
     const d = Array.isArray(raw) ? raw[0] : raw;
     if(d.error) throw new Error(d.error);
+    st.agendaEvents = d.events || [];   // eventos ocupados anonimizados (visão Agenda/Completa)
     var allSlots = (d.slots||[]).map(function(s){
       // displayStart é o horário de reunião (sem o tempo de preparação); start/end (slotStart/slotEnd)
       // são o bloco total reservado de fato, usados no /reserve.
@@ -374,6 +376,7 @@ export async function fetchSlots() {
     st.filterPeriod = st.filterPeriod || 'all';
 
     applySlotFilters(); renderRefused(); renderQueueHint();
+    if (st.slotView === 'full') renderAgenda();
   } catch(e) { document.getElementById('slotsGrid').innerHTML='<div class="slot-empty">Erro ao buscar agenda: '+e.message+'</div>'; }
 }
 
@@ -693,6 +696,7 @@ export function resetAll(){
   document.getElementById('slotTime').value = '';
   var sWarn = document.getElementById('specificWarn'); if (sWarn) sWarn.style.display='none';
   var bSpec = document.getElementById('btnSpecific'); if (bSpec) bSpec.disabled = true;
+  setSlotView('compact');
   document.getElementById('noAvailBanner').classList.remove('show');
   document.getElementById('leadIdError').style.display='none';
   document.getElementById('clientEmailError').style.display='none';

@@ -21,6 +21,7 @@ import { loadCampaigns, addCampaign, toggleCampaign } from './dashboard-campaign
 import { loadTimeConfig, editCloserOverride, saveCloserOverride, clearCloserOverride, saveSegmentDefault } from './dashboard-time.js';
 import { loadEscalationConfig, editEscalationLeader, saveEscalationLeader, removeEscalationLeader, addEscalationLeader } from './dashboard-escalation.js';
 import { toggleCloser } from './closers.js';
+import { setSlotView, togglePrepAdjust, syncPrepAdjustToggleUI } from './agenda.js';
 import { showToast, toggleTheme } from './ui.js';
 import { fmtBRL, classify, getCloserPhoto, getMon } from './utils.js';
 import './animation.js';
@@ -40,7 +41,11 @@ Object.assign(window, {
   loadTimeConfig, editCloserOverride, saveCloserOverride, clearCloserOverride, saveSegmentDefault,
   loadEscalationConfig, editEscalationLeader, saveEscalationLeader, removeEscalationLeader, addEscalationLeader,
   toggleCloser, toggleTheme,
+  setSlotView, togglePrepAdjust,
 });
+
+// Sincroniza o estado inicial do toggle admin (feature de ajuste de preparação)
+syncPrepAdjustToggleUI();
 
 /* ── Inicialização ──────────────────────────── */
 
