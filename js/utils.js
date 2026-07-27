@@ -63,6 +63,8 @@ const PHOTO_BY_EMAIL = {
   'mateus.pereira@hotmart.com':   'https://i.ibb.co/8L0nypP8/mateus-pereira.png',
   'sarah.sena@hotmart.com':       'https://i.ibb.co/kstjMmVq/sarah-andrade.png',
   'matheus.vilela@hotmart.com':   'https://i.ibb.co/v6YDZV9P/matheus-vilela.png',
+  'amanda.gcampos@hotmart.com':   'https://i.ibb.co/93GCVnb7/blank-preto.png',
+  'gustavo.vieira@hotmart.com':   'https://i.ibb.co/93GCVnb7/blank-preto.png',
 };
 
 export function getCloserPhoto(email) {

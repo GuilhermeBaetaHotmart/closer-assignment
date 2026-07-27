@@ -14,7 +14,7 @@ import {
 } from './sdr.js?v=20260702-1332';
 import { loadMercado, acceptLead, removeLead } from './mercado.js?v=20260702-1332';
 import { switchTab, switchDashTab, setAdminViewMode } from './navigation.js?v=20260702-1332';
-import { setPeriod, setSegFilter, loadDashboard } from './dashboard-core.js?v=20260702-1332';
+import { setPeriod, setSegFilter, loadDashboard, exportHistory } from './dashboard-core.js?v=20260702-1332';
 import { loadCapacity } from './dashboard-capacity.js?v=20260702-1332';
 import { loadSecurity } from './dashboard-security.js?v=20260702-1332';
 import { loadCampaigns, addCampaign, toggleCampaign } from './dashboard-campaigns.js?v=20260702-1332';
@@ -35,7 +35,7 @@ Object.assign(window, {
   changeWeek: function(dir){ if(st.slotsLoading) return; st.weekOffset += dir; st.filterDay = 'all'; st.filterPeriod = 'all'; fetchSlots(); },
   loadMercado, acceptLead, removeLead,
   switchTab, switchDashTab, setAdminViewMode,
-  setPeriod, setSegFilter, loadDashboard,
+  setPeriod, setSegFilter, loadDashboard, exportHistory,
   loadCapacity, loadSecurity,
   loadCampaigns, addCampaign, toggleCampaign,
   loadTimeConfig, editCloserOverride, saveCloserOverride, clearCloserOverride, saveSegmentDefault,

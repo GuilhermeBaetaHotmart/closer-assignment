@@ -14,6 +14,7 @@ import { showToast } from './ui.js?v=20260702-1332';
 let currentPeriod = 'all';
 let currentSegment = 'all';
 let chartInstance = null;
+let lastHistory = [];
 
 export function setPeriod(period, btn) {
   currentPeriod = period;
@@ -247,6 +248,7 @@ function renderDashboard(data){
   });
 
   // History
+  lastHistory = filteredHistory;
   var hb=document.getElementById('historyTableBody');
   if(!filteredHistory.length){ hb.innerHTML='<tr><td colspan="9" class="table-empty">Nenhum agendamento registrado.</td></tr>'; return; }
   hb.innerHTML=filteredHistory.map(function(h){
@@ -265,5 +267,37 @@ function renderDashboard(data){
       '<td>'+(function(m){ var labels={schedule:'<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:99px;background:rgba(255,255,255,0.06);color:var(--txt-3)">Agenda</span>',specific_date:'<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:99px;background:rgba(255,92,0,0.12);color:var(--org)">Horário fixo</span>',pool:'<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:99px;background:rgba(72,180,255,0.12);color:#48b4ff">Mercado</span>'}; return labels[m]||'<span style="font-size:10px;color:var(--txt-3)">'+m+'</span>'; })(h.mode||'schedule')+'</td>'+
       '</tr>';
   }).join('');
+}
+
+function csvField(v){
+  var s = v===undefined || v===null ? '' : String(v);
+  if (/[";\n]/.test(s)) s = '"' + s.replace(/"/g,'""') + '"';
+  return s;
+}
+
+export function exportHistory(){
+  if (!lastHistory.length){ showToast('Nenhum registro para exportar.', 'error'); return; }
+  var modeLabels = { schedule:'Agenda', specific_date:'Horário fixo', pool:'Mercado' };
+  var header = ['Data/Hora','Closer','SDR','Segmento','Subgrupo','Lead ID','Amount 12m','Horário da reunião','Tipo'];
+  var rows = lastHistory.map(function(h){
+    var ts = h.ts && h.ts!=='—' ? new Date(h.ts).toLocaleString('pt-BR') : '—';
+    var val = h.client_value && h.client_value!=='—' ? 'R$ ' + parseInt(h.client_value).toLocaleString('pt-BR') : '—';
+    var sdrLabel = h.sdr && h.sdr !== '—' ? h.sdr.split('@')[0].replace(/\./g,' ').replace(/\b\w/g, function(c){return c.toUpperCase();}) : '—';
+    var slot = (function(s){ if(!s||s==='—') return '—'; var d=new Date(s); return isNaN(d.getTime()) ? '—' : d.toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}); })(h.slot);
+    var tipo = modeLabels[h.mode||'schedule'] || (h.mode||'—');
+    return [ts, h.closer_name||h.closer_email||'—', sdrLabel, h.segment||'—', h.subgroup||'—', h.lead_id||'—', val, slot, tipo];
+  });
+  var lines = [header].concat(rows).map(function(r){ return r.map(csvField).join(';'); });
+  var csv = '﻿' + lines.join('\r\n');
+  var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  var stamp = new Date().toISOString().slice(0,10);
+  a.href = url;
+  a.download = 'historico-atribuicoes-' + stamp + '.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
