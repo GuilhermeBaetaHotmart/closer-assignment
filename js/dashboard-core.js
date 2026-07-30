@@ -7,7 +7,6 @@ import { API, SEGS } from './api.js?v=20260702-1332';
 import { session, st } from './state.js?v=20260702-1332';
 import { classify, fmtBRL, getCloserPhoto, getMon } from './utils.js?v=20260702-1332';
 import { authFetch } from './auth.js?v=20260702-1332';
-import { toggleCloser } from './closers.js?v=20260702-1332';
 
 import { showToast } from './ui.js?v=20260702-1332';
 
@@ -34,10 +33,11 @@ export function setSegFilter(seg, btn) {
 }
 
 export async function loadDashboard(){
-  var ld6='<tr><td colspan="6" class="table-empty"><div style="display:flex;align-items:center;justify-content:center;gap:8px"><div class="spinner"></div> Carregando...</div></td></tr>';
-  var ld7='<tr><td colspan="7" class="table-empty"><div style="display:flex;align-items:center;justify-content:center;gap:8px"><div class="spinner"></div> Carregando...</div></td></tr>';
+  var ld6='<tr><td colspan="5" class="table-empty"><div style="display:flex;align-items:center;justify-content:center;gap:8px"><div class="spinner"></div> Carregando...</div></td></tr>';
+  var ld7='<tr><td colspan="10" class="table-empty"><div style="display:flex;align-items:center;justify-content:center;gap:8px"><div class="spinner"></div> Carregando...</div></td></tr>';
   ['tbodySMB','tbodyMID','tbodyENT'].forEach(function(id){ document.getElementById(id).innerHTML=ld6; });
   document.getElementById('historyTableBody').innerHTML=ld7;
+  document.getElementById('eligibilityHistoryBody').innerHTML='<tr><td colspan="6" class="table-empty"><div style="display:flex;align-items:center;justify-content:center;gap:8px"><div class="spinner"></div> Carregando...</div></td></tr>';
 
   // Build query params
   var params = 'period=' + currentPeriod;
@@ -54,8 +54,37 @@ export async function loadDashboard(){
     const d = await r.json();
     renderDashboard(d);
   } catch(e){
-    ['tbodySMB','tbodyMID','tbodyENT'].forEach(function(id){ document.getElementById(id).innerHTML='<tr><td colspan="6" class="table-empty">Erro: '+e.message+'</td></tr>'; });
+    ['tbodySMB','tbodyMID','tbodyENT'].forEach(function(id){ document.getElementById(id).innerHTML='<tr><td colspan="5" class="table-empty">Erro: '+e.message+'</td></tr>'; });
   }
+
+  // Log de auditoria de elegibilidade — endpoint separado, não deve quebrar o resto do dashboard se falhar
+  try {
+    const rElig = await authFetch(API.eligibilityHistory);
+    const dElig = await rElig.json();
+    renderEligibilityHistory(dElig.entries || []);
+  } catch(e) {
+    document.getElementById('eligibilityHistoryBody').innerHTML = '<tr><td colspan="6" class="table-empty">Erro ao carregar: '+e.message+'</td></tr>';
+  }
+}
+
+function renderEligibilityHistory(entries) {
+  var body = document.getElementById('eligibilityHistoryBody');
+  if (!entries.length) { body.innerHTML = '<tr><td colspan="6" class="table-empty">Nenhuma alteração registrada.</td></tr>'; return; }
+  var originLabels = { inbound:'Inbound', outbound:'Outbound' };
+  body.innerHTML = entries.map(function(e){
+    var ts = e.ts ? new Date(e.ts).toLocaleString('pt-BR') : '—';
+    var acao = e.active
+      ? '<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:99px;background:rgba(61,219,168,0.12);color:var(--green)">Ativado</span>'
+      : '<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:99px;background:rgba(255,92,92,0.12);color:#ff5c5c">Desativado</span>';
+    return '<tr>'+
+      '<td style="font-size:11px;white-space:nowrap">'+ts+'</td>'+
+      '<td><strong style="font-family:\'Space Grotesk\',sans-serif;font-size:12px">'+(e.closerName||e.closerEmail||'—')+'</strong></td>'+
+      '<td style="font-size:11px;color:var(--txt-3)">'+(e.queue||'—')+'</td>'+
+      '<td style="font-size:11px;color:var(--txt-2)">'+(originLabels[e.origin]||'—')+'</td>'+
+      '<td>'+acao+'</td>'+
+      '<td style="font-size:11px;color:var(--txt-3)">'+(e.updatedBy||'—')+'</td>'+
+      '</tr>';
+  }).join('');
 }
 
 function renderChart(series, period) {
@@ -200,7 +229,7 @@ function renderDashboard(data){
     var sc=filteredClosers.filter(function(c){ return c.segment===seg; });
     var maxTotal=Math.max.apply(null,sc.map(function(c){ return c.opps_total; }).concat([1]));
     var tbody=document.getElementById(cfg.tbody);
-    if(!sc.length){ tbody.innerHTML='<tr><td colspan="6" class="table-empty">Nenhum closer cadastrado neste segmento.</td></tr>'; return; }
+    if(!sc.length){ tbody.innerHTML='<tr><td colspan="5" class="table-empty">Nenhum closer cadastrado neste segmento.</td></tr>'; return; }
 
     tbody.innerHTML=sc.map(function(c){
       var barPct=Math.max(4,Math.round((c.opps_total/maxTotal)*100));
@@ -214,19 +243,8 @@ function renderDashboard(data){
           '</td>';
       }).join('');
 
-      var isActive = c.active;
-      var toggleId = 'tog_' + c.email.replace(/[@.]/g,'_');
-      var toggleHtml =
-        '<label class="seg-toggle" onclick="toggleCloser(\''+c.email+'\',\''+toggleId+'\')" title="'+(isActive?'Desativar':'Ativar')+' closer">' +
-          '<div class="seg-toggle-track '+(isActive?'on':'off')+'" id="'+toggleId+'">' +
-            '<div class="seg-toggle-thumb"></div>' +
-          '</div>' +
-          '<span class="seg-toggle-label">'+(isActive?'Ativo':'Inativo')+'</span>' +
-        '</label>';
-
       var normalRow = '<tr>' +
         '<td><span class="closer-cell-name">'+(c.name||c.email)+'</span><span class="closer-cell-email">'+c.email+'</span></td>' +
-        '<td>'+toggleHtml+'</td>' +
         '<td><div class="bar-cell"><div class="bar-track"><div class="bar-fill" style="width:'+barPct+'%"></div></div><span class="bar-num">'+c.opps_total+'</span></div></td>' +
         subCells+'</tr>';
 
@@ -238,7 +256,6 @@ function renderDashboard(data){
         }).join('');
         campRow = '<tr style="background:rgba(68,208,255,0.04);">' +
           '<td style="padding:6px 20px;"><span style="font-size:11px;color:var(--blue);font-weight:600;">↳ Campanhas</span></td>' +
-          '<td></td>' +
           '<td><div class="bar-cell"><span class="bar-num" style="color:var(--blue);font-size:14px;">'+c.campaign_total+'</span></div></td>' +
           campSubCells+'</tr>';
       }
@@ -250,7 +267,7 @@ function renderDashboard(data){
   // History
   lastHistory = filteredHistory;
   var hb=document.getElementById('historyTableBody');
-  if(!filteredHistory.length){ hb.innerHTML='<tr><td colspan="9" class="table-empty">Nenhum agendamento registrado.</td></tr>'; return; }
+  if(!filteredHistory.length){ hb.innerHTML='<tr><td colspan="10" class="table-empty">Nenhum agendamento registrado.</td></tr>'; return; }
   hb.innerHTML=filteredHistory.map(function(h){
     var ts=h.ts&&h.ts!=='—'?new Date(h.ts).toLocaleString('pt-BR'):'—';
     var val=h.client_value&&h.client_value!=='—'?'R$ '+parseInt(h.client_value).toLocaleString('pt-BR'):'—';
@@ -265,6 +282,7 @@ function renderDashboard(data){
       '<td style="font-family:\'Space Grotesk\',sans-serif;font-weight:700;font-size:13px">'+val+'</td>'+
       '<td style="font-size:11px;color:var(--txt-2)">'+(function(s){ if(!s||s==='—') return '—'; var d=new Date(s); return isNaN(d.getTime()) ? '—' : d.toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}); })(h.slot)+'</td>'+
       '<td>'+(function(m){ var labels={schedule:'<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:99px;background:rgba(255,255,255,0.06);color:var(--txt-3)">Agenda</span>',specific_date:'<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:99px;background:rgba(255,92,0,0.12);color:var(--org)">Horário fixo</span>',pool:'<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:99px;background:rgba(72,180,255,0.12);color:#48b4ff">Mercado</span>'}; return labels[m]||'<span style="font-size:10px;color:var(--txt-3)">'+m+'</span>'; })(h.mode||'schedule')+'</td>'+
+      '<td>'+(function(o){ var labels={inbound:'<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:99px;background:rgba(61,219,168,0.12);color:var(--green)">Inbound</span>',outbound:'<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:99px;background:rgba(180,142,255,0.12);color:#B48EFF">Outbound</span>'}; return labels[o]||'<span style="font-size:10px;color:var(--txt-3)">—</span>'; })(h.origin)+'</td>'+
       '</tr>';
   }).join('');
 }
@@ -278,14 +296,16 @@ function csvField(v){
 export function exportHistory(){
   if (!lastHistory.length){ showToast('Nenhum registro para exportar.', 'error'); return; }
   var modeLabels = { schedule:'Agenda', specific_date:'Horário fixo', pool:'Mercado' };
-  var header = ['Data/Hora','Closer','SDR','Segmento','Subgrupo','Lead ID','Amount 12m','Horário da reunião','Tipo'];
+  var originLabels = { inbound:'Inbound', outbound:'Outbound' };
+  var header = ['Data/Hora','Closer','SDR','Segmento','Subgrupo','Lead ID','Amount 12m','Horário da reunião','Tipo','Origem'];
   var rows = lastHistory.map(function(h){
     var ts = h.ts && h.ts!=='—' ? new Date(h.ts).toLocaleString('pt-BR') : '—';
     var val = h.client_value && h.client_value!=='—' ? 'R$ ' + parseInt(h.client_value).toLocaleString('pt-BR') : '—';
     var sdrLabel = h.sdr && h.sdr !== '—' ? h.sdr.split('@')[0].replace(/\./g,' ').replace(/\b\w/g, function(c){return c.toUpperCase();}) : '—';
     var slot = (function(s){ if(!s||s==='—') return '—'; var d=new Date(s); return isNaN(d.getTime()) ? '—' : d.toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}); })(h.slot);
     var tipo = modeLabels[h.mode||'schedule'] || (h.mode||'—');
-    return [ts, h.closer_name||h.closer_email||'—', sdrLabel, h.segment||'—', h.subgroup||'—', h.lead_id||'—', val, slot, tipo];
+    var origem = originLabels[h.origin] || '—';
+    return [ts, h.closer_name||h.closer_email||'—', sdrLabel, h.segment||'—', h.subgroup||'—', h.lead_id||'—', val, slot, tipo, origem];
   });
   var lines = [header].concat(rows).map(function(r){ return r.map(csvField).join(';'); });
   var csv = '﻿' + lines.join('\r\n');

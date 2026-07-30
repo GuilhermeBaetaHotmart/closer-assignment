@@ -12,6 +12,7 @@ import { loadSecurity } from './dashboard-security.js?v=20260702-1332';
 import { loadCampaigns } from './dashboard-campaigns.js?v=20260702-1332';
 import { loadTimeConfig } from './dashboard-time.js?v=20260702-1332';
 import { loadEscalationConfig } from './dashboard-escalation.js?v=20260702-1332';
+import { loadQueueSetup } from './dashboard-queue-setup.js?v=20260702-1332';
 
 
 export function switchTab(tab){
@@ -44,6 +45,7 @@ export function switchDashTab(tab, btn) {
   document.getElementById('dashCampaigns').style.display  = tab === 'campaigns'  ? '' : 'none';
   document.getElementById('dashTime').style.display       = tab === 'time'       ? '' : 'none';
   document.getElementById('dashEscalation').style.display  = tab === 'escalation' ? '' : 'none';
+  document.getElementById('dashQueueSetup').style.display  = tab === 'queuesetup' ? '' : 'none';
   document.querySelectorAll('#adminView .filter-btn').forEach(function(b){ b.classList.remove('active'); });
   if (btn) btn.classList.add('active');
   if (tab === 'capacidade') loadCapacity();
@@ -51,6 +53,7 @@ export function switchDashTab(tab, btn) {
   if (tab === 'campaigns')  loadCampaigns();
   if (tab === 'time')       loadTimeConfig();
   if (tab === 'escalation') loadEscalationConfig();
+  if (tab === 'queuesetup') loadQueueSetup();
 }
 
 export function setAdminViewMode(mode) {

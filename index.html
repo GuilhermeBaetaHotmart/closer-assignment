@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Closer Assignment — Hotmart</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔥</text></svg>">
+<link rel="icon" type="image/png" href="hotmart_logo4.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -23,11 +23,7 @@
     <div class="login-card">
 
       <div class="login-brand" style="display:flex;align-items:center;gap:8px;">
-        <svg width="34" height="40" viewBox="0 0 34 40" fill="none" aria-label="Hotmart logo" role="img" xmlns="http://www.w3.org/2000/svg">
-          <path d="M17 0C13 8 11 13 13 18C10 15 9 11 9 11C6 14 4 19 4 23C4 31.3 9.9 38 17 38C24.1 38 30 31.3 30 23C30 14 22 5 17 0Z" fill="#FF4800"/>
-          <circle cx="17" cy="26" r="7" fill="white"/>
-          <circle cx="17" cy="26" r="4.5" fill="#FF4800"/>
-        </svg>
+        <img src="hotmart_logo4.png" alt="Hotmart logo" width="34" height="34" style="object-fit:contain;">
         <span style="font-size:26px;font-weight:800;color:#fff;letter-spacing:-0.5px;line-height:1;">hotmart</span>
       </div>
 
@@ -62,11 +58,7 @@
   <!-- Header -->
   <header class="hdr">
     <div class="hdr-brand" style="display:flex;align-items:center;gap:6px;">
-      <svg width="20" height="24" viewBox="0 0 34 40" fill="none" aria-label="Hotmart" role="img" xmlns="http://www.w3.org/2000/svg">
-        <path d="M17 0C13 8 11 13 13 18C10 15 9 11 9 11C6 14 4 19 4 23C4 31.3 9.9 38 17 38C24.1 38 30 31.3 30 23C30 14 22 5 17 0Z" fill="#FF4800"/>
-        <circle cx="17" cy="26" r="7" fill="white"/>
-        <circle cx="17" cy="26" r="4.5" fill="#FF4800"/>
-      </svg>
+      <img src="hotmart_logo4.png" alt="Hotmart" width="20" height="20" style="object-fit:contain;">
       <span style="font-size:17px;font-weight:800;color:#fff;letter-spacing:-0.3px;line-height:1;">hotmart</span>
     </div>
     <div class="hdr-sep"></div>
@@ -147,6 +139,16 @@
           <label class="field-label" for="clientEmailInput">E-mail do cliente</label>
           <input class="field-input" type="email" id="clientEmailInput" placeholder="ex: cliente@empresa.com" autocomplete="off">
           <div class="field-err" id="clientEmailError" role="alert">Campo obrigatório</div>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="leadOriginInput">Origem do lead</label>
+          <select class="field-input" id="leadOriginInput" onchange="onLeadOriginChange()">
+            <option value="">Selecione a origem</option>
+            <option value="inbound">Inbound</option>
+            <option value="outbound">Outbound</option>
+          </select>
+          <div class="field-err" id="leadOriginError" role="alert">Campo obrigatório</div>
         </div>
 
         <div class="field" id="competitorField">
@@ -438,6 +440,7 @@
         <button class="filter-btn" id="dashTabCampaigns" onclick="switchDashTab('campaigns',this)">Campanhas</button>
         <button class="filter-btn" id="dashTabTime" onclick="switchDashTab('time',this)">Tempo</button>
         <button class="filter-btn" id="dashTabEscalation" onclick="switchDashTab('escalation',this)">Escalação</button>
+        <button class="filter-btn" id="dashTabQueueSetup" onclick="switchDashTab('queuesetup',this)">Setup de Fila</button>
       </div>
 
       <!-- Seção Histórico -->
@@ -536,12 +539,12 @@
         <div class="table-wrap">
           <table class="data-table">
             <thead><tr>
-              <th>Closer</th><th>Segmento</th><th>Total Opps</th>
+              <th>Closer</th><th>Total Opps</th>
               <th class="center">Grupo 1<br><span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--txt-3)">100–300k</span></th>
               <th class="center">Grupo 2<br><span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--txt-3)">300–600k</span></th>
               <th class="center">Grupo 3<br><span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--txt-3)">600k+</span></th>
             </tr></thead>
-            <tbody id="tbodySMB"><tr><td colspan="6" class="table-empty">Carregando...</td></tr></tbody>
+            <tbody id="tbodySMB"><tr><td colspan="5" class="table-empty">Carregando...</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -560,12 +563,12 @@
         <div class="table-wrap">
           <table class="data-table">
             <thead><tr>
-              <th>Closer</th><th>Segmento</th><th>Total Opps</th>
+              <th>Closer</th><th>Total Opps</th>
               <th class="center">Grupo 1<br><span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--txt-3)">1M–2M</span></th>
               <th class="center">Grupo 2<br><span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--txt-3)">2M–3M</span></th>
               <th class="center">Grupo 3<br><span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--txt-3)">3M+</span></th>
             </tr></thead>
-            <tbody id="tbodyMID"><tr><td colspan="6" class="table-empty">Carregando...</td></tr></tbody>
+            <tbody id="tbodyMID"><tr><td colspan="5" class="table-empty">Carregando...</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -584,12 +587,12 @@
         <div class="table-wrap">
           <table class="data-table">
             <thead><tr>
-              <th>Closer</th><th>Segmento</th><th>Total Opps</th>
+              <th>Closer</th><th>Total Opps</th>
               <th class="center">Grupo 1<br><span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--txt-3)">5M–10M</span></th>
               <th class="center">Grupo 2<br><span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--txt-3)">10M–20M</span></th>
               <th class="center">Grupo 3<br><span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--txt-3)">20M+</span></th>
             </tr></thead>
-            <tbody id="tbodyENT"><tr><td colspan="6" class="table-empty">Carregando...</td></tr></tbody>
+            <tbody id="tbodyENT"><tr><td colspan="5" class="table-empty">Carregando...</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -607,9 +610,27 @@
           <table class="history-table">
             <thead><tr>
               <th>Data / Hora</th><th>Closer</th><th>SDR</th><th>Segmento</th>
-              <th>Subgrupo</th><th>Lead ID</th><th>Amount 12m</th><th>Horário da reunião</th><th>Tipo</th>
+              <th>Subgrupo</th><th>Lead ID</th><th>Amount 12m</th><th>Horário da reunião</th><th>Tipo</th><th>Origem</th>
             </tr></thead>
-            <tbody id="historyTableBody"><tr><td colspan="9" class="table-empty">Carregando...</td></tr></tbody>
+            <tbody id="historyTableBody"><tr><td colspan="10" class="table-empty">Carregando...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Log de auditoria de elegibilidade -->
+      <div class="dash-section">
+        <div class="dash-section-header">
+          <div>
+            <div class="dash-section-title">Histórico de alterações de elegibilidade</div>
+            <div class="dash-section-sub">Mudanças nos toggles de fila/origem por closer</div>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead><tr>
+              <th>Data / Hora</th><th>Closer</th><th>Fila</th><th>Origem</th><th>Ação</th><th>Alterado por</th>
+            </tr></thead>
+            <tbody id="eligibilityHistoryBody"><tr><td colspan="6" class="table-empty">Carregando...</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -810,6 +831,23 @@
 
         </div>
       </div><!-- /dashEscalation -->
+
+      <!-- Seção Setup de Fila -->
+      <div id="dashQueueSetup" style="display:none">
+        <div style="max-width:960px;margin:0 auto;padding:0 16px 32px;">
+
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+            <div>
+              <div style="font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:700;color:var(--txt-1);">Setup de Fila</div>
+              <div style="font-size:12px;color:var(--txt-3);margin-top:2px;">Elegibilidade por closer, fila e origem (Inbound/Outbound) — controle independente por combinação</div>
+            </div>
+            <button class="btn btn-ghost" onclick="loadQueueSetup()" style="font-size:13px;">↻ Atualizar</button>
+          </div>
+
+          <div id="queueSetupSections"></div>
+
+        </div>
+      </div><!-- /dashQueueSetup -->
 
     </div><!-- /adminView -->
 

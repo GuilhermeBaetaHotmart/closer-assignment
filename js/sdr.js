@@ -74,6 +74,10 @@ export async function goStep2() {
   const lid=document.getElementById('leadIdInput').value.trim();
   if (!lid) { document.getElementById('leadIdError').style.display='block'; document.getElementById('leadIdInput').classList.add('error'); return; }
   document.getElementById('leadIdError').style.display='none'; document.getElementById('leadIdInput').classList.remove('error');
+  const leadOrigin=document.getElementById('leadOriginInput').value;
+  if (!leadOrigin) { document.getElementById('leadOriginError').style.display='block'; document.getElementById('leadOriginInput').classList.add('error'); return; }
+  document.getElementById('leadOriginError').style.display='none'; document.getElementById('leadOriginInput').classList.remove('error');
+  st.leadOrigin = leadOrigin;
   var competitorFieldVisible = document.getElementById('competitorField').style.display !== 'none';
   const competitor = document.getElementById('competitorInput').value.trim();
   if (competitorFieldVisible && !competitor) { document.getElementById('competitorError').style.display='block'; document.getElementById('competitorInput').classList.add('error'); return; }
@@ -263,7 +267,8 @@ export async function goEmergencyPool() {
         segmentKey:  st.segKey,
         subgroupKey: st.subKey,
         mode:        'specific_date',
-        slotStart:   st.specificSlotStart
+        slotStart:   st.specificSlotStart,
+        origin:      st.leadOrigin || ''
       };
       const checkRes = await authFetch(API.algorithm, {
         method: 'POST',
@@ -292,7 +297,8 @@ export async function goEmergencyPool() {
       clientEmail: st.clientEmail || '',
       subgroup:    st.subKey,
       slotStart:   st.specificSlotStart || '',
-      sdrEmail:    session ? session.email : ''
+      sdrEmail:    session ? session.email : '',
+      origin:      st.leadOrigin || ''
     };
     const r = await authFetch(API.poolAdd, {
       method: 'POST',
@@ -323,7 +329,8 @@ export async function fetchCloser() {
       segmentKey: st.segKey,
       subgroupKey: st.subKey,
       mode: st.schedulingMode === 'specific' ? 'specific_date' : 'schedule',
-      competitor: st.competitor || ''
+      competitor: st.competitor || '',
+      origin: st.leadOrigin || ''
     };
     if (payload.mode === 'specific_date') payload.slotStart = st.specificSlotStart;
     const r=await authFetch(API.algorithm,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
@@ -647,6 +654,7 @@ export async function doConfirmFinal(){
         ts:            new Date().toISOString(),
         mode:          st.schedulingMode === 'specific' ? 'specific_date' : 'schedule',
         competitor:    st.competitor || '',
+        origin:        st.leadOrigin || '',
         campaignActive: st.campaignActive || false
       })
     });
@@ -718,12 +726,14 @@ export function showSuccess(data){
 }
 
 export function resetAll(){
-  Object.assign(st, {rawValue:0,leadId:null,clientEmail:null,segKey:null,subKey:null,subLabel:null,competitor:null,campaignActive:false,
+  Object.assign(st, {rawValue:0,leadId:null,clientEmail:null,leadOrigin:null,segKey:null,subKey:null,subLabel:null,competitor:null,campaignActive:false,
       closerId:null,queue:[],refused:[],weekOffset:0,
       selectedSlotId:null,selectedSlotLabel:null,selectedSlotStart:null,selectedSlotEnd:null,
       tempEventId:null,schedulingMode:null,specificSlotStart:null,specificOutOfWindow:false});
   ['leadIdInput','clientEmailInput'].forEach(function(id){ document.getElementById(id).value=''; document.getElementById(id).classList.remove('error'); });
   var compEl = document.getElementById('competitorInput'); if(compEl) { compEl.value=''; compEl.classList.remove('error'); }
+  var originEl = document.getElementById('leadOriginInput'); if(originEl) { originEl.value=''; originEl.classList.remove('error'); }
+  document.getElementById('leadOriginError').style.display='none';
   document.getElementById('valInput').value='';
   // Zera a escolha de modo de agendamento — sem seleção, sem legado entre opps
   document.getElementById('modeSlots').classList.remove('selected');
@@ -770,5 +780,14 @@ export function onCompetitorChange() {
     document.getElementById('competitorInput').classList.remove('error');
   }
   st.competitor = val;
+}
+
+export function onLeadOriginChange() {
+  var val = document.getElementById('leadOriginInput').value;
+  if (val) {
+    document.getElementById('leadOriginError').style.display = 'none';
+    document.getElementById('leadOriginInput').classList.remove('error');
+  }
+  st.leadOrigin = val;
 }
 

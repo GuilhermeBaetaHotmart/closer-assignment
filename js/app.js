@@ -10,7 +10,7 @@ import {
   clearSlotAndRetry, goEmergencyPool, fetchCloser, fetchSlots, renderSlots, selectSlot,
   applySlotFilters, setFilterDay, setFilterPeriod, rejectAgenda, renderRefused,
   renderQueueHint, doReserveSpecific, doReserve, showReservationState, startReservationTimer,
-  doConfirmFinal, doCancelReserve, showSuccess, resetAll, onCompetitorChange
+  doConfirmFinal, doCancelReserve, showSuccess, resetAll, onCompetitorChange, onLeadOriginChange
 } from './sdr.js?v=20260702-1332';
 import { loadMercado, acceptLead, removeLead } from './mercado.js?v=20260702-1332';
 import { switchTab, switchDashTab, setAdminViewMode } from './navigation.js?v=20260702-1332';
@@ -20,6 +20,7 @@ import { loadSecurity } from './dashboard-security.js?v=20260702-1332';
 import { loadCampaigns, addCampaign, toggleCampaign } from './dashboard-campaigns.js?v=20260702-1332';
 import { loadTimeConfig, editCloserOverride, saveCloserOverride, clearCloserOverride, saveSegmentDefault } from './dashboard-time.js?v=20260702-1332';
 import { loadEscalationConfig, editEscalationLeader, saveEscalationLeader, removeEscalationLeader, addEscalationLeader } from './dashboard-escalation.js?v=20260702-1332';
+import { loadQueueSetup, toggleEligibility } from './dashboard-queue-setup.js?v=20260702-1332';
 import { toggleCloser } from './closers.js?v=20260702-1332';
 import { setSlotView, togglePrepAdjust, syncPrepAdjustToggleUI } from './agenda.js?v=20260702-1332';
 import { showToast, toggleTheme } from './ui.js?v=20260702-1332';
@@ -31,7 +32,7 @@ Object.assign(window, {
   doLogin, doLogout,
   goStep2, selectSchedulingMode, validateSlotPicker, submitSpecificSlot, backToStep1, clearSlotAndRetry, goEmergencyPool,
   selectSlot, setFilterDay, setFilterPeriod, rejectAgenda, doReserveSpecific, doReserve,
-  doConfirmFinal, doCancelReserve, resetAll, onCompetitorChange,
+  doConfirmFinal, doCancelReserve, resetAll, onCompetitorChange, onLeadOriginChange,
   changeWeek: function(dir){ if(st.slotsLoading) return; st.weekOffset += dir; st.filterDay = 'all'; st.filterPeriod = 'all'; fetchSlots(); },
   loadMercado, acceptLead, removeLead,
   switchTab, switchDashTab, setAdminViewMode,
@@ -40,6 +41,7 @@ Object.assign(window, {
   loadCampaigns, addCampaign, toggleCampaign,
   loadTimeConfig, editCloserOverride, saveCloserOverride, clearCloserOverride, saveSegmentDefault,
   loadEscalationConfig, editEscalationLeader, saveEscalationLeader, removeEscalationLeader, addEscalationLeader,
+  loadQueueSetup, toggleEligibility,
   toggleCloser, toggleTheme,
   setSlotView, togglePrepAdjust,
 });

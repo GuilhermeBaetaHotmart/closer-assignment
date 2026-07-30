@@ -28,6 +28,9 @@ export const API = {
   timeConfigSet: 'https://hotmart.app.n8n.cloud/webhook/time-config-set',
   escalationConfigGet: 'https://hotmart.app.n8n.cloud/webhook/escalation-config-get',
   escalationConfigSet: 'https://hotmart.app.n8n.cloud/webhook/escalation-config-set',
+  eligibilityGet:      'https://hotmart.app.n8n.cloud/webhook/eligibility-get',
+  eligibilitySet:      'https://hotmart.app.n8n.cloud/webhook/eligibility-set',
+  eligibilityHistory:  'https://hotmart.app.n8n.cloud/webhook/eligibility-history',
 };
 
 export const SEGS = {
