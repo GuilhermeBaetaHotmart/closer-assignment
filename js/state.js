@@ -17,5 +17,9 @@ export let st = {
   closerId: null, queue: [], refused: [], weekOffset: 0,
   selectedSlotId: null, selectedSlotLabel: null, selectedSlotStart: null, selectedSlotEnd: null,
   schedulingMode: null, specificSlotStart: null, specificOutOfWindow: false, noAvailability: false,
-  slotView: 'compact', agendaEvents: [], slotsLoading: false
+  slotView: 'compact', agendaEvents: [], slotsLoading: false,
+  // Snapshot da reserva recém-criada nesta sessão — sobrevive ao resetAll() (que só
+  // reseta os campos do lead em andamento) pra continuar disponível pra confirmar/
+  // cancelar/editar via #reservationState, agora hospedado na aba "Aguardando confirmação".
+  activeReservation: null
 };

@@ -1,41 +1,35 @@
 /* ══════════════════════════════════════════════
    pending.js — Aba "Aguardando confirmação".
-   Lista completa das reservas pendentes do SDR logado.
+   Reserva ativa da sessão (se houver) + lista completa das
+   reservas pendentes do SDR logado, vindas da API.
    ══════════════════════════════════════════════ */
 
 
 import { API } from './api.js?v=20260702-1332';
-import { session } from './state.js?v=20260702-1332';
+import { session, st } from './state.js?v=20260702-1332';
 import { authFetch } from './auth.js?v=20260702-1332';
 
 export async function loadPendingView() {
-  var view = document.getElementById('pendingView');
-  if (!view) return;
+  // O card #reservationState e o header já são estáticos em index.html — aqui só
+  // alternamos a visibilidade dele (reflete st.activeReservation) e recarregamos a lista.
+  var reservationEl = document.getElementById('reservationState');
+  if (reservationEl) reservationEl.style.display = st.activeReservation ? 'block' : 'none';
 
-  view.innerHTML =
-    '<div style="max-width:680px;margin:0 auto;padding:16px 12px;">' +
-      '<div class="pending-view-header">' +
-        '<div>' +
-          '<div class="pending-view-title">Aguardando confirmação</div>' +
-          '<div class="pending-view-subtitle">Suas reservas ainda não confirmadas pelo cliente</div>' +
-        '</div>' +
-        '<button class="btn btn-ghost" onclick="loadPendingView()" style="font-size:13px;">↻ Atualizar</button>' +
-      '</div>' +
-      '<div id="pendingViewList" class="pending-list">' +
-        '<div class="pending-empty"><div class="spinner"></div> Carregando...</div>' +
-      '</div>' +
-    '</div>';
+  var list = document.getElementById('pendingViewList');
+  if (!list) return;
+  list.innerHTML = '<div class="pending-empty"><div class="spinner"></div> Carregando...</div>';
 
   try {
     const r = await authFetch(API.reservationsList);
     const raw = await r.json();
     const all = Array.isArray(raw) ? raw : (raw.reservations || []);
     const email = session ? session.email : null;
-    const mine = all.filter(function(res){ return res.sdrEmail === email; });
+    // A reserva ativa da sessão já aparece destacada em #reservationState — evita duplicar na lista.
+    const activeSlotId = st.activeReservation ? st.activeReservation.slotId : null;
+    const mine = all.filter(function(res){ return res.sdrEmail === email && res.slotId !== activeSlotId; });
     renderPendingView(mine);
   } catch(e) {
-    var list = document.getElementById('pendingViewList');
-    if (list) list.innerHTML = '<div class="pending-empty">Erro ao carregar: ' + e.message + '</div>';
+    list.innerHTML = '<div class="pending-empty">Erro ao carregar: ' + e.message + '</div>';
   }
 }
 

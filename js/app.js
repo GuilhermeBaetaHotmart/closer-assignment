@@ -10,7 +10,7 @@ import {
   clearSlotAndRetry, goEmergencyPool, fetchCloser, fetchSlots, renderSlots, selectSlot,
   applySlotFilters, setFilterDay, setFilterPeriod, rejectAgenda, renderRefused, goBackToCloser,
   renderQueueHint, doReserveSpecific, doReserve, showReservationState, startReservationTimer,
-  doConfirmFinal, doCancelReserve, showSuccess, resetAll, onCompetitorChange, onLeadOriginChange, startInlineEdit,
+  doConfirmFinal, doCancelReserve, resetAll, onCompetitorChange, onLeadOriginChange, startInlineEdit,
   doCancelReserveById
 } from './sdr.js?v=20260702-1332';
 import { loadMercado, acceptLead, removeLead } from './mercado.js?v=20260702-1332';

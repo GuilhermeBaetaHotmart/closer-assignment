@@ -347,48 +347,6 @@
         <div class="queue-hint" id="queueInfo" role="status"></div>
       </div>
 
-      <!-- Reservation state (step 3) -->
-      <div id="reservationState" style="display:none">
-        <div class="reservation-card">
-          <div class="reservation-header">
-            <div>
-              <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
-                <span class="reservation-badge"><span class="reservation-badge-dot"></span>Reservado</span>
-              </div>
-              <div class="reservation-title">Aguardando confirmação do cliente</div>
-              <div class="reservation-sub" id="resvSub">—</div>
-            </div>
-          </div>
-
-          <div class="reservation-detail">
-            <div class="confirm-row"><span class="confirm-k">Lead ID</span><span class="confirm-v confirm-editable" id="resvLeadId" onclick="startInlineEdit('resvLeadId','leadId')" title="Clique para editar"></span></div>
-            <div class="confirm-row"><span class="confirm-k">E-mail do cliente</span><span class="confirm-v confirm-editable" id="resvClientEmail" onclick="startInlineEdit('resvClientEmail','clientEmail')" title="Clique para editar"></span></div>
-            <div class="confirm-row"><span class="confirm-k">Closer</span><span class="confirm-v" id="resvCloser">—</span></div>
-            <div class="confirm-row"><span class="confirm-k">Horário reservado</span><span class="confirm-v" id="resvSlot">—</span></div>
-            <div class="confirm-row"><span class="confirm-k">Segmento</span><span class="confirm-v" id="resvSeg">—</span></div>
-            <div class="confirm-row"><span class="confirm-k">Amount 12m</span><span class="confirm-v" id="resvVal">—</span></div>
-          </div>
-
-          <div class="timer-bar-wrap">
-            <div class="timer-label">
-              Reserva expira em <span id="timerLabel">24h 00m</span>
-            </div>
-            <div class="timer-track"><div class="timer-fill" id="timerFill" style="width:100%"></div></div>
-          </div>
-
-          <div class="reservation-btn-row">
-            <button class="btn-confirm-final" onclick="doConfirmFinal()">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-              Cliente confirmou
-            </button>
-            <button class="btn-cancel-reserve" onclick="doCancelReserve()">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              Cancelar reserva
-            </button>
-          </div>
-        </div>
-      </div>
-
       <!-- Success -->
       <div id="successState" style="display:none">
         <div class="card">
@@ -872,7 +830,63 @@
 
   <!-- ── PENDING VIEW (Aguardando confirmação) ── -->
   <div id="pendingView" style="display:none">
-    <!-- conteúdo gerenciado por pending.js -->
+    <div style="max-width:680px; margin:0 auto; padding:16px 12px;">
+
+      <!-- Reservation state: só aparece quando há reserva ativa na sessão (st.activeReservation) -->
+      <div id="reservationState" style="display:none">
+        <div class="reservation-card">
+          <div class="reservation-header">
+            <div>
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+                <span class="reservation-badge"><span class="reservation-badge-dot"></span>Reservado</span>
+              </div>
+              <div class="reservation-title">Aguardando confirmação do cliente</div>
+              <div class="reservation-sub" id="resvSub">—</div>
+            </div>
+          </div>
+
+          <div class="reservation-detail">
+            <div class="confirm-row"><span class="confirm-k">Lead ID</span><span class="confirm-v confirm-editable" id="resvLeadId" onclick="startInlineEdit('resvLeadId','leadId')" title="Clique para editar"></span></div>
+            <div class="confirm-row"><span class="confirm-k">E-mail do cliente</span><span class="confirm-v confirm-editable" id="resvClientEmail" onclick="startInlineEdit('resvClientEmail','clientEmail')" title="Clique para editar"></span></div>
+            <div class="confirm-row"><span class="confirm-k">Closer</span><span class="confirm-v" id="resvCloser">—</span></div>
+            <div class="confirm-row"><span class="confirm-k">Horário reservado</span><span class="confirm-v" id="resvSlot">—</span></div>
+            <div class="confirm-row"><span class="confirm-k">Segmento</span><span class="confirm-v" id="resvSeg">—</span></div>
+            <div class="confirm-row"><span class="confirm-k">Amount 12m</span><span class="confirm-v" id="resvVal">—</span></div>
+          </div>
+
+          <div class="timer-bar-wrap">
+            <div class="timer-label">
+              Reserva expira em <span id="timerLabel">24h 00m</span>
+            </div>
+            <div class="timer-track"><div class="timer-fill" id="timerFill" style="width:100%"></div></div>
+          </div>
+
+          <div class="reservation-btn-row">
+            <button class="btn-confirm-final" onclick="doConfirmFinal()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              Cliente confirmou
+            </button>
+            <button class="btn-cancel-reserve" onclick="doCancelReserve()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              Cancelar reserva
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="pending-view-header">
+        <div>
+          <div class="pending-view-title">Aguardando confirmação</div>
+          <div class="pending-view-subtitle">Suas reservas ainda não confirmadas pelo cliente</div>
+        </div>
+        <button class="btn btn-ghost" onclick="loadPendingView()" style="font-size:13px;">↻ Atualizar</button>
+      </div>
+
+      <div id="pendingViewList" class="pending-list">
+        <div class="pending-empty"><div class="spinner"></div> Carregando...</div>
+      </div>
+
+    </div>
   </div>
 
 </div><!-- /appScreen -->

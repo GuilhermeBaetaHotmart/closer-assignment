@@ -5,11 +5,12 @@
 
 import { API, SEGS } from './api.js?v=20260702-1332';
 import { session, st } from './state.js?v=20260702-1332';
-import { classify, fmtBRL, getCloserPhoto, getMon, extractLeadId } from './utils.js?v=20260702-1332';
+import { classify, fmtBRL, getMon, extractLeadId } from './utils.js?v=20260702-1332';
 import { authFetch } from './auth.js?v=20260702-1332';
 import { showToast } from './ui.js?v=20260702-1332';
 import { markDone, markActive } from './animation.js?v=20260702-1332';
 import { renderAgenda, setSlotView } from './agenda.js?v=20260702-1332';
+import { switchTab } from './navigation.js?v=20260702-1332';
 
 let reservationExpiresAt = null;
 let reservationTimer = null;
@@ -646,30 +647,59 @@ export async function doReserve(){
 }
 
 export function showReservationState(data) {
-  document.getElementById('c1').style.display = 'none';
-  document.getElementById('c2').style.display = 'none';
-  document.querySelector('.steps').style.display = 'none';
+  // Snapshot de tudo que a confirmação/cancelamento/edição desta reserva vão precisar depois.
+  // Fica em st.activeReservation (não em st.* direto) porque resetAll(), logo abaixo, libera a
+  // sdrView pro SDR já começar outro lead — e activeReservation não é uma das chaves que ele reseta.
+  st.activeReservation = {
+    closerId:       st.closerId,
+    slotId:         st.selectedSlotId,
+    slotStart:      st.selectedSlotStart,
+    slotEnd:        st.selectedSlotEnd,
+    slotLabel:      st.selectedSlotLabel,
+    tempEventId:    data.tempEventId,
+    leadId:         st.leadId,
+    clientEmail:    st.clientEmail,
+    clientValue:    st.rawValue,
+    segmentKey:     st.segKey,
+    subgroupKey:    st.subKey,
+    subLabel:       st.subLabel,
+    schedulingMode: st.schedulingMode,
+    competitor:     st.competitor,
+    origin:         st.leadOrigin,
+    campaignActive: st.campaignActive
+  };
+  var ar = st.activeReservation;
+
   renderInlineValue('resvLeadId', 'leadId');
   renderInlineValue('resvClientEmail', 'clientEmail');
   document.getElementById('resvCloser').textContent  = '****';
-  document.getElementById('resvSlot').textContent    = st.selectedSlotLabel || '—';
-  document.getElementById('resvSeg').textContent     = SEGS[st.segKey].label + ' · ' + st.subLabel;
-  document.getElementById('resvVal').textContent     = fmtBRL(st.rawValue);
-  document.getElementById('resvSub').textContent     = st.selectedSlotLabel + ' · ' + fmtBRL(st.rawValue);
-  st.tempEventId = data.tempEventId;
+  document.getElementById('resvSlot').textContent    = ar.slotLabel || '—';
+  document.getElementById('resvSeg').textContent     = SEGS[ar.segmentKey].label + ' · ' + ar.subLabel;
+  document.getElementById('resvVal').textContent     = fmtBRL(ar.clientValue);
+  document.getElementById('resvSub').textContent     = ar.slotLabel + ' · ' + fmtBRL(ar.clientValue);
   reservationExpiresAt = Date.now() + (24 * 60 * 60 * 1000);
   startReservationTimer();
+
+  // Libera a sdrView pro SDR já iniciar outro lead — a reserva atual segue viva em
+  // st.activeReservation e acompanhável na aba "Aguardando confirmação".
+  resetAll();
   document.getElementById('reservationState').style.display = 'block';
-  showToast('Horário reservado com sucesso', 'success');
+
+  showToast('Reserva criada — acompanhe em Aguardando confirmação', 'success');
+  switchTab('pending');
+  setTimeout(function(){ switchTab('sdr'); }, 2000);
 }
 
 const PENCIL_ICON = '<svg class="confirm-edit-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>';
 
-// Reexibe o valor de st[stateKey] em modo texto (com o ícone de lápis) dentro do container.
+// Reexibe o valor de st.activeReservation[stateKey] em modo texto (com o ícone de lápis).
+// resvLeadId/resvClientEmail representam sempre a reserva ativa, nunca o lead em
+// andamento na sdrView — por isso lêem de activeReservation, não de st[stateKey] direto.
 function renderInlineValue(containerId, stateKey) {
   var container = document.getElementById(containerId);
   if (!container) return;
-  container.innerHTML = '<span class="confirm-v-text">' + (st[stateKey] || '—') + '</span>' + PENCIL_ICON;
+  var ar = st.activeReservation || {};
+  container.innerHTML = '<span class="confirm-v-text">' + (ar[stateKey] || '—') + '</span>' + PENCIL_ICON;
 }
 
 // Troca o container pra um <input> editável. Enter/blur salva; Escape descarta.
@@ -677,7 +707,8 @@ function renderInlineValue(containerId, stateKey) {
 export function startInlineEdit(containerId, stateKey) {
   var container = document.getElementById(containerId);
   if (!container || container.querySelector('input')) return;
-  var previousValue = st[stateKey] || '';
+  var ar = st.activeReservation || {};
+  var previousValue = ar[stateKey] || '';
 
   var input = document.createElement('input');
   input.type = 'text';
@@ -690,7 +721,7 @@ export function startInlineEdit(containerId, stateKey) {
 
   input.addEventListener('blur', function() {
     var newValue = input.value.trim();
-    st[stateKey] = newValue || previousValue;
+    if (st.activeReservation) st.activeReservation[stateKey] = newValue || previousValue;
     renderInlineValue(containerId, stateKey);
   });
   input.addEventListener('keydown', function(e) {
@@ -725,34 +756,41 @@ export async function doConfirmFinal(){
   var btn = document.querySelector('.btn-confirm-final');
   btn.disabled = true; btn.textContent = 'Confirmando...';
   if (reservationTimer) clearInterval(reservationTimer);
+  var ar = st.activeReservation || {};
   try {
     const res = await authFetch(API.confirm, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        closerId:      st.closerId,
-        slotId:        st.selectedSlotId,
-        slotStart:     st.selectedSlotStart,
-        slotEnd:       st.selectedSlotEnd,
-        tempEventId:   st.tempEventId,
-        leadId:        st.leadId,
-        clientEmail:   st.clientEmail,
-        clientValue:   st.rawValue,
-        segmentKey:    st.segKey,
-        subgroupKey:   st.subKey,
+        closerId:      ar.closerId,
+        slotId:        ar.slotId,
+        slotStart:     ar.slotStart,
+        slotEnd:       ar.slotEnd,
+        tempEventId:   ar.tempEventId,
+        leadId:        ar.leadId,
+        clientEmail:   ar.clientEmail,
+        clientValue:   ar.clientValue,
+        segmentKey:    ar.segmentKey,
+        subgroupKey:   ar.subgroupKey,
         sdrEmail:      session ? session.email : '',
         ts:            new Date().toISOString(),
-        mode:          st.schedulingMode === 'specific' ? 'specific_date' : 'schedule',
-        competitor:    st.competitor || '',
-        origin:        st.leadOrigin || '',
-        campaignActive: st.campaignActive || false
+        mode:          ar.schedulingMode === 'specific' ? 'specific_date' : 'schedule',
+        competitor:    ar.competitor || '',
+        origin:        ar.origin || '',
+        campaignActive: ar.campaignActive || false
       })
     });
     const raw = await res.json();
     const data = Array.isArray(raw) ? raw[0] : raw;
     if (data.error) throw new Error(data.error);
     document.getElementById('reservationState').style.display = 'none';
-    showSuccess(data);
+    var closerName = data.closerName || '****';
+    // Sem tela de sucesso na sdrView de propósito: um segundo lead pode estar em
+    // andamento por lá, e essa confirmação (de uma reserva diferente, feita pela
+    // aba Pending) não pode sobrepor ou afetar o formulário desse outro lead.
+    showToast('Reunião confirmada com ' + closerName + ' — não esqueça de converter a opp no Salesforce.', 'success', 7000);
+    st.activeReservation = null;
+    switchTab('sdr');
   } catch(e) {
     showToast('Erro ao confirmar: ' + e.message, 'error', 5000);
     btn.disabled = false; btn.textContent = 'Cliente confirmou';
@@ -763,56 +801,29 @@ export async function doCancelReserve(){
   var btn = document.querySelector('.btn-cancel-reserve');
   btn.disabled = true; btn.textContent = 'Cancelando...';
   if (reservationTimer) clearInterval(reservationTimer);
+  var ar = st.activeReservation || {};
   try {
     const res = await authFetch(API.cancelReserve, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        closerId:    st.closerId,
-        slotId:      st.selectedSlotId,
-        slotStart:   st.selectedSlotStart,
-        slotEnd:     st.selectedSlotEnd,
-        tempEventId: st.tempEventId,
+        closerId:    ar.closerId,
+        slotId:      ar.slotId,
+        slotStart:   ar.slotStart,
+        slotEnd:     ar.slotEnd,
+        tempEventId: ar.tempEventId,
       })
     });
     const data = await res.json();
     if (data.error) throw new Error(data.error);
     showToast('Reserva cancelada — slot liberado', 'info');
-    resetAll();
+    document.getElementById('reservationState').style.display = 'none';
+    st.activeReservation = null;
+    switchTab('sdr');
   } catch(e) {
     showToast('Erro ao cancelar: ' + e.message, 'error', 5000);
     btn.disabled = false; btn.textContent = 'Cancelar reserva';
   }
-}
-
-
-export function showSuccess(data){
-  document.getElementById('c1').style.display='none';
-  document.getElementById('c2').style.display='none';
-  document.querySelector('.steps').style.display='none';
-
-  /* Foto: prioridade → API → mapa local → pool aleatório */
-  var photo = data.closerPhoto || getCloserPhoto(st.closerId);
-  var name  = data.closerName || '—';
-
-  var imgEl = document.getElementById('revPhoto');
-  var initEl = document.getElementById('revInitials');
-  if (photo) {
-    imgEl.src = photo;
-    imgEl.alt = name;
-    imgEl.style.display = 'block';
-    initEl.style.display = 'none';
-  } else {
-    initEl.textContent = name[0].toUpperCase();
-    initEl.style.display = 'flex';
-    imgEl.style.display = 'none';
-  }
-
-  document.getElementById('revName').textContent = name;
-  document.getElementById('revNameAlert').textContent = name;
-  document.getElementById('revRole').textContent = SEGS[st.segKey].label + ' · ' + st.subLabel;
-  document.getElementById('succSub').textContent = st.selectedSlotLabel + ' · ' + fmtBRL(st.rawValue);
-  document.getElementById('successState').style.display = 'block';
 }
 
 export function resetAll(){
