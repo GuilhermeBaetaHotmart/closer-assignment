@@ -99,12 +99,13 @@ export function setupRole(d) {
   const role = (d.role || '').toLowerCase().trim();
   const tabSdr     = document.getElementById('tabSdr');
   const tabMercado = document.getElementById('tabMercado');
+  const tabPending = document.getElementById('tabPending');
   const tabAdmin   = document.getElementById('tabAdmin');
   const navTabs    = document.getElementById('navTabs');
   const adminTabs  = document.getElementById('adminTabs');
 
   // Reset
-  [tabSdr, tabMercado, tabAdmin].forEach(function(t){ if(t) t.style.display='none'; });
+  [tabSdr, tabMercado, tabPending, tabAdmin].forEach(function(t){ if(t) t.style.display='none'; });
   navTabs.style.display = 'none';
   adminTabs.style.display = 'none';
 
@@ -112,6 +113,7 @@ export function setupRole(d) {
     navTabs.style.display = 'block';
     tabSdr.style.display = '';
     tabMercado.style.display = '';
+    tabPending.style.display = '';
     switchTab('sdr');
   } else if (role === 'closer') {
     navTabs.style.display = 'block';
@@ -121,6 +123,7 @@ export function setupRole(d) {
     navTabs.style.display = 'block';
     tabSdr.style.display = '';
     tabMercado.style.display = '';
+    tabPending.style.display = '';
     tabAdmin.style.display = '';
     document.getElementById('adminViewMode').style.display = '';
     switchTab('sdr');
@@ -133,6 +136,7 @@ export function setupRole(d) {
     // Role desconhecida: não mostra nenhuma aba, evita ficar travado em uma view antiga
     document.getElementById('sdrView').style.display = 'none';
     document.getElementById('mercadoView').style.display = 'none';
+    document.getElementById('pendingView').style.display = 'none';
     document.getElementById('adminView').style.display = 'none';
   }
 

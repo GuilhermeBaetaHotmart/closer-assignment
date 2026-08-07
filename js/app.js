@@ -11,9 +11,10 @@ import {
   applySlotFilters, setFilterDay, setFilterPeriod, rejectAgenda, renderRefused, goBackToCloser,
   renderQueueHint, doReserveSpecific, doReserve, showReservationState, startReservationTimer,
   doConfirmFinal, doCancelReserve, showSuccess, resetAll, onCompetitorChange, onLeadOriginChange, startInlineEdit,
-  loadPendingReservations, doCancelReserveById
+  doCancelReserveById
 } from './sdr.js?v=20260702-1332';
 import { loadMercado, acceptLead, removeLead } from './mercado.js?v=20260702-1332';
+import { loadPendingView } from './pending.js?v=20260702-1332';
 import { switchTab, switchDashTab, setAdminViewMode } from './navigation.js?v=20260702-1332';
 import { setPeriod, setSegFilter, loadDashboard, exportHistory } from './dashboard-core.js?v=20260702-1332';
 import { loadCapacity } from './dashboard-capacity.js?v=20260702-1332';
@@ -37,6 +38,7 @@ Object.assign(window, {
   doCancelReserveById,
   changeWeek: function(dir){ if(st.slotsLoading) return; st.weekOffset += dir; st.filterDay = 'all'; st.filterPeriod = 'all'; fetchSlots(); },
   loadMercado, acceptLead, removeLead,
+  loadPendingView,
   switchTab, switchDashTab, setAdminViewMode,
   setPeriod, setSegFilter, loadDashboard, exportHistory,
   loadCapacity, loadSecurity,

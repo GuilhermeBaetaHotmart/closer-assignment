@@ -13,18 +13,19 @@ import { loadCampaigns } from './dashboard-campaigns.js?v=20260702-1332';
 import { loadTimeConfig } from './dashboard-time.js?v=20260702-1332';
 import { loadEscalationConfig } from './dashboard-escalation.js?v=20260702-1332';
 import { loadQueueSetup } from './dashboard-queue-setup.js?v=20260702-1332';
-import { loadPendingReservations } from './sdr.js?v=20260702-1332';
+import { loadPendingView } from './pending.js?v=20260702-1332';
 
 
 export function switchTab(tab){
   // tabs novas
   var tSdr     = document.getElementById('tabSdr');
   var tMercado = document.getElementById('tabMercado');
+  var tPending = document.getElementById('tabPending');
   var tAdmin   = document.getElementById('tabAdmin');
   var tSdrL    = document.getElementById('tabSdrLegacy');
   var tAdminL  = document.getElementById('tabAdminLegacy');
 
-  [tSdr,tMercado,tAdmin,tSdrL,tAdminL].forEach(function(t){ if(t){ t.classList.remove('active'); t.setAttribute('aria-selected','false'); } });
+  [tSdr,tMercado,tPending,tAdmin,tSdrL,tAdminL].forEach(function(t){ if(t){ t.classList.remove('active'); t.setAttribute('aria-selected','false'); } });
 
   var active = document.getElementById('tab' + tab.charAt(0).toUpperCase() + tab.slice(1));
   if (active) { active.classList.add('active'); active.setAttribute('aria-selected','true'); }
@@ -33,11 +34,12 @@ export function switchTab(tab){
 
   document.getElementById('sdrView').style.display     = tab==='sdr'     ? '' : 'none';
   document.getElementById('mercadoView').style.display = tab==='mercado' ? '' : 'none';
+  document.getElementById('pendingView').style.display = tab==='pending' ? '' : 'none';
   document.getElementById('adminView').style.display   = tab==='admin'   ? '' : 'none';
 
   if (tab==='admin')   loadDashboard();
   if (tab==='mercado') loadMercado();
-  if (tab==='sdr')     loadPendingReservations();
+  if (tab==='pending') loadPendingView();
 }
 
 export function switchDashTab(tab, btn) {

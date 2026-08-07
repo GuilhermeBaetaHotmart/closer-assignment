@@ -46,46 +46,9 @@ export async function loadActiveCompetitorsField() {
   }
 }
 
-export async function loadPendingReservations() {
-  var section = document.getElementById('pendingReservations');
-  var list = document.getElementById('pendingList');
-  if (!section || !list) return;
-
-  try {
-    const r = await authFetch(API.reservationsList);
-    const raw = await r.json();
-    const all = Array.isArray(raw) ? raw : (raw.reservations || []);
-    const email = session ? session.email : null;
-    const mine = all.filter(function(res){ return res.sdrEmail === email; });
-
-    if (!mine.length) {
-      section.style.display = 'none';
-      list.innerHTML = '';
-      return;
-    }
-    renderPendingReservations(mine);
-    section.style.display = '';
-  } catch(e) {
-    section.style.display = 'none';
-  }
-}
-
-function renderPendingReservations(items) {
-  var list = document.getElementById('pendingList');
-  list.innerHTML = items.map(function(res){
-    var urgent = res.remainingMs != null && res.remainingMs < 3 * 60 * 60 * 1000;
-    return '<div class="pending-item" id="pending_'+res.slotId+'">' +
-      '<div class="pending-item-main">' +
-        '<span class="pending-lead-id">'+(res.leadId||'—')+'</span>' +
-        '<span class="pending-slot">'+(res.slotLabel||'—')+'</span>' +
-        '<span class="pending-subgroup">'+(res.subgroupKey||'—')+'</span>' +
-        '<span class="pending-remaining'+(urgent?' urgent':'')+'">'+(res.remainingLabel||'—')+'</span>' +
-      '</div>' +
-      '<button type="button" class="btn btn-ghost pending-cancel-btn" onclick="doCancelReserveById(\''+res.slotId+'\',\''+res.sdrEmail+'\')">Cancelar</button>' +
-    '</div>';
-  }).join('');
-}
-
+// Usada pela aba "Aguardando confirmação" (pending.js) para cancelar uma reserva
+// da lista completa. O item/lista alvo (#pendingView_<slotId> / #pendingViewList)
+// pertencem ao markup renderizado por pending.js.
 export async function doCancelReserveById(slotId, sdrEmail) {
   try {
     const res = await authFetch(API.cancelReserve, {
@@ -96,11 +59,11 @@ export async function doCancelReserveById(slotId, sdrEmail) {
     const data = await res.json();
     if (data.error) throw new Error(data.error);
 
-    var item = document.getElementById('pending_'+slotId);
+    var item = document.getElementById('pendingView_'+slotId);
     if (item) item.remove();
-    var list = document.getElementById('pendingList');
+    var list = document.getElementById('pendingViewList');
     if (list && !list.children.length) {
-      document.getElementById('pendingReservations').style.display = 'none';
+      list.innerHTML = '<div class="pending-empty">Nenhuma reserva pendente no momento.</div>';
     }
     showToast('Reserva cancelada', 'info');
   } catch(e) {

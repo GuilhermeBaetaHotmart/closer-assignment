@@ -92,6 +92,7 @@
       <div class="nav-tabs" role="tablist">
         <button class="nav-tab active" id="tabSdr" onclick="switchTab('sdr')" role="tab" aria-selected="true" style="display:none">Nova Oportunidade</button>
         <button class="nav-tab" id="tabMercado" onclick="switchTab('mercado')" role="tab" aria-selected="false" style="display:none">Mercado</button>
+        <button class="nav-tab" id="tabPending" onclick="switchTab('pending')" role="tab" aria-selected="false" style="display:none">Aguardando confirmação</button>
         <button class="nav-tab" id="tabAdmin" onclick="switchTab('admin')" role="tab" aria-selected="false" style="display:none">Dashboard Admin</button>
       </div>
     </div>
@@ -123,12 +124,6 @@
           <div class="step-dot" id="b3">3</div>
           <span class="step-label" id="l3">Confirmação</span>
         </div>
-      </div>
-
-      <!-- Minhas reservas pendentes -->
-      <div class="pending-card" id="pendingReservations" style="display:none">
-        <div class="pending-card-title">Minhas reservas pendentes</div>
-        <div id="pendingList" class="pending-list"></div>
       </div>
 
       <!-- Step 1 -->
@@ -873,6 +868,11 @@
         <div class="mercado-empty">Carregando...</div>
       </div>
     </div>
+  </div>
+
+  <!-- ── PENDING VIEW (Aguardando confirmação) ── -->
+  <div id="pendingView" style="display:none">
+    <!-- conteúdo gerenciado por pending.js -->
   </div>
 
 </div><!-- /appScreen -->
