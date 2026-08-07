@@ -2,8 +2,8 @@
    app.js — Orquestrador principal
    ══════════════════════════════════════════════ */
 
-import { session, st, setSession } from './state.js?v=20260702-1332';
-import { doLogin, doLogout, setupRole, authFetch, isSessionExpired, touchActivity, startInactivityWatch } from './auth.js?v=20260702-1332';
+import { session, st, setSession } from './state.js?v=20260807-1300';
+import { doLogin, doLogout, setupRole, authFetch, isSessionExpired, touchActivity, startInactivityWatch } from './auth.js?v=20260807-1300';
 import {
   loadActiveCompetitorsField, updateTag, goStep2, selectSchedulingMode, validateSlotPicker,
   submitSpecificSlot, backToStep1,
@@ -12,22 +12,22 @@ import {
   renderQueueHint, doReserveSpecific, doReserve, showReservationState, startReservationTimer,
   doConfirmFinal, doCancelReserve, resetAll, onCompetitorChange, onLeadOriginChange, startInlineEdit,
   doCancelReserveById
-} from './sdr.js?v=20260702-1332';
-import { loadMercado, acceptLead, removeLead } from './mercado.js?v=20260702-1332';
-import { loadPendingView, confirmReserveById } from './pending.js?v=20260702-1332';
-import { switchTab, switchDashTab, setAdminViewMode } from './navigation.js?v=20260702-1332';
-import { setPeriod, setSegFilter, loadDashboard, exportHistory } from './dashboard-core.js?v=20260702-1332';
-import { loadCapacity } from './dashboard-capacity.js?v=20260702-1332';
-import { loadSecurity } from './dashboard-security.js?v=20260702-1332';
-import { loadCampaigns, addCampaign, toggleCampaign } from './dashboard-campaigns.js?v=20260702-1332';
-import { loadTimeConfig, editCloserOverride, saveCloserOverride, clearCloserOverride, saveSegmentDefault } from './dashboard-time.js?v=20260702-1332';
-import { loadEscalationConfig, editEscalationLeader, saveEscalationLeader, removeEscalationLeader, addEscalationLeader } from './dashboard-escalation.js?v=20260702-1332';
-import { loadQueueSetup, toggleEligibility } from './dashboard-queue-setup.js?v=20260702-1332';
-import { toggleCloser } from './closers.js?v=20260702-1332';
-import { setSlotView, togglePrepAdjust, syncPrepAdjustToggleUI } from './agenda.js?v=20260702-1332';
-import { showToast, toggleTheme } from './ui.js?v=20260702-1332';
-import { fmtBRL, classify, getCloserPhoto, getMon } from './utils.js?v=20260702-1332';
-import './animation.js?v=20260702-1332';
+} from './sdr.js?v=20260807-1300';
+import { loadMercado, acceptLead, removeLead } from './mercado.js?v=20260807-1300';
+import { loadPendingView, confirmReserveById } from './pending.js?v=20260807-1300';
+import { switchTab, switchDashTab, setAdminViewMode } from './navigation.js?v=20260807-1300';
+import { setPeriod, setSegFilter, loadDashboard, exportHistory } from './dashboard-core.js?v=20260807-1300';
+import { loadCapacity } from './dashboard-capacity.js?v=20260807-1300';
+import { loadSecurity } from './dashboard-security.js?v=20260807-1300';
+import { loadCampaigns, addCampaign, toggleCampaign } from './dashboard-campaigns.js?v=20260807-1300';
+import { loadTimeConfig, editCloserOverride, saveCloserOverride, clearCloserOverride, saveSegmentDefault } from './dashboard-time.js?v=20260807-1300';
+import { loadEscalationConfig, editEscalationLeader, saveEscalationLeader, removeEscalationLeader, addEscalationLeader } from './dashboard-escalation.js?v=20260807-1300';
+import { loadQueueSetup, toggleEligibility } from './dashboard-queue-setup.js?v=20260807-1300';
+import { toggleCloser } from './closers.js?v=20260807-1300';
+import { setSlotView, togglePrepAdjust, syncPrepAdjustToggleUI } from './agenda.js?v=20260807-1300';
+import { showToast, toggleTheme } from './ui.js?v=20260807-1300';
+import { fmtBRL, classify, getCloserPhoto, getMon } from './utils.js?v=20260807-1300';
+import './animation.js?v=20260807-1300';
 
 /* ── Expõe no window tudo que é chamado via onclick/onchange no HTML ── */
 Object.assign(window, {

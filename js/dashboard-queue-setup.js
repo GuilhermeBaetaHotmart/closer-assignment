@@ -4,9 +4,9 @@
    ══════════════════════════════════════════════ */
 
 
-import { API, SEGS } from './api.js?v=20260702-1332';
-import { authFetch } from './auth.js?v=20260702-1332';
-import { showToast } from './ui.js?v=20260702-1332';
+import { API, SEGS } from './api.js?v=20260807-1300';
+import { authFetch } from './auth.js?v=20260807-1300';
+import { showToast } from './ui.js?v=20260807-1300';
 
 export async function loadQueueSetup() {
   var sections = document.getElementById('queueSetupSections');

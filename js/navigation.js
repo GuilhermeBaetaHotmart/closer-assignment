@@ -3,17 +3,17 @@
    ══════════════════════════════════════════════ */
 
 
-import { session, st } from './state.js?v=20260702-1332';
-import { setupRole } from './auth.js?v=20260702-1332';
-import { loadDashboard } from './dashboard-core.js?v=20260702-1332';
-import { loadMercado } from './mercado.js?v=20260702-1332';
-import { loadCapacity } from './dashboard-capacity.js?v=20260702-1332';
-import { loadSecurity } from './dashboard-security.js?v=20260702-1332';
-import { loadCampaigns } from './dashboard-campaigns.js?v=20260702-1332';
-import { loadTimeConfig } from './dashboard-time.js?v=20260702-1332';
-import { loadEscalationConfig } from './dashboard-escalation.js?v=20260702-1332';
-import { loadQueueSetup } from './dashboard-queue-setup.js?v=20260702-1332';
-import { loadPendingView } from './pending.js?v=20260702-1332';
+import { session, st } from './state.js?v=20260807-1300';
+import { setupRole } from './auth.js?v=20260807-1300';
+import { loadDashboard } from './dashboard-core.js?v=20260807-1300';
+import { loadMercado } from './mercado.js?v=20260807-1300';
+import { loadCapacity } from './dashboard-capacity.js?v=20260807-1300';
+import { loadSecurity } from './dashboard-security.js?v=20260807-1300';
+import { loadCampaigns } from './dashboard-campaigns.js?v=20260807-1300';
+import { loadTimeConfig } from './dashboard-time.js?v=20260807-1300';
+import { loadEscalationConfig } from './dashboard-escalation.js?v=20260807-1300';
+import { loadQueueSetup } from './dashboard-queue-setup.js?v=20260807-1300';
+import { loadPendingView } from './pending.js?v=20260807-1300';
 
 
 export function switchTab(tab){

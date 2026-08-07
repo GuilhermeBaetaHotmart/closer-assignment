@@ -3,14 +3,14 @@
    ══════════════════════════════════════════════ */
 
 
-import { API, SEGS } from './api.js?v=20260702-1332';
-import { session, st } from './state.js?v=20260702-1332';
-import { classify, fmtBRL, getMon, extractLeadId } from './utils.js?v=20260702-1332';
-import { authFetch } from './auth.js?v=20260702-1332';
-import { showToast } from './ui.js?v=20260702-1332';
-import { markDone, markActive } from './animation.js?v=20260702-1332';
-import { renderAgenda, setSlotView } from './agenda.js?v=20260702-1332';
-import { switchTab } from './navigation.js?v=20260702-1332';
+import { API, SEGS } from './api.js?v=20260807-1300';
+import { session, st } from './state.js?v=20260807-1300';
+import { classify, fmtBRL, getMon, extractLeadId } from './utils.js?v=20260807-1300';
+import { authFetch } from './auth.js?v=20260807-1300';
+import { showToast } from './ui.js?v=20260807-1300';
+import { markDone, markActive } from './animation.js?v=20260807-1300';
+import { renderAgenda, setSlotView } from './agenda.js?v=20260807-1300';
+import { switchTab } from './navigation.js?v=20260807-1300';
 
 let reservationExpiresAt = null;
 let reservationTimer = null;
