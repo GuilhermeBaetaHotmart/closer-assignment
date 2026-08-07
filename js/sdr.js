@@ -46,6 +46,68 @@ export async function loadActiveCompetitorsField() {
   }
 }
 
+export async function loadPendingReservations() {
+  var section = document.getElementById('pendingReservations');
+  var list = document.getElementById('pendingList');
+  if (!section || !list) return;
+
+  try {
+    const r = await authFetch(API.reservationsList);
+    const raw = await r.json();
+    const all = Array.isArray(raw) ? raw : (raw.reservations || []);
+    const email = session ? session.email : null;
+    const mine = all.filter(function(res){ return res.sdrEmail === email; });
+
+    if (!mine.length) {
+      section.style.display = 'none';
+      list.innerHTML = '';
+      return;
+    }
+    renderPendingReservations(mine);
+    section.style.display = '';
+  } catch(e) {
+    section.style.display = 'none';
+  }
+}
+
+function renderPendingReservations(items) {
+  var list = document.getElementById('pendingList');
+  list.innerHTML = items.map(function(res){
+    var urgent = res.remainingMs != null && res.remainingMs < 3 * 60 * 60 * 1000;
+    return '<div class="pending-item" id="pending_'+res.slotId+'">' +
+      '<div class="pending-item-main">' +
+        '<span class="pending-lead-id">'+(res.leadId||'—')+'</span>' +
+        '<span class="pending-slot">'+(res.slotLabel||'—')+'</span>' +
+        '<span class="pending-subgroup">'+(res.subgroupKey||'—')+'</span>' +
+        '<span class="pending-remaining'+(urgent?' urgent':'')+'">'+(res.remainingLabel||'—')+'</span>' +
+      '</div>' +
+      '<button type="button" class="btn btn-ghost pending-cancel-btn" onclick="doCancelReserveById(\''+res.slotId+'\',\''+res.sdrEmail+'\')">Cancelar</button>' +
+    '</div>';
+  }).join('');
+}
+
+export async function doCancelReserveById(slotId, sdrEmail) {
+  try {
+    const res = await authFetch(API.cancelReserve, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ slotId: slotId })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+
+    var item = document.getElementById('pending_'+slotId);
+    if (item) item.remove();
+    var list = document.getElementById('pendingList');
+    if (list && !list.children.length) {
+      document.getElementById('pendingReservations').style.display = 'none';
+    }
+    showToast('Reserva cancelada', 'info');
+  } catch(e) {
+    showToast('Erro ao cancelar: ' + e.message, 'error', 5000);
+  }
+}
+
 export function updateTag() {
   const r=classify(st.rawValue);
   const el=document.getElementById('segTag');
@@ -493,7 +555,7 @@ export function setFilterPeriod(val, btn) {
 }
 
 export async function rejectAgenda(){
-  if(!st.queue.length){ alert('Não há mais closers disponíveis neste segmento.'); return; }
+  if(!st.closerId) return;
   // Registra o pulo antes de trocar o closer
   try {
     await authFetch(API.skip, {
@@ -508,15 +570,43 @@ export async function rejectAgenda(){
   } catch(e) {
     console.warn('[skip] Erro ao registrar pulo:', e.message);
   }
-  st.refused.push(st.closerId); st.closerId=st.queue.shift(); st.weekOffset=0;
+  st.refused.push(st.closerId);
+
+  if (!st.queue.length) {
+    // Sem próximo closer na fila — em vez de travar o SDR, deixa revisar os recusados
+    st.closerId = null;
+    document.getElementById('slotsGrid').innerHTML='<div class="slot-empty">Nenhum closer restante na fila.</div>';
+    document.getElementById('queueInfo').textContent = 'Todos os closers foram verificados. Clique em um abaixo para revisar a agenda.';
+    renderRefused();
+    return;
+  }
+
+  st.closerId=st.queue.shift(); st.weekOffset=0;
   fetchSlots(); renderRefused(); renderQueueHint();
+}
+
+// Volta a exibir a agenda de um closer já recusado, sem criar nova reserva.
+// O closer atualmente selecionado (se houver) retorna para a frente da fila.
+export function goBackToCloser(closerIdFromRefused){
+  var idx = st.refused.indexOf(closerIdFromRefused);
+  if (idx === -1) return;
+  st.refused.splice(idx, 1);
+  if (st.closerId) st.queue.unshift(st.closerId);
+  st.closerId = closerIdFromRefused;
+  st.weekOffset = 0;
+  document.getElementById('noAvailBanner').classList.remove('show');
+  fetchSlots();
+  renderRefused();
+  renderQueueHint();
 }
 
 export function renderRefused(){
   const log=document.getElementById('refusedLog'); const items=document.getElementById('refusedItems');
   if(!st.refused.length){ log.style.display='none'; return; }
   log.style.display='block';
-  items.innerHTML=st.refused.map(function(_,i){ return '<div class="refused-item">→ Closer '+(i+1)+' — agenda indisponível</div>'; }).join('');
+  items.innerHTML=st.refused.map(function(id,i){
+    return '<button type="button" class="refused-item" onclick="goBackToCloser(\''+id+'\')">↺ Closer '+(i+1)+' — agenda indisponível — clique para revisar</button>';
+  }).join('');
 }
 
 export function renderQueueHint(){
@@ -596,7 +686,8 @@ export function showReservationState(data) {
   document.getElementById('c1').style.display = 'none';
   document.getElementById('c2').style.display = 'none';
   document.querySelector('.steps').style.display = 'none';
-  document.getElementById('resvLeadId').textContent  = st.leadId || '—';
+  renderInlineValue('resvLeadId', 'leadId');
+  renderInlineValue('resvClientEmail', 'clientEmail');
   document.getElementById('resvCloser').textContent  = '****';
   document.getElementById('resvSlot').textContent    = st.selectedSlotLabel || '—';
   document.getElementById('resvSeg').textContent     = SEGS[st.segKey].label + ' · ' + st.subLabel;
@@ -607,6 +698,42 @@ export function showReservationState(data) {
   startReservationTimer();
   document.getElementById('reservationState').style.display = 'block';
   showToast('Horário reservado com sucesso', 'success');
+}
+
+const PENCIL_ICON = '<svg class="confirm-edit-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>';
+
+// Reexibe o valor de st[stateKey] em modo texto (com o ícone de lápis) dentro do container.
+function renderInlineValue(containerId, stateKey) {
+  var container = document.getElementById(containerId);
+  if (!container) return;
+  container.innerHTML = '<span class="confirm-v-text">' + (st[stateKey] || '—') + '</span>' + PENCIL_ICON;
+}
+
+// Troca o container pra um <input> editável. Enter/blur salva; Escape descarta.
+// Valor vazio nunca é salvo — restaura o anterior.
+export function startInlineEdit(containerId, stateKey) {
+  var container = document.getElementById(containerId);
+  if (!container || container.querySelector('input')) return;
+  var previousValue = st[stateKey] || '';
+
+  var input = document.createElement('input');
+  input.type = 'text';
+  input.className = 'inline-edit-input';
+  input.value = previousValue;
+  container.innerHTML = '';
+  container.appendChild(input);
+  input.focus();
+  input.select();
+
+  input.addEventListener('blur', function() {
+    var newValue = input.value.trim();
+    st[stateKey] = newValue || previousValue;
+    renderInlineValue(containerId, stateKey);
+  });
+  input.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
+    else if (e.key === 'Escape') { input.value = previousValue; input.blur(); }
+  });
 }
 
 export function startReservationTimer() {

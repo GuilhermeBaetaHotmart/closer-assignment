@@ -125,6 +125,12 @@
         </div>
       </div>
 
+      <!-- Minhas reservas pendentes -->
+      <div class="pending-card" id="pendingReservations" style="display:none">
+        <div class="pending-card-title">Minhas reservas pendentes</div>
+        <div id="pendingList" class="pending-list"></div>
+      </div>
+
       <!-- Step 1 -->
       <div class="card" id="c1">
         <div class="card-eyebrow">Passo 1</div>
@@ -360,7 +366,8 @@
           </div>
 
           <div class="reservation-detail">
-            <div class="confirm-row"><span class="confirm-k">Lead ID</span><span class="confirm-v" id="resvLeadId">—</span></div>
+            <div class="confirm-row"><span class="confirm-k">Lead ID</span><span class="confirm-v confirm-editable" id="resvLeadId" onclick="startInlineEdit('resvLeadId','leadId')" title="Clique para editar"></span></div>
+            <div class="confirm-row"><span class="confirm-k">E-mail do cliente</span><span class="confirm-v confirm-editable" id="resvClientEmail" onclick="startInlineEdit('resvClientEmail','clientEmail')" title="Clique para editar"></span></div>
             <div class="confirm-row"><span class="confirm-k">Closer</span><span class="confirm-v" id="resvCloser">—</span></div>
             <div class="confirm-row"><span class="confirm-k">Horário reservado</span><span class="confirm-v" id="resvSlot">—</span></div>
             <div class="confirm-row"><span class="confirm-k">Segmento</span><span class="confirm-v" id="resvSeg">—</span></div>

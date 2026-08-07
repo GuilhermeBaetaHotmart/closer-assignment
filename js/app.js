@@ -8,9 +8,10 @@ import {
   loadActiveCompetitorsField, updateTag, goStep2, selectSchedulingMode, validateSlotPicker,
   submitSpecificSlot, backToStep1,
   clearSlotAndRetry, goEmergencyPool, fetchCloser, fetchSlots, renderSlots, selectSlot,
-  applySlotFilters, setFilterDay, setFilterPeriod, rejectAgenda, renderRefused,
+  applySlotFilters, setFilterDay, setFilterPeriod, rejectAgenda, renderRefused, goBackToCloser,
   renderQueueHint, doReserveSpecific, doReserve, showReservationState, startReservationTimer,
-  doConfirmFinal, doCancelReserve, showSuccess, resetAll, onCompetitorChange, onLeadOriginChange
+  doConfirmFinal, doCancelReserve, showSuccess, resetAll, onCompetitorChange, onLeadOriginChange, startInlineEdit,
+  loadPendingReservations, doCancelReserveById
 } from './sdr.js?v=20260702-1332';
 import { loadMercado, acceptLead, removeLead } from './mercado.js?v=20260702-1332';
 import { switchTab, switchDashTab, setAdminViewMode } from './navigation.js?v=20260702-1332';
@@ -31,8 +32,9 @@ import './animation.js?v=20260702-1332';
 Object.assign(window, {
   doLogin, doLogout,
   goStep2, selectSchedulingMode, validateSlotPicker, submitSpecificSlot, backToStep1, clearSlotAndRetry, goEmergencyPool,
-  selectSlot, setFilterDay, setFilterPeriod, rejectAgenda, doReserveSpecific, doReserve,
-  doConfirmFinal, doCancelReserve, resetAll, onCompetitorChange, onLeadOriginChange,
+  selectSlot, setFilterDay, setFilterPeriod, rejectAgenda, goBackToCloser, doReserveSpecific, doReserve,
+  doConfirmFinal, doCancelReserve, resetAll, onCompetitorChange, onLeadOriginChange, startInlineEdit,
+  doCancelReserveById,
   changeWeek: function(dir){ if(st.slotsLoading) return; st.weekOffset += dir; st.filterDay = 'all'; st.filterPeriod = 'all'; fetchSlots(); },
   loadMercado, acceptLead, removeLead,
   switchTab, switchDashTab, setAdminViewMode,

@@ -12,6 +12,7 @@ export const API = {
   reserve:       'https://hotmart.app.n8n.cloud/webhook/reserve',
   confirm:       'https://hotmart.app.n8n.cloud/webhook/confirm',
   cancelReserve: 'https://hotmart.app.n8n.cloud/webhook/cancel-reserve',
+  reservationsList: 'https://hotmart.app.n8n.cloud/webhook/reservations-list',
   dashboard:     'https://hotmart.app.n8n.cloud/webhook/dashboard',
   toggle:        'https://hotmart.app.n8n.cloud/webhook/toggle',
   poolAdd:       'https://hotmart.app.n8n.cloud/webhook/pool-add',

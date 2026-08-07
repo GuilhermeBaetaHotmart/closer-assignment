@@ -854,6 +854,46 @@ body.light .cal-loading { background: rgba(255,255,255,0.65); }
 .confirm-k { color: var(--txt-3); font-size: 12px; font-weight: 500; }
 .confirm-v { font-family: 'Space Grotesk', sans-serif; font-weight: 600; color: var(--txt-1); font-size: 13px; }
 
+/* ── Campos editáveis inline (Lead ID / e-mail no card de reserva) ── */
+.confirm-editable {
+  display: inline-flex; align-items: center; gap: 6px;
+  cursor: pointer; border-radius: 4px; padding: 2px 4px; margin: -2px -4px;
+  transition: background 120ms ease;
+}
+.confirm-editable:hover { background: rgba(255,72,0,0.06); }
+.confirm-v-text { font-family: 'Space Grotesk', sans-serif; font-weight: 600; color: var(--txt-1); font-size: 13px; }
+.confirm-edit-icon { flex-shrink: 0; color: var(--txt-3); opacity: 0.7; }
+.confirm-editable:hover .confirm-edit-icon { color: var(--org); opacity: 1; }
+.inline-edit-input {
+  font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 13px;
+  color: var(--txt-1); background: transparent;
+  border: none; border-bottom: 1px solid var(--bd-strong);
+  padding: 0 0 2px; outline: none; min-width: 140px;
+}
+.inline-edit-input:focus { border-bottom-color: var(--org); }
+
+/* ── Minhas reservas pendentes ───────────────── */
+.pending-card {
+  background: var(--bg-card); border: 1px solid var(--bd-default);
+  border-radius: var(--r); padding: 14px 18px; margin-bottom: 18px;
+}
+.pending-card-title {
+  font-size: 11px; font-weight: 700; color: var(--txt-3);
+  text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 10px;
+}
+.pending-list { display: flex; flex-direction: column; gap: 8px; }
+.pending-item {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  background: var(--bg-raised); border: 1px solid var(--bd-default);
+  border-radius: var(--r-sm); padding: 10px 14px; flex-wrap: wrap;
+}
+.pending-item-main { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.pending-lead-id { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 13px; color: var(--txt-1); }
+.pending-slot, .pending-subgroup { font-size: 12px; color: var(--txt-3); }
+.pending-remaining { font-size: 12px; font-weight: 600; color: var(--green); }
+.pending-remaining.urgent { color: var(--org); }
+.pending-cancel-btn { padding: 6px 14px; font-size: 12px; }
+
 /* ── Refused log ─────────────────────────────── */
 .refused-log {
   margin-top: 14px; padding: 12px 16px;
@@ -861,7 +901,13 @@ body.light .cal-loading { background: rgba(255,255,255,0.65); }
   background: rgba(255,212,80,0.04);
 }
 .refused-title { font-size: 11px; font-weight: 700; color: #FFD450; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 7px; }
-.refused-item { font-size: 12px; color: var(--txt-2); padding: 2px 0; }
+.refused-item {
+  display: block; width: 100%; text-align: left;
+  font-family: inherit; font-size: 12px; color: var(--txt-2); padding: 5px 8px;
+  background: transparent; border: 1px solid transparent; border-radius: 6px;
+  cursor: pointer; transition: all 120ms ease;
+}
+.refused-item:hover { border-color: var(--org); color: var(--txt-1); background: rgba(255,72,0,0.06); }
 .queue-hint { margin-top: 10px; font-size: 12px; color: var(--txt-3); }
 
 /* ── Success ─────────────────────────────────── */

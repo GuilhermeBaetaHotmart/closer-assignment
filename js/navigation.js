@@ -13,6 +13,7 @@ import { loadCampaigns } from './dashboard-campaigns.js?v=20260702-1332';
 import { loadTimeConfig } from './dashboard-time.js?v=20260702-1332';
 import { loadEscalationConfig } from './dashboard-escalation.js?v=20260702-1332';
 import { loadQueueSetup } from './dashboard-queue-setup.js?v=20260702-1332';
+import { loadPendingReservations } from './sdr.js?v=20260702-1332';
 
 
 export function switchTab(tab){
@@ -36,6 +37,7 @@ export function switchTab(tab){
 
   if (tab==='admin')   loadDashboard();
   if (tab==='mercado') loadMercado();
+  if (tab==='sdr')     loadPendingReservations();
 }
 
 export function switchDashTab(tab, btn) {
