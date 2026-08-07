@@ -892,6 +892,13 @@ body.light .cal-loading { background: rgba(255,255,255,0.65); }
 .pending-remaining { font-size: 12px; font-weight: 600; color: var(--green); }
 .pending-remaining.urgent { color: var(--org); }
 .pending-cancel-btn { padding: 6px 14px; font-size: 12px; }
+.pending-item-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.pending-confirm-btn {
+  padding: 6px 14px; font-size: 12px; font-weight: 700;
+  background: var(--green); color: #0D0D1A; border: none;
+  border-radius: var(--r-sm); cursor: pointer; transition: all 200ms ease;
+}
+.pending-confirm-btn:hover { filter: brightness(1.1); box-shadow: 0 2px 12px rgba(61,219,168,0.3); }
 
 /* ── Refused log ─────────────────────────────── */
 .refused-log {

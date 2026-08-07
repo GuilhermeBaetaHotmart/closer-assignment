@@ -62,8 +62,9 @@ export async function doCancelReserveById(slotId, sdrEmail) {
 
     var item = document.getElementById('pendingView_'+slotId);
     if (item) item.remove();
+    if (window.__pendingItemsCache) delete window.__pendingItemsCache[slotId];
     var list = document.getElementById('pendingViewList');
-    if (list && !list.children.length) {
+    if (list && !list.children.length && !st.activeReservation) {
       list.innerHTML = '<div class="pending-empty">Nenhuma reserva pendente no momento.</div>';
     }
     showToast('Reserva cancelada', 'info');
