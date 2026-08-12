@@ -8,7 +8,7 @@
 import { API } from './api.js?v=20260807-1300';
 import { session, st } from './state.js?v=20260807-1300';
 import { authFetch } from './auth.js?v=20260807-1300';
-import { showToast } from './ui.js?v=20260807-1300';
+import { showToast, showPoolFallbackModal } from './ui.js?v=20260807-1300';
 
 // Cache dos itens renderizados, indexado por slotId — permite passar o objeto
 // completo pro onclick="confirmReserveById(...)" sem precisar re-fetch nem
@@ -52,7 +52,7 @@ function renderPendingView(items) {
   }
 
   list.innerHTML = items.map(function(res){
-    var urgent = res.remainingMs != null && res.remainingMs < 3 * 60 * 60 * 1000;
+    var urgent = res.remainingMs != null && res.remainingMs < 30 * 60 * 1000;
     return '<div class="pending-item" id="pendingView_'+res.slotId+'">' +
       '<div class="pending-item-main">' +
         '<span class="pending-lead-id">'+(res.leadId||'—')+'</span>' +
@@ -101,6 +101,10 @@ export async function confirmReserveById(reservation) {
     });
     const raw = await res.json();
     const data = Array.isArray(raw) ? raw[0] : raw;
+    if (data.sendToPool) {
+      showPoolFallbackModal(reservation);
+      return;
+    }
     if (data.error) throw new Error(data.error);
 
     var closerName = data.closerName || '****';

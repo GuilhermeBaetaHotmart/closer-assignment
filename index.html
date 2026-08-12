@@ -894,6 +894,18 @@
 <div id="toastContainer" aria-live="polite"></div>
 <div class="env-badge" role="status">HOMOLOGAÇÃO</div>
 
+<!-- Modal: closer indisponível na confirmação (WF2 sendToPool) -->
+<div id="poolFallbackModal" class="modal-overlay" style="display:none" role="dialog" aria-modal="true" aria-labelledby="poolFallbackTitle">
+  <div class="modal-card">
+    <div class="modal-title" id="poolFallbackTitle">Closer indisponível</div>
+    <div class="modal-text">Não encontramos um closer disponível para este horário. Deseja enviar este lead ao Mercado?</div>
+    <div class="modal-btn-row">
+      <button type="button" class="btn btn-ghost" onclick="closePoolFallbackModal()">Cancelar</button>
+      <button type="button" class="btn-confirm-final" id="poolFallbackSendBtn" onclick="confirmPoolFallback()">Enviar ao Mercado</button>
+    </div>
+  </div>
+</div>
+
 <script type="module" src="js/app.js?v=20260807-1300"></script>
 </body>
 </html>

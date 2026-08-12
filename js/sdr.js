@@ -7,7 +7,7 @@ import { API, SEGS } from './api.js?v=20260807-1300';
 import { session, st } from './state.js?v=20260807-1300';
 import { classify, fmtBRL, getMon, extractLeadId } from './utils.js?v=20260807-1300';
 import { authFetch } from './auth.js?v=20260807-1300';
-import { showToast } from './ui.js?v=20260807-1300';
+import { showToast, showPoolFallbackModal } from './ui.js?v=20260807-1300';
 import { markDone, markActive } from './animation.js?v=20260807-1300';
 import { renderAgenda, setSlotView } from './agenda.js?v=20260807-1300';
 import { switchTab } from './navigation.js?v=20260807-1300';
@@ -783,6 +783,11 @@ export async function doConfirmFinal(){
     });
     const raw = await res.json();
     const data = Array.isArray(raw) ? raw[0] : raw;
+    if (data.sendToPool) {
+      btn.disabled = false; btn.textContent = 'Cliente confirmou';
+      showPoolFallbackModal(st.activeReservation);
+      return;
+    }
     if (data.error) throw new Error(data.error);
     document.getElementById('reservationState').style.display = 'none';
     var closerName = data.closerName || '****';

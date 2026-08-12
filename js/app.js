@@ -25,7 +25,7 @@ import { loadEscalationConfig, editEscalationLeader, saveEscalationLeader, remov
 import { loadQueueSetup, toggleEligibility } from './dashboard-queue-setup.js?v=20260807-1300';
 import { toggleCloser } from './closers.js?v=20260807-1300';
 import { setSlotView, togglePrepAdjust, syncPrepAdjustToggleUI } from './agenda.js?v=20260807-1300';
-import { showToast, toggleTheme } from './ui.js?v=20260807-1300';
+import { showToast, toggleTheme, showPoolFallbackModal, confirmPoolFallback, closePoolFallbackModal } from './ui.js?v=20260807-1300';
 import { fmtBRL, classify, getCloserPhoto, getMon } from './utils.js?v=20260807-1300';
 import './animation.js?v=20260807-1300';
 
@@ -46,7 +46,7 @@ Object.assign(window, {
   loadTimeConfig, editCloserOverride, saveCloserOverride, clearCloserOverride, saveSegmentDefault,
   loadEscalationConfig, editEscalationLeader, saveEscalationLeader, removeEscalationLeader, addEscalationLeader,
   loadQueueSetup, toggleEligibility,
-  toggleCloser, toggleTheme,
+  toggleCloser, toggleTheme, showPoolFallbackModal, confirmPoolFallback, closePoolFallbackModal,
   setSlotView, togglePrepAdjust,
 });
 
