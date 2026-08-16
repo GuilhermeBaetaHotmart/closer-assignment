@@ -3,12 +3,12 @@
    ══════════════════════════════════════════════ */
 
 
-import { API, SEGS } from './api.js?v=20260807-1300';
-import { classify, fmtBRL, getCloserPhoto, getMon } from './utils.js?v=20260807-1300';
-import { authFetch } from './auth.js?v=20260807-1300';
-import { showToast } from './ui.js?v=20260807-1300';
+import { API, SEGS } from './api.js?v=20260816-1200';
+import { classify, fmtBRL, getCloserPhoto, getMon } from './utils.js?v=20260816-1200';
+import { authFetch } from './auth.js?v=20260816-1200';
+import { showToast } from './ui.js?v=20260816-1200';
 
-import { session, st } from './state.js?v=20260807-1300';
+import { session, st } from './state.js?v=20260816-1200';
 
 const MAX_RANGE_VAL = 50000000;
 

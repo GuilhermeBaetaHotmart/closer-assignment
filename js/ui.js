@@ -2,9 +2,9 @@
    ui.js — Componentes de UI genéricos
    ══════════════════════════════════════════════ */
 
-import { API } from './api.js?v=20260807-1300';
-import { session } from './state.js?v=20260807-1300';
-import { authFetch } from './auth.js?v=20260807-1300';
+import { API } from './api.js?v=20260816-1200';
+import { session } from './state.js?v=20260816-1200';
+import { authFetch } from './auth.js?v=20260816-1200';
 
 export function showToast(msg, type, duration) {
   var tc = document.getElementById('toastContainer');

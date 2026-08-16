@@ -1519,6 +1519,14 @@ body.light .cal-loading { background: rgba(255,255,255,0.65); }
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
 
+/* ── Atividade no app: badges de role + separador de data ── */
+.role-badge { display: inline-block; font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 99px; }
+.activity-date-sep td {
+  padding: 8px 14px; font-size: 11px; font-weight: 700;
+  color: var(--txt-3); text-transform: uppercase; letter-spacing: 0.6px;
+  background: var(--bg-raised); border-bottom: 1px solid var(--bd-default);
+}
+
 /* ── Capacity: breakdown slots/espaços ───────── */
 .cap-day-breakdown { display: flex; gap: 6px; justify-content: center; margin-top: 6px; flex-wrap: wrap; }
 .cap-slot-badge { font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 99px; background: rgba(255,72,0,0.12); color: var(--org); }

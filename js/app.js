@@ -2,8 +2,8 @@
    app.js — Orquestrador principal
    ══════════════════════════════════════════════ */
 
-import { session, st, setSession } from './state.js?v=20260807-1300';
-import { doLogin, doLogout, setupRole, authFetch, isSessionExpired, touchActivity, startInactivityWatch } from './auth.js?v=20260807-1300';
+import { session, st, setSession } from './state.js?v=20260816-1200';
+import { doLogin, doLogout, setupRole, authFetch, isSessionExpired, touchActivity, startInactivityWatch } from './auth.js?v=20260816-1200';
 import {
   loadActiveCompetitorsField, updateTag, goStep2, selectSchedulingMode, validateSlotPicker,
   submitSpecificSlot, backToStep1,
@@ -12,22 +12,23 @@ import {
   renderQueueHint, doReserveSpecific, doReserve, showReservationState, startReservationTimer,
   doConfirmFinal, doCancelReserve, resetAll, onCompetitorChange, onLeadOriginChange, startInlineEdit,
   doCancelReserveById
-} from './sdr.js?v=20260807-1300';
-import { loadMercado, acceptLead, removeLead } from './mercado.js?v=20260807-1300';
-import { loadPendingView, confirmReserveById } from './pending.js?v=20260807-1300';
-import { switchTab, switchDashTab, setAdminViewMode } from './navigation.js?v=20260807-1300';
-import { setPeriod, setSegFilter, loadDashboard, exportHistory } from './dashboard-core.js?v=20260807-1300';
-import { loadCapacity } from './dashboard-capacity.js?v=20260807-1300';
-import { loadSecurity } from './dashboard-security.js?v=20260807-1300';
-import { loadCampaigns, addCampaign, toggleCampaign } from './dashboard-campaigns.js?v=20260807-1300';
-import { loadTimeConfig, editCloserOverride, saveCloserOverride, clearCloserOverride, saveSegmentDefault } from './dashboard-time.js?v=20260807-1300';
-import { loadEscalationConfig, editEscalationLeader, saveEscalationLeader, removeEscalationLeader, addEscalationLeader } from './dashboard-escalation.js?v=20260807-1300';
-import { loadQueueSetup, toggleEligibility } from './dashboard-queue-setup.js?v=20260807-1300';
-import { toggleCloser } from './closers.js?v=20260807-1300';
-import { setSlotView, togglePrepAdjust, syncPrepAdjustToggleUI } from './agenda.js?v=20260807-1300';
-import { showToast, toggleTheme, showPoolFallbackModal, confirmPoolFallback, closePoolFallbackModal } from './ui.js?v=20260807-1300';
-import { fmtBRL, classify, getCloserPhoto, getMon } from './utils.js?v=20260807-1300';
-import './animation.js?v=20260807-1300';
+} from './sdr.js?v=20260816-1200';
+import { loadMercado, acceptLead, removeLead } from './mercado.js?v=20260816-1200';
+import { loadPendingView, confirmReserveById } from './pending.js?v=20260816-1200';
+import { switchTab, switchDashTab, setAdminViewMode } from './navigation.js?v=20260816-1200';
+import { setPeriod, setSegFilter, loadDashboard, exportHistory } from './dashboard-core.js?v=20260816-1200';
+import { loadCapacity } from './dashboard-capacity.js?v=20260816-1200';
+import { loadSecurity } from './dashboard-security.js?v=20260816-1200';
+import { loadCampaigns, addCampaign, toggleCampaign } from './dashboard-campaigns.js?v=20260816-1200';
+import { loadTimeConfig, editCloserOverride, saveCloserOverride, clearCloserOverride, saveSegmentDefault } from './dashboard-time.js?v=20260816-1200';
+import { loadEscalationConfig, editEscalationLeader, saveEscalationLeader, removeEscalationLeader, addEscalationLeader } from './dashboard-escalation.js?v=20260816-1200';
+import { loadQueueSetup, toggleEligibility } from './dashboard-queue-setup.js?v=20260816-1200';
+import { loadActivity, exportActivity } from './dashboard-activity.js?v=20260816-1200';
+import { toggleCloser } from './closers.js?v=20260816-1200';
+import { setSlotView, togglePrepAdjust, syncPrepAdjustToggleUI } from './agenda.js?v=20260816-1200';
+import { showToast, toggleTheme, showPoolFallbackModal, confirmPoolFallback, closePoolFallbackModal } from './ui.js?v=20260816-1200';
+import { fmtBRL, classify, getCloserPhoto, getMon } from './utils.js?v=20260816-1200';
+import './animation.js?v=20260816-1200';
 
 /* ── Expõe no window tudo que é chamado via onclick/onchange no HTML ── */
 Object.assign(window, {
@@ -46,6 +47,7 @@ Object.assign(window, {
   loadTimeConfig, editCloserOverride, saveCloserOverride, clearCloserOverride, saveSegmentDefault,
   loadEscalationConfig, editEscalationLeader, saveEscalationLeader, removeEscalationLeader, addEscalationLeader,
   loadQueueSetup, toggleEligibility,
+  loadActivity, exportActivity,
   toggleCloser, toggleTheme, showPoolFallbackModal, confirmPoolFallback, closePoolFallbackModal,
   setSlotView, togglePrepAdjust,
 });

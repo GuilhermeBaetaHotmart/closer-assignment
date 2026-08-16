@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<link rel="stylesheet" href="style.css?v=20260807-1300">
+<link rel="stylesheet" href="style.css?v=20260816-1200">
 </head>
 <body>
 
@@ -401,6 +401,7 @@
         <button class="filter-btn" id="dashTabTime" onclick="switchDashTab('time',this)">Tempo</button>
         <button class="filter-btn" id="dashTabEscalation" onclick="switchDashTab('escalation',this)">Escalação</button>
         <button class="filter-btn" id="dashTabQueueSetup" onclick="switchDashTab('queuesetup',this)">Setup de Fila</button>
+        <button class="filter-btn" id="dashTabActivity" onclick="switchDashTab('activity',this)">Atividade no App</button>
       </div>
 
       <!-- Seção Histórico -->
@@ -792,6 +793,38 @@
         </div>
       </div><!-- /dashEscalation -->
 
+      <!-- Seção Atividade no App -->
+      <div id="dashActivity" style="display:none">
+        <div style="max-width:960px;margin:0 auto;padding:0 16px 32px;">
+
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+            <div>
+              <div style="font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:700;color:var(--txt-1);">Atividade no App</div>
+              <div style="font-size:12px;color:var(--txt-3);margin-top:2px;">Log de logins — <span id="activityTotal">—</span> registrados</div>
+            </div>
+            <div style="display:flex;gap:8px;">
+              <button class="btn btn-ghost" onclick="exportActivity()" style="font-size:13px;">⬇ Exportar CSV</button>
+              <button class="btn btn-ghost" onclick="loadActivity()" style="font-size:13px;">↻ Atualizar</button>
+            </div>
+          </div>
+
+          <div class="history-wrap">
+            <table class="history-table">
+              <thead><tr>
+                <th>Nome</th>
+                <th>E-mail</th>
+                <th>Role</th>
+                <th>Horário</th>
+              </tr></thead>
+              <tbody id="activityTableBody">
+                <tr><td colspan="4" class="table-empty">Carregando...</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        </div>
+      </div><!-- /dashActivity -->
+
       <!-- Seção Setup de Fila -->
       <div id="dashQueueSetup" style="display:none">
         <div style="max-width:960px;margin:0 auto;padding:0 16px 32px;">
@@ -906,6 +939,6 @@
   </div>
 </div>
 
-<script type="module" src="js/app.js?v=20260807-1300"></script>
+<script type="module" src="js/app.js?v=20260816-1200"></script>
 </body>
 </html>

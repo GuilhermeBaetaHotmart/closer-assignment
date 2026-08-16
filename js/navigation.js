@@ -3,17 +3,18 @@
    ══════════════════════════════════════════════ */
 
 
-import { session, st } from './state.js?v=20260807-1300';
-import { setupRole } from './auth.js?v=20260807-1300';
-import { loadDashboard } from './dashboard-core.js?v=20260807-1300';
-import { loadMercado } from './mercado.js?v=20260807-1300';
-import { loadCapacity } from './dashboard-capacity.js?v=20260807-1300';
-import { loadSecurity } from './dashboard-security.js?v=20260807-1300';
-import { loadCampaigns } from './dashboard-campaigns.js?v=20260807-1300';
-import { loadTimeConfig } from './dashboard-time.js?v=20260807-1300';
-import { loadEscalationConfig } from './dashboard-escalation.js?v=20260807-1300';
-import { loadQueueSetup } from './dashboard-queue-setup.js?v=20260807-1300';
-import { loadPendingView } from './pending.js?v=20260807-1300';
+import { session, st } from './state.js?v=20260816-1200';
+import { setupRole } from './auth.js?v=20260816-1200';
+import { loadDashboard } from './dashboard-core.js?v=20260816-1200';
+import { loadMercado } from './mercado.js?v=20260816-1200';
+import { loadCapacity } from './dashboard-capacity.js?v=20260816-1200';
+import { loadSecurity } from './dashboard-security.js?v=20260816-1200';
+import { loadCampaigns } from './dashboard-campaigns.js?v=20260816-1200';
+import { loadTimeConfig } from './dashboard-time.js?v=20260816-1200';
+import { loadEscalationConfig } from './dashboard-escalation.js?v=20260816-1200';
+import { loadQueueSetup } from './dashboard-queue-setup.js?v=20260816-1200';
+import { loadActivity } from './dashboard-activity.js?v=20260816-1200';
+import { loadPendingView } from './pending.js?v=20260816-1200';
 
 
 export function switchTab(tab){
@@ -50,6 +51,7 @@ export function switchDashTab(tab, btn) {
   document.getElementById('dashTime').style.display       = tab === 'time'       ? '' : 'none';
   document.getElementById('dashEscalation').style.display  = tab === 'escalation' ? '' : 'none';
   document.getElementById('dashQueueSetup').style.display  = tab === 'queuesetup' ? '' : 'none';
+  document.getElementById('dashActivity').style.display    = tab === 'activity'   ? '' : 'none';
   document.querySelectorAll('#adminView .filter-btn').forEach(function(b){ b.classList.remove('active'); });
   if (btn) btn.classList.add('active');
   if (tab === 'capacidade') loadCapacity();
@@ -58,6 +60,7 @@ export function switchDashTab(tab, btn) {
   if (tab === 'time')       loadTimeConfig();
   if (tab === 'escalation') loadEscalationConfig();
   if (tab === 'queuesetup') loadQueueSetup();
+  if (tab === 'activity')   loadActivity();
 }
 
 export function setAdminViewMode(mode) {

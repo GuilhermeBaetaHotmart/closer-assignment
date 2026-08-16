@@ -32,6 +32,7 @@ export const API = {
   eligibilityGet:      'https://hotmart.app.n8n.cloud/webhook/eligibility-get',
   eligibilitySet:      'https://hotmart.app.n8n.cloud/webhook/eligibility-set',
   eligibilityHistory:  'https://hotmart.app.n8n.cloud/webhook/eligibility-history',
+  loginLog:      'https://hotmart.app.n8n.cloud/webhook/login-log',
 };
 
 export const SEGS = {
