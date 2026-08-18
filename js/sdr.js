@@ -3,14 +3,14 @@
    ══════════════════════════════════════════════ */
 
 
-import { API, SEGS } from './api.js?v=20260816-1200';
-import { session, st } from './state.js?v=20260816-1200';
-import { classify, fmtBRL, getMon, extractLeadId } from './utils.js?v=20260816-1200';
-import { authFetch } from './auth.js?v=20260816-1200';
-import { showToast, showPoolFallbackModal } from './ui.js?v=20260816-1200';
-import { markDone, markActive } from './animation.js?v=20260816-1200';
-import { renderAgenda, setSlotView } from './agenda.js?v=20260816-1200';
-import { switchTab } from './navigation.js?v=20260816-1200';
+import { API, SEGS } from './api.js?v=20260817-1000';
+import { session, st } from './state.js?v=20260817-1000';
+import { classify, fmtBRL, getMon, extractLeadId } from './utils.js?v=20260817-1000';
+import { authFetch } from './auth.js?v=20260817-1000';
+import { showToast, showPoolFallbackModal } from './ui.js?v=20260817-1000';
+import { markDone, markActive } from './animation.js?v=20260817-1000';
+import { renderAgenda, setSlotView } from './agenda.js?v=20260817-1000';
+import { switchTab } from './navigation.js?v=20260817-1000';
 
 let reservationExpiresAt = null;
 let reservationTimer = null;
@@ -362,7 +362,7 @@ export async function fetchCloser() {
     if (payload.mode === 'specific_date') payload.slotStart = st.specificSlotStart;
     const r=await authFetch(API.algorithm,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
     const d=await r.json(); if(d.error) throw new Error(d.error);
-    if (d.no_availability || d.fallback === 'emergency') {
+    if (d.no_availability || d.fallback === 'emergency' || (!d.closerId && !(d.queue && d.queue.length))) {
       st.noAvailability = true;
       // Atualiza título do banner conforme o motivo
       var title = document.getElementById('noAvailTitle');
@@ -370,6 +370,11 @@ export async function fetchCloser() {
         title.textContent = d.fallback === 'emergency'
           ? 'Nenhum closer disponível neste segmento'
           : 'Nenhum closer disponível neste horário';
+      }
+      // Aviso imediato em destaque — o banner troca o Passo 1, que é fácil de não notar
+      // logo após os ~12s da animação de busca (SDR pode achar que travou).
+      if (d.fallback === 'emergency') {
+        showToast('Nenhum closer disponível para este segmento no momento. Tente agendar por slots ou envie ao Mercado.', 'error', 6000);
       }
       return;
     }

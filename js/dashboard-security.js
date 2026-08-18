@@ -3,12 +3,12 @@
    ══════════════════════════════════════════════ */
 
 
-import { API, SEGS } from './api.js?v=20260816-1200';
-import { authFetch } from './auth.js?v=20260816-1200';
+import { API, SEGS } from './api.js?v=20260817-1000';
+import { authFetch } from './auth.js?v=20260817-1000';
 
-import { session, st } from './state.js?v=20260816-1200';
-import { fmtBRL, classify, getCloserPhoto, getMon } from './utils.js?v=20260816-1200';
-import { showToast } from './ui.js?v=20260816-1200';
+import { session, st } from './state.js?v=20260817-1000';
+import { fmtBRL, classify, getCloserPhoto, getMon } from './utils.js?v=20260817-1000';
+import { showToast } from './ui.js?v=20260817-1000';
 
 export async function loadSecurity() {
   document.getElementById('securityUsersBody').innerHTML = '<tr><td colspan="5" class="table-empty"><div style="display:flex;align-items:center;justify-content:center;gap:8px"><div class="spinner"></div> Carregando...</div></td></tr>';
