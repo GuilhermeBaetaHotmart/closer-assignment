@@ -3,14 +3,14 @@
    ══════════════════════════════════════════════ */
 
 
-import { API, SEGS } from './api.js?v=20260817-1000';
-import { session, st } from './state.js?v=20260817-1000';
-import { classify, fmtBRL, getMon, extractLeadId } from './utils.js?v=20260817-1000';
-import { authFetch } from './auth.js?v=20260817-1000';
-import { showToast, showPoolFallbackModal } from './ui.js?v=20260817-1000';
-import { markDone, markActive } from './animation.js?v=20260817-1000';
-import { renderAgenda, setSlotView } from './agenda.js?v=20260817-1000';
-import { switchTab } from './navigation.js?v=20260817-1000';
+import { API, SEGS } from './api.js?v=20260819-0930';
+import { session, st } from './state.js?v=20260819-0930';
+import { classify, fmtBRL, getMon, extractLeadId } from './utils.js?v=20260819-0930';
+import { authFetch } from './auth.js?v=20260819-0930';
+import { showToast, showPoolFallbackModal } from './ui.js?v=20260819-0930';
+import { markDone, markActive } from './animation.js?v=20260819-0930';
+import { renderAgenda, setSlotView } from './agenda.js?v=20260819-0930';
+import { switchTab } from './navigation.js?v=20260819-0930';
 
 let reservationExpiresAt = null;
 let reservationTimer = null;
@@ -322,7 +322,8 @@ export async function goEmergencyPool() {
       leadId:      st.leadId,
       clientValue: st.rawValue,
       clientEmail: st.clientEmail || '',
-      subgroup:    st.subKey,
+      segmentKey:  st.segKey,
+      subgroupKey: st.subKey,
       slotStart:   st.specificSlotStart || '',
       sdrEmail:    session ? session.email : '',
       origin:      st.leadOrigin || ''
