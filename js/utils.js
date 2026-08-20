@@ -4,7 +4,7 @@
    ══════════════════════════════════════════════ */
 
 
-import { SEGS } from './api.js?v=20260820-1000';
+import { SEGS } from './api.js?v=20260820-1130';
 
 
 /* Classifica um valor de cliente em segmento + subgrupo */

@@ -3,14 +3,14 @@
    ══════════════════════════════════════════════ */
 
 
-import { API, SEGS } from './api.js?v=20260820-1000';
-import { session, st } from './state.js?v=20260820-1000';
-import { classify, fmtBRL, getMon, extractLeadId } from './utils.js?v=20260820-1000';
-import { authFetch } from './auth.js?v=20260820-1000';
-import { showToast, showPoolFallbackModal } from './ui.js?v=20260820-1000';
-import { markDone, markActive } from './animation.js?v=20260820-1000';
-import { renderAgenda, setSlotView } from './agenda.js?v=20260820-1000';
-import { switchTab } from './navigation.js?v=20260820-1000';
+import { API, SEGS } from './api.js?v=20260820-1130';
+import { session, st } from './state.js?v=20260820-1130';
+import { classify, fmtBRL, getMon, extractLeadId } from './utils.js?v=20260820-1130';
+import { authFetch } from './auth.js?v=20260820-1130';
+import { showToast, showPoolFallbackModal } from './ui.js?v=20260820-1130';
+import { markDone, markActive } from './animation.js?v=20260820-1130';
+import { renderAgenda, setSlotView } from './agenda.js?v=20260820-1130';
+import { switchTab } from './navigation.js?v=20260820-1130';
 
 let reservationExpiresAt = null;
 let reservationTimer = null;
@@ -273,8 +273,18 @@ export function validateSlotPicker() {
   if (btn) btn.disabled = !st.specificSlotStart;
 }
 
+// "Ver agenda normal" no banner de indisponibilidade do modo Horário específico:
+// tenta o modo slots sem perder a data/hora já escolhida — se essa segunda tentativa
+// também não achar closer, "Enviar ao Mercado" ainda precisa mandar o horário desejado
+// original. Por isso NÃO usa selectSchedulingMode('slots') direto: aquela função zera
+// st.specificSlotStart, que é exatamente o dado que goEmergencyPool() precisa preservar.
 export function clearSlotAndRetry() {
-  selectSchedulingMode('slots');
+  st.schedulingMode = 'slots';
+  document.getElementById('modeSlots').classList.add('selected');
+  document.getElementById('modeSpecific').classList.remove('selected');
+  document.getElementById('noAvailBanner').classList.remove('show');
+  document.getElementById('btnS1').textContent = 'Continuar →';
+  updateStep1Button();
   runAlgorithm();
 }
 
