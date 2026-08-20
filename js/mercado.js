@@ -3,12 +3,12 @@
    ══════════════════════════════════════════════ */
 
 
-import { API, SEGS } from './api.js?v=20260819-0930';
-import { session, st } from './state.js?v=20260819-0930';
-import { authFetch } from './auth.js?v=20260819-0930';
-import { showToast } from './ui.js?v=20260819-0930';
+import { API, SEGS } from './api.js?v=20260820-1000';
+import { session, st } from './state.js?v=20260820-1000';
+import { authFetch } from './auth.js?v=20260820-1000';
+import { showToast } from './ui.js?v=20260820-1000';
 
-import { fmtBRL, classify, getCloserPhoto, getMon } from './utils.js?v=20260819-0930';
+import { fmtBRL, classify, getCloserPhoto, getMon } from './utils.js?v=20260820-1000';
 
 export async function loadMercado() {
   const grid = document.getElementById('mercadoGrid');

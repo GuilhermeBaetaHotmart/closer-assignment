@@ -3,14 +3,14 @@
    ══════════════════════════════════════════════ */
 
 
-import { API, SEGS } from './api.js?v=20260819-0930';
-import { session, st } from './state.js?v=20260819-0930';
-import { classify, fmtBRL, getMon, extractLeadId } from './utils.js?v=20260819-0930';
-import { authFetch } from './auth.js?v=20260819-0930';
-import { showToast, showPoolFallbackModal } from './ui.js?v=20260819-0930';
-import { markDone, markActive } from './animation.js?v=20260819-0930';
-import { renderAgenda, setSlotView } from './agenda.js?v=20260819-0930';
-import { switchTab } from './navigation.js?v=20260819-0930';
+import { API, SEGS } from './api.js?v=20260820-1000';
+import { session, st } from './state.js?v=20260820-1000';
+import { classify, fmtBRL, getMon, extractLeadId } from './utils.js?v=20260820-1000';
+import { authFetch } from './auth.js?v=20260820-1000';
+import { showToast, showPoolFallbackModal } from './ui.js?v=20260820-1000';
+import { markDone, markActive } from './animation.js?v=20260820-1000';
+import { renderAgenda, setSlotView } from './agenda.js?v=20260820-1000';
+import { switchTab } from './navigation.js?v=20260820-1000';
 
 let reservationExpiresAt = null;
 let reservationTimer = null;
@@ -136,6 +136,8 @@ export async function goStep2() {
   if (st.schedulingMode === 'specific') {
     document.getElementById('cSpecific').style.display='';
     document.getElementById('cSpecific').classList.remove('dimmed');
+    // Trava o picker nativo pra não deixar escolher data passada (BRT)
+    document.getElementById('slotDate').min = todayBRT();
     return;
   }
 
@@ -230,11 +232,26 @@ export function selectSchedulingMode(mode) {
   updateStep1Button();
 }
 
+// Data de hoje em BRT no formato YYYY-MM-DD (comparável lexicograficamente com o value do <input type="date">)
+function todayBRT() {
+  return new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
+}
+
 export function validateSlotPicker() {
   const date = document.getElementById('slotDate').value;
   const time = document.getElementById('slotTime').value;
   const warn = document.getElementById('specificWarn');
   const btn  = document.getElementById('btnSpecific');
+
+  // Bloqueia data passada mesmo se o SDR digitar manualmente (o min do input só bloqueia o calendário nativo)
+  if (date && date < todayBRT()) {
+    st.specificSlotStart = null;
+    st.specificOutOfWindow = false;
+    warn.textContent = 'Selecione uma data a partir de hoje.';
+    warn.style.display = 'block';
+    if (btn) btn.disabled = true;
+    return;
+  }
 
   if (date && time) {
     st.specificSlotStart = date + 'T' + time + ':00-03:00';
