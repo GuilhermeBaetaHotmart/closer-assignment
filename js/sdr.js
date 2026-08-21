@@ -3,14 +3,14 @@
    ══════════════════════════════════════════════ */
 
 
-import { API, SEGS } from './api.js?v=20260820-1500';
-import { session, st } from './state.js?v=20260820-1500';
-import { classify, fmtBRL, getMon, extractLeadId } from './utils.js?v=20260820-1500';
-import { authFetch } from './auth.js?v=20260820-1500';
-import { showToast, showPoolFallbackModal } from './ui.js?v=20260820-1500';
-import { markDone, markActive } from './animation.js?v=20260820-1500';
-import { renderAgenda, setSlotView } from './agenda.js?v=20260820-1500';
-import { switchTab } from './navigation.js?v=20260820-1500';
+import { API, SEGS } from './api.js?v=20260821-1000';
+import { session, st } from './state.js?v=20260821-1000';
+import { classify, fmtBRL, getMon, extractLeadId } from './utils.js?v=20260821-1000';
+import { authFetch } from './auth.js?v=20260821-1000';
+import { showToast, showPoolFallbackModal } from './ui.js?v=20260821-1000';
+import { markDone, markActive } from './animation.js?v=20260821-1000';
+import { renderAgenda, setSlotView } from './agenda.js?v=20260821-1000';
+import { switchTab } from './navigation.js?v=20260821-1000';
 
 let reservationExpiresAt = null;
 let reservationTimer = null;
@@ -651,7 +651,11 @@ export async function doReserveSpecific() {
         segmentKey:  st.segKey,
         subgroupKey: st.subKey,
         sdrEmail:    session ? session.email : '',
-        ts:          new Date().toISOString()
+        ts:          new Date().toISOString(),
+        mode:           st.schedulingMode === 'specific' ? 'specific_date' : 'schedule',
+        origin:         st.leadOrigin || '',
+        competitor:     st.competitor || '',
+        campaignActive: st.campaignActive || false
       })
     });
     const data = await res.json();
@@ -680,7 +684,11 @@ export async function doReserve(){
         segmentKey:  st.segKey,
         subgroupKey: st.subKey,
         sdrEmail:    session ? session.email : '',
-        ts:          new Date().toISOString()
+        ts:          new Date().toISOString(),
+        mode:           st.schedulingMode === 'specific' ? 'specific_date' : 'schedule',
+        origin:         st.leadOrigin || '',
+        competitor:     st.competitor || '',
+        campaignActive: st.campaignActive || false
       })
     });
     const data = await res.json();
