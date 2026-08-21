@@ -3,14 +3,14 @@
    ══════════════════════════════════════════════ */
 
 
-import { API, SEGS } from './api.js?v=20260820-1130';
-import { session, st } from './state.js?v=20260820-1130';
-import { classify, fmtBRL, getMon, extractLeadId } from './utils.js?v=20260820-1130';
-import { authFetch } from './auth.js?v=20260820-1130';
-import { showToast, showPoolFallbackModal } from './ui.js?v=20260820-1130';
-import { markDone, markActive } from './animation.js?v=20260820-1130';
-import { renderAgenda, setSlotView } from './agenda.js?v=20260820-1130';
-import { switchTab } from './navigation.js?v=20260820-1130';
+import { API, SEGS } from './api.js?v=20260820-1500';
+import { session, st } from './state.js?v=20260820-1500';
+import { classify, fmtBRL, getMon, extractLeadId } from './utils.js?v=20260820-1500';
+import { authFetch } from './auth.js?v=20260820-1500';
+import { showToast, showPoolFallbackModal } from './ui.js?v=20260820-1500';
+import { markDone, markActive } from './animation.js?v=20260820-1500';
+import { renderAgenda, setSlotView } from './agenda.js?v=20260820-1500';
+import { switchTab } from './navigation.js?v=20260820-1500';
 
 let reservationExpiresAt = null;
 let reservationTimer = null;
@@ -50,12 +50,24 @@ export async function loadActiveCompetitorsField() {
 // Usada pela aba "Aguardando confirmação" (pending.js) para cancelar uma reserva
 // da lista completa. O item/lista alvo (#pendingView_<slotId> / #pendingViewList)
 // pertencem ao markup renderizado por pending.js.
-export async function doCancelReserveById(slotId, sdrEmail) {
+// Recebe o objeto de reserva inteiro (não só o slotId): o workflow de cancel-reserve
+// não faz fallback pro Redis como o de confirm — ele lê closerId/tempEventId direto
+// do body pra saber qual Google Calendar e qual evento apagar. Sem isso, o slot fica
+// preso na agenda do closer até expirar sozinho.
+export async function doCancelReserveById(reservation) {
+  if (!reservation) return;
+  var slotId = reservation.slotId;
   try {
     const res = await authFetch(API.cancelReserve, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ slotId: slotId })
+      body: JSON.stringify({
+        slotId:      reservation.slotId,
+        closerId:    reservation.closerId,
+        slotStart:   reservation.slotStart,
+        slotEnd:     reservation.slotEnd,
+        tempEventId: reservation.tempEventId
+      })
     });
     const data = await res.json();
     if (data.error) throw new Error(data.error);

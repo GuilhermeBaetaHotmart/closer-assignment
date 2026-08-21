@@ -4,9 +4,10 @@
    ══════════════════════════════════════════════ */
 
 
-import { API, SEGS } from './api.js?v=20260820-1130';
-import { authFetch } from './auth.js?v=20260820-1130';
-import { showToast } from './ui.js?v=20260820-1130';
+import { API, SEGS } from './api.js?v=20260820-1500';
+import { authFetch } from './auth.js?v=20260820-1500';
+import { showToast } from './ui.js?v=20260820-1500';
+import { session } from './state.js?v=20260820-1500';
 
 export async function loadQueueSetup() {
   var sections = document.getElementById('queueSetupSections');
@@ -98,7 +99,7 @@ export async function toggleEligibility(email, queueKey, origin, trackId) {
     const r = await authFetch(API.eligibilitySet, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: email, queue: queueKey, origin: origin, active: !isOn })
+      body: JSON.stringify({ email: email, queue: queueKey, origin: origin, active: !isOn, updatedBy: session ? session.email : '' })
     });
     const d = await r.json();
     if (d.success) {

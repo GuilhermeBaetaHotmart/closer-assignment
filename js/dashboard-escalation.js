@@ -3,12 +3,12 @@
    ══════════════════════════════════════════════ */
 
 
-import { API, SEGS } from './api.js?v=20260820-1130';
-import { classify, fmtBRL, getCloserPhoto, getMon } from './utils.js?v=20260820-1130';
-import { authFetch } from './auth.js?v=20260820-1130';
-import { showToast } from './ui.js?v=20260820-1130';
+import { API, SEGS } from './api.js?v=20260820-1500';
+import { classify, fmtBRL, getCloserPhoto, getMon } from './utils.js?v=20260820-1500';
+import { authFetch } from './auth.js?v=20260820-1500';
+import { showToast } from './ui.js?v=20260820-1500';
 
-import { session, st } from './state.js?v=20260820-1130';
+import { session, st } from './state.js?v=20260820-1500';
 
 const MAX_RANGE_VAL = 50000000;
 
@@ -44,7 +44,7 @@ function renderEscalationLeaders(leaders) {
         '<td class="center" id="escMin_' + safeId + '">' + fmtBRL(l.min) + '</td>' +
         '<td class="center" id="escMax_' + safeId + '">' + maxLabel + '</td>' +
         '<td class="center" id="escAct_' + safeId + '">' +
-          '<button class="btn-remove-pool" style="padding:5px 12px;font-size:12px;" onclick="editEscalationLeader(' + idx + ',\'' + l.email + '\',' + l.min + ',' + l.max + ')">Editar</button> ' +
+          '<button class="btn-remove-pool" style="padding:5px 12px;font-size:12px;" onclick="editEscalationLeader(' + idx + ',\'' + l.email + '\',\'' + (l.name||'').replace(/'/g,"\\'") + '\',' + l.min + ',' + l.max + ')">Editar</button> ' +
           '<button class="btn-remove-pool" style="padding:5px 10px;font-size:12px;" onclick="removeEscalationLeader(\'' + l.email + '\')">Remover</button>' +
         '</td>' +
       '</tr>';
@@ -96,7 +96,7 @@ function renderEscalationLeaders(leaders) {
   gantt.innerHTML = tableHtml + ganttHtml;
 }
 
-export function editEscalationLeader(idx, email, currentMin, currentMax) {
+export function editEscalationLeader(idx, email, name, currentMin, currentMax) {
   var safeId = 'esc_' + idx;
   var minCell = document.getElementById('escMin_' + safeId);
   var maxCell = document.getElementById('escMax_' + safeId);
@@ -106,10 +106,13 @@ export function editEscalationLeader(idx, email, currentMin, currentMax) {
   var maxM = currentMax >= 100000000 ? 50 : Math.round(currentMax / 1000000);
   minCell.innerHTML = '<input type="number" min="0" max="50" id="escEditMin_' + safeId + '" value="' + minM + '" style="width:80px;text-align:center;background:var(--bg-raised);border:1px solid var(--bd-default);border-radius:6px;color:var(--txt-1);padding:4px;font-size:12px;"> M';
   maxCell.innerHTML = '<input type="number" min="0" max="50" id="escEditMax_' + safeId + '" value="' + maxM + '" style="width:80px;text-align:center;background:var(--bg-raised);border:1px solid var(--bd-default);border-radius:6px;color:var(--txt-1);padding:4px;font-size:12px;"> M <span style="font-size:10px;color:var(--txt-3);">(50 = sem limite)</span>';
-  actCell.innerHTML = '<button class="btn-accept" style="padding:5px 12px;font-size:12px;" onclick="saveEscalationLeader(\'' + email + '\',\'' + safeId + '\')">Salvar</button>';
+  actCell.innerHTML = '<button class="btn-accept" style="padding:5px 12px;font-size:12px;" onclick="saveEscalationLeader(\'' + email + '\',\'' + safeId + '\',\'' + (name||'').replace(/'/g,"\\'") + '\')">Salvar</button>';
 }
 
-export async function saveEscalationLeader(email, safeId) {
+// name é reenviado no payload porque o workflow escalation-config-set faz
+// `body.name || email` no HSET — sem isso, salvar só min/max sobrescreve o
+// nome do líder pelo e-mail dele.
+export async function saveEscalationLeader(email, safeId, name) {
   var minM = parseInt(document.getElementById('escEditMin_' + safeId).value);
   var maxM = parseInt(document.getElementById('escEditMax_' + safeId).value);
   if (isNaN(minM) || isNaN(maxM)) { showToast('Valores inválidos.', 'error'); return; }
@@ -118,7 +121,7 @@ export async function saveEscalationLeader(email, safeId) {
   try {
     const r = await authFetch(API.escalationConfigSet, {
       method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ email: email, min: min, max: max })
+      body: JSON.stringify({ email: email, name: name, min: min, max: max })
     });
     const d = await r.json();
     if (d.success) { showToast('Regra atualizada.', 'success'); loadEscalationConfig(); }

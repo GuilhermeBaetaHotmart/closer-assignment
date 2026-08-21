@@ -2,8 +2,8 @@
    app.js — Orquestrador principal
    ══════════════════════════════════════════════ */
 
-import { session, st, setSession } from './state.js?v=20260820-1130';
-import { doLogin, doLogout, setupRole, authFetch, isSessionExpired, touchActivity, startInactivityWatch } from './auth.js?v=20260820-1130';
+import { session, st, setSession } from './state.js?v=20260820-1500';
+import { doLogin, doLogout, setupRole, authFetch, isSessionExpired, touchActivity, startInactivityWatch } from './auth.js?v=20260820-1500';
 import {
   loadActiveCompetitorsField, updateTag, goStep2, selectSchedulingMode, validateSlotPicker,
   submitSpecificSlot, backToStep1,
@@ -12,23 +12,23 @@ import {
   renderQueueHint, doReserveSpecific, doReserve, showReservationState, startReservationTimer,
   doConfirmFinal, doCancelReserve, resetAll, onCompetitorChange, onLeadOriginChange, startInlineEdit,
   doCancelReserveById
-} from './sdr.js?v=20260820-1130';
-import { loadMercado, acceptLead, removeLead } from './mercado.js?v=20260820-1130';
-import { loadPendingView, confirmReserveById } from './pending.js?v=20260820-1130';
-import { switchTab, switchDashTab, setAdminViewMode } from './navigation.js?v=20260820-1130';
-import { setPeriod, setSegFilter, loadDashboard, exportHistory } from './dashboard-core.js?v=20260820-1130';
-import { loadCapacity } from './dashboard-capacity.js?v=20260820-1130';
-import { loadSecurity } from './dashboard-security.js?v=20260820-1130';
-import { loadCampaigns, addCampaign, toggleCampaign } from './dashboard-campaigns.js?v=20260820-1130';
-import { loadTimeConfig, editCloserOverride, saveCloserOverride, clearCloserOverride, saveSegmentDefault } from './dashboard-time.js?v=20260820-1130';
-import { loadEscalationConfig, editEscalationLeader, saveEscalationLeader, removeEscalationLeader, addEscalationLeader } from './dashboard-escalation.js?v=20260820-1130';
-import { loadQueueSetup, toggleEligibility } from './dashboard-queue-setup.js?v=20260820-1130';
-import { loadActivity, exportActivity } from './dashboard-activity.js?v=20260820-1130';
-import { toggleCloser } from './closers.js?v=20260820-1130';
-import { setSlotView, togglePrepAdjust, syncPrepAdjustToggleUI } from './agenda.js?v=20260820-1130';
-import { showToast, toggleTheme, showPoolFallbackModal, confirmPoolFallback, closePoolFallbackModal } from './ui.js?v=20260820-1130';
-import { fmtBRL, classify, getCloserPhoto, getMon } from './utils.js?v=20260820-1130';
-import './animation.js?v=20260820-1130';
+} from './sdr.js?v=20260820-1500';
+import { loadMercado, acceptLead, removeLead } from './mercado.js?v=20260820-1500';
+import { loadPendingView, confirmReserveById } from './pending.js?v=20260820-1500';
+import { switchTab, switchDashTab, setAdminViewMode } from './navigation.js?v=20260820-1500';
+import { setPeriod, setSegFilter, loadDashboard, exportHistory } from './dashboard-core.js?v=20260820-1500';
+import { loadCapacity } from './dashboard-capacity.js?v=20260820-1500';
+import { loadSecurity } from './dashboard-security.js?v=20260820-1500';
+import { loadCampaigns, addCampaign, toggleCampaign } from './dashboard-campaigns.js?v=20260820-1500';
+import { loadTimeConfig, editCloserOverride, saveCloserOverride, clearCloserOverride, saveSegmentDefault } from './dashboard-time.js?v=20260820-1500';
+import { loadEscalationConfig, editEscalationLeader, saveEscalationLeader, removeEscalationLeader, addEscalationLeader } from './dashboard-escalation.js?v=20260820-1500';
+import { loadQueueSetup, toggleEligibility } from './dashboard-queue-setup.js?v=20260820-1500';
+import { loadActivity, exportActivity } from './dashboard-activity.js?v=20260820-1500';
+import { toggleCloser } from './closers.js?v=20260820-1500';
+import { setSlotView, togglePrepAdjust, syncPrepAdjustToggleUI } from './agenda.js?v=20260820-1500';
+import { showToast, toggleTheme, showPoolFallbackModal, confirmPoolFallback, closePoolFallbackModal } from './ui.js?v=20260820-1500';
+import { fmtBRL, classify, getCloserPhoto, getMon } from './utils.js?v=20260820-1500';
+import './animation.js?v=20260820-1500';
 
 /* ── Expõe no window tudo que é chamado via onclick/onchange no HTML ── */
 Object.assign(window, {

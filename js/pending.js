@@ -5,10 +5,10 @@
    ══════════════════════════════════════════════ */
 
 
-import { API } from './api.js?v=20260820-1130';
-import { session, st } from './state.js?v=20260820-1130';
-import { authFetch } from './auth.js?v=20260820-1130';
-import { showToast, showPoolFallbackModal } from './ui.js?v=20260820-1130';
+import { API } from './api.js?v=20260820-1500';
+import { session, st } from './state.js?v=20260820-1500';
+import { authFetch } from './auth.js?v=20260820-1500';
+import { showToast, showPoolFallbackModal } from './ui.js?v=20260820-1500';
 
 // Cache dos itens renderizados, indexado por slotId — permite passar o objeto
 // completo pro onclick="confirmReserveById(...)" sem precisar re-fetch nem
@@ -63,7 +63,7 @@ function renderPendingView(items) {
       '</div>' +
       '<div class="pending-item-actions">' +
         '<button type="button" class="pending-confirm-btn" onclick="confirmReserveById(window.__pendingItemsCache[\''+res.slotId+'\'])">Confirmar</button>' +
-        '<button type="button" class="btn btn-ghost pending-cancel-btn" onclick="doCancelReserveById(\''+res.slotId+'\',\''+res.sdrEmail+'\')">Cancelar</button>' +
+        '<button type="button" class="btn btn-ghost pending-cancel-btn" onclick="doCancelReserveById(window.__pendingItemsCache[\''+res.slotId+'\'])">Cancelar</button>' +
       '</div>' +
     '</div>';
   }).join('');
