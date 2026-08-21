@@ -2,9 +2,9 @@
    ui.js — Componentes de UI genéricos
    ══════════════════════════════════════════════ */
 
-import { API } from './api.js?v=20260821-1000';
-import { session } from './state.js?v=20260821-1000';
-import { authFetch } from './auth.js?v=20260821-1000';
+import { API } from './api.js?v=20260821-1500';
+import { session } from './state.js?v=20260821-1500';
+import { authFetch } from './auth.js?v=20260821-1500';
 
 export function showToast(msg, type, duration) {
   var tc = document.getElementById('toastContainer');
@@ -59,6 +59,8 @@ export async function confirmPoolFallback() {
         clientValue: data.clientValue,
         segmentKey:  data.segmentKey,
         subgroupKey: data.subgroupKey,
+        slotStart:   data.slotStart || '',
+        origin:      data.origin || '',
         sdrEmail:    session ? session.email : ''
       })
     });
