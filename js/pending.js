@@ -5,10 +5,10 @@
    ══════════════════════════════════════════════ */
 
 
-import { API } from './api.js?v=20260821-1500';
-import { session, st } from './state.js?v=20260821-1500';
-import { authFetch } from './auth.js?v=20260821-1500';
-import { showToast, showPoolFallbackModal } from './ui.js?v=20260821-1500';
+import { API } from './api.js?v=20260824-1600';
+import { session, st } from './state.js?v=20260824-1600';
+import { authFetch } from './auth.js?v=20260824-1600';
+import { showToast, showPoolFallbackModal } from './ui.js?v=20260824-1600';
 
 // Cache dos itens renderizados, indexado por slotId — permite passar o objeto
 // completo pro onclick="confirmReserveById(...)" sem precisar re-fetch nem
@@ -84,6 +84,11 @@ function removePendingItem(slotId) {
 
 export async function confirmReserveById(reservation) {
   if (!reservation) return;
+  // Trava o botão durante o envio — sem isso, um duplo-clique manda dois /confirm
+  // quase simultâneos e duplica a entrada no histórico de atribuições.
+  var item = document.getElementById('pendingView_' + reservation.slotId);
+  var btn = item ? item.querySelector('.pending-confirm-btn') : null;
+  if (btn) { if (btn.disabled) return; btn.disabled = true; btn.textContent = 'Confirmando...'; }
   try {
     const res = await authFetch(API.confirm, {
       method: 'POST',
@@ -103,6 +108,7 @@ export async function confirmReserveById(reservation) {
     const data = Array.isArray(raw) ? raw[0] : raw;
     if (data.sendToPool) {
       showPoolFallbackModal(reservation);
+      if (btn) { btn.disabled = false; btn.textContent = 'Confirmar'; }
       return;
     }
     if (data.error) throw new Error(data.error);
@@ -112,5 +118,6 @@ export async function confirmReserveById(reservation) {
     removePendingItem(reservation.slotId);
   } catch(e) {
     showToast('Erro ao confirmar: ' + e.message, 'error', 5000);
+    if (btn) { btn.disabled = false; btn.textContent = 'Confirmar'; }
   }
 }
