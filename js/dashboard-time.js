@@ -3,12 +3,12 @@
    ══════════════════════════════════════════════ */
 
 
-import { API, SEGS } from './api.js?v=20260824-1600';
-import { classify, fmtBRL, getCloserPhoto, getMon } from './utils.js?v=20260824-1600';
-import { authFetch } from './auth.js?v=20260824-1600';
-import { showToast } from './ui.js?v=20260824-1600';
+import { API, SEGS } from './api.js?v=20260902-1400';
+import { classify, fmtBRL, getCloserPhoto, getMon } from './utils.js?v=20260902-1400';
+import { authFetch } from './auth.js?v=20260902-1400';
+import { showToast } from './ui.js?v=20260902-1400';
 
-import { session, st } from './state.js?v=20260824-1600';
+import { session, st } from './state.js?v=20260902-1400';
 
 let timeConfigCache = null;
 
