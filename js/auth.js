@@ -3,13 +3,13 @@
    ══════════════════════════════════════════════ */
 
 
-import { API, SEGS } from './api.js?v=20260904-1900';
-import { session, setSession, st, setActiveReservation } from './state.js?v=20260904-1900';
-import { switchTab } from './navigation.js?v=20260904-1900';
-import { loadActiveCompetitorsField, resetAll } from './sdr.js?v=20260904-1900';
+import { API, SEGS } from './api.js?v=20260904-2200';
+import { session, setSession, st, setActiveReservation } from './state.js?v=20260904-2200';
+import { switchTab } from './navigation.js?v=20260904-2200';
+import { loadActiveCompetitorsField, resetAll } from './sdr.js?v=20260904-2200';
 
-import { fmtBRL, classify, getCloserPhoto, getMon } from './utils.js?v=20260904-1900';
-import { showToast } from './ui.js?v=20260904-1900';
+import { fmtBRL, classify, getCloserPhoto, getMon } from './utils.js?v=20260904-2200';
+import { showToast } from './ui.js?v=20260904-2200';
 
 /* ── Expiração de sessão por inatividade (front-only) ────────────
    A sessão fica salva no localStorage sem validade própria. Aqui damos

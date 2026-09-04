@@ -6,9 +6,9 @@
    o cursor; o clique seleciona aquele horário (mesma caixa de confirmação).
    ══════════════════════════════════════════════ */
 
-import { st } from './state.js?v=20260904-1900';
-import { SEGS } from './api.js?v=20260904-1900';
-import { fmtBRL, getMon } from './utils.js?v=20260904-1900';
+import { st } from './state.js?v=20260904-2200';
+import { SEGS } from './api.js?v=20260904-2200';
+import { fmtBRL, getMon } from './utils.js?v=20260904-2200';
 
 const WIN_START  = 8 * 60;    // 08:00 — início visível
 const WIN_END    = 18 * 60;   // 18:00 — fim visível
@@ -217,7 +217,11 @@ function selectAgenda(el, day, startMin, endMin, kind, ref) {
   const endISO   = ref ? ref.end   : isoFor(day, endMin);
   const label = day.label + ' ' + day.date + ' · ' + fmtMin(startMin) + '–' + fmtMin(endMin) +
                 (kind === 'free' ? (prepMin ? ' (30min prep + 1h)' : ' (sem prep + 1h)') : '');
-  st.selectedSlotId    = ref ? ref.id : ('free_' + startISO);
+  // Janela livre: o closer entra no id pelo mesmo motivo do modo "horario especifico"
+  // em sdr.js — a reserva vira reservation:<slotId> no Redis, e um id so com o horario
+  // faz dois SDRs com closers diferentes colidirem na mesma chave. Slot cadastrado
+  // (ref.id) ja e o id do evento no Google, unico por closer, e nao precisa disso.
+  st.selectedSlotId    = ref ? ref.id : ('free_' + st.closerId + '_' + startISO);
   st.selectedSlotLabel = label;
   st.selectedSlotStart = startISO;
   st.selectedSlotEnd   = endISO;

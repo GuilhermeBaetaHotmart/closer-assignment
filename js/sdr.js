@@ -3,14 +3,14 @@
    ══════════════════════════════════════════════ */
 
 
-import { API, SEGS } from './api.js?v=20260904-1900';
-import { session, st, setActiveReservation } from './state.js?v=20260904-1900';
-import { classify, fmtBRL, getMon, extractLeadId } from './utils.js?v=20260904-1900';
-import { authFetch } from './auth.js?v=20260904-1900';
-import { showToast, showPoolFallbackModal } from './ui.js?v=20260904-1900';
-import { markDone, markActive } from './animation.js?v=20260904-1900';
-import { renderAgenda, setSlotView } from './agenda.js?v=20260904-1900';
-import { switchTab } from './navigation.js?v=20260904-1900';
+import { API, SEGS } from './api.js?v=20260904-2200';
+import { session, st, setActiveReservation } from './state.js?v=20260904-2200';
+import { classify, fmtBRL, getMon, extractLeadId } from './utils.js?v=20260904-2200';
+import { authFetch } from './auth.js?v=20260904-2200';
+import { showToast, showPoolFallbackModal } from './ui.js?v=20260904-2200';
+import { markDone, markActive } from './animation.js?v=20260904-2200';
+import { renderAgenda, setSlotView } from './agenda.js?v=20260904-2200';
+import { switchTab } from './navigation.js?v=20260904-2200';
 
 let reservationExpiresAt = null;
 let reservationTimer = null;
@@ -637,7 +637,14 @@ export async function doReserveSpecific() {
   // Monta slotEnd = slotStart + 1h30
   const start = new Date(st.specificSlotStart);
   const end = new Date(start.getTime() + 90 * 60 * 1000);
-  st.selectedSlotId    = 'specific_' + start.toISOString();
+  // O closer entra no id porque a reserva e gravada no Redis como
+  // reservation:<slotId>. Sem ele, o id carregava so o horario — e dois SDRs
+  // reservando o MESMO horario com closers DIFERENTES escreviam na mesma chave,
+  // o segundo sobrescrevendo o primeiro. A reuniao acabava na agenda do closer
+  // errado, a opp era creditada pra ele, e o [TEMP] do outro ficava orfao.
+  // Nenhum fluxo interpreta o conteudo do slotId: todos so fazem startsWith()
+  // no prefixo, entao inserir o closer depois dele nao quebra nada.
+  st.selectedSlotId    = 'specific_' + st.closerId + '_' + start.toISOString();
   st.selectedSlotStart = st.specificSlotStart;
   st.selectedSlotEnd   = end.toISOString();
   st.selectedSlotLabel = start.toLocaleString('pt-BR', {
