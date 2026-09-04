@@ -15,6 +15,15 @@ import { switchTab } from './navigation.js?v=20260904-1900';
 let reservationExpiresAt = null;
 let reservationTimer = null;
 
+/* Prazo da reserva: 2 horas para o SDR confirmar, cancelar ou esperar o cliente.
+   Este numero nao vive sozinho — precisa acompanhar dois valores do backend:
+     - TTL do "22. cleanup-temp", que apaga o [TEMP] da agenda e a chave do Redis
+     - EXPIRE do "3. reserve", que precisa ficar ACIMA do TTL da limpeza mais o
+       intervalo do cron (1h), senao a chave some antes da limpeza conseguir ler o
+       tempEventId de dentro dela e o [TEMP] fica orfao na agenda para sempre.
+   Combinacao atual: tela 2h · limpeza 2h · Redis 4h. Ver o README dos workflows. */
+const RESERVATION_TTL_MS = 2 * 60 * 60 * 1000;
+
 
 export async function loadActiveCompetitorsField() {
   var field = document.getElementById('competitorField');
@@ -754,6 +763,16 @@ export function renderReservationCard() {
     return;
   }
 
+  // Reserva vencida: o backend já liberou o horário (o 22.cleanup-temp apaga o [TEMP]
+  // da agenda e a chave do Redis). Manter o card na tela levaria o SDR a confirmar um
+  // horário que não está mais reservado — e como o /confirm faz fallback pro corpo da
+  // requisição, a reunião seria criada assim mesmo, possivelmente em cima de alguém que
+  // pegou o horário no meio tempo. Agora o card se descarta sozinho.
+  if (ar.reservedAt && Date.now() - ar.reservedAt > RESERVATION_TTL_MS) {
+    expireActiveReservation();
+    return;
+  }
+
   renderInlineValue('resvLeadId', 'leadId');
   renderInlineValue('resvClientEmail', 'clientEmail');
   document.getElementById('resvCloser').textContent  = '****';
@@ -762,9 +781,22 @@ export function renderReservationCard() {
   document.getElementById('resvVal').textContent     = fmtBRL(ar.clientValue);
   document.getElementById('resvSub').textContent     = (ar.slotLabel || '—') + ' · ' + fmtBRL(ar.clientValue);
 
-  reservationExpiresAt = (ar.reservedAt || Date.now()) + (24 * 60 * 60 * 1000);
+  reservationExpiresAt = (ar.reservedAt || Date.now()) + RESERVATION_TTL_MS;
   startReservationTimer();
   card.style.display = 'block';
+}
+
+// Descarta a reserva vencida: limpa o estado (e o localStorage, via setActiveReservation),
+// para o contador, esconde o card e avisa. Chamado tanto ao repintar quanto pelo tique
+// do contador, então precisa ser idempotente — sair cedo se já não há reserva evita
+// mostrar o aviso duas vezes.
+function expireActiveReservation() {
+  if (!st.activeReservation) return;
+  setActiveReservation(null);
+  if (reservationTimer) { clearInterval(reservationTimer); reservationTimer = null; }
+  var card = document.getElementById('reservationState');
+  if (card) card.style.display = 'none';
+  showToast('Reserva expirada — o horário foi liberado. Faça uma nova reserva se ainda precisar.', 'info', 8000);
 }
 
 const PENCIL_ICON = '<svg class="confirm-edit-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>';
@@ -798,7 +830,12 @@ export function startInlineEdit(containerId, stateKey) {
 
   input.addEventListener('blur', function() {
     var newValue = input.value.trim();
-    if (st.activeReservation) st.activeReservation[stateKey] = newValue || previousValue;
+    if (st.activeReservation) {
+      st.activeReservation[stateKey] = newValue || previousValue;
+      // Regrava no localStorage: agora que a reserva sobrevive ao F5, a edição
+      // também precisa sobreviver — senão o card voltaria com o valor antigo.
+      setActiveReservation(st.activeReservation);
+    }
     renderInlineValue(containerId, stateKey);
   });
   input.addEventListener('keydown', function(e) {
@@ -812,13 +849,14 @@ export function startReservationTimer() {
   function tick() {
     var remaining = reservationExpiresAt - Date.now();
     if (remaining <= 0) {
-      clearInterval(reservationTimer);
+      // Antes o card ficava na tela marcado "Expirada", com os botões ainda ativos.
+      // Agora ele é descartado de vez — o horário já não está mais reservado.
       document.getElementById('timerLabel').textContent = 'Expirada';
       document.getElementById('timerFill').style.width = '0%';
-      showToast('Reserva expirada — o slot foi liberado automaticamente', 'info', 6000);
+      expireActiveReservation();
       return;
     }
-    var totalMs = 24 * 60 * 60 * 1000;
+    var totalMs = RESERVATION_TTL_MS;
     var pct     = (remaining / totalMs) * 100;
     var hours   = Math.floor(remaining / (60 * 60 * 1000));
     var minutes = Math.floor((remaining % (60 * 60 * 1000)) / 60000);
