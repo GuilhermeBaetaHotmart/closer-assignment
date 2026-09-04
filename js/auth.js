@@ -3,13 +3,13 @@
    ══════════════════════════════════════════════ */
 
 
-import { API, SEGS } from './api.js?v=20260902-1400';
-import { session, setSession, st } from './state.js?v=20260902-1400';
-import { switchTab } from './navigation.js?v=20260902-1400';
-import { loadActiveCompetitorsField, resetAll } from './sdr.js?v=20260902-1400';
+import { API, SEGS } from './api.js?v=20260904-1900';
+import { session, setSession, st, setActiveReservation } from './state.js?v=20260904-1900';
+import { switchTab } from './navigation.js?v=20260904-1900';
+import { loadActiveCompetitorsField, resetAll } from './sdr.js?v=20260904-1900';
 
-import { fmtBRL, classify, getCloserPhoto, getMon } from './utils.js?v=20260902-1400';
-import { showToast } from './ui.js?v=20260902-1400';
+import { fmtBRL, classify, getCloserPhoto, getMon } from './utils.js?v=20260904-1900';
+import { showToast } from './ui.js?v=20260904-1900';
 
 /* ── Expiração de sessão por inatividade (front-only) ────────────
    A sessão fica salva no localStorage sem validade própria. Aqui damos
@@ -87,6 +87,9 @@ export async function doLogin() {
 export function doLogout() {
   setSession(null);
   stopInactivityWatch();
+  // Limpa também a reserva ativa: como ela agora vive no localStorage, sem isso o
+  // próximo usuário a logar nesta máquina veria o card da reserva de outra pessoa.
+  setActiveReservation(null);
   try { localStorage.removeItem('ca_session'); localStorage.removeItem('ca_token'); localStorage.removeItem('ca_last_activity'); } catch(e) {} resetAll();
   document.getElementById('appScreen').style.display='none';
   document.getElementById('loginScreen').style.display='flex';

@@ -5,10 +5,11 @@
    ══════════════════════════════════════════════ */
 
 
-import { API } from './api.js?v=20260902-1400';
-import { session, st } from './state.js?v=20260902-1400';
-import { authFetch } from './auth.js?v=20260902-1400';
-import { showToast, showPoolFallbackModal } from './ui.js?v=20260902-1400';
+import { API } from './api.js?v=20260904-1900';
+import { session, st } from './state.js?v=20260904-1900';
+import { authFetch } from './auth.js?v=20260904-1900';
+import { showToast, showPoolFallbackModal } from './ui.js?v=20260904-1900';
+import { renderReservationCard } from './sdr.js?v=20260904-1900';
 
 // Cache dos itens renderizados, indexado por slotId — permite passar o objeto
 // completo pro onclick="confirmReserveById(...)" sem precisar re-fetch nem
@@ -16,10 +17,11 @@ import { showToast, showPoolFallbackModal } from './ui.js?v=20260902-1400';
 window.__pendingItemsCache = window.__pendingItemsCache || {};
 
 export async function loadPendingView() {
-  // O card #reservationState e o header já são estáticos em index.html — aqui só
-  // alternamos a visibilidade dele (reflete st.activeReservation) e recarregamos a lista.
-  var reservationEl = document.getElementById('reservationState');
-  if (reservationEl) reservationEl.style.display = st.activeReservation ? 'block' : 'none';
+  // O card #reservationState é estático em index.html, mas o CONTEÚDO dele vive em
+  // st.activeReservation. Só alternar a visibilidade não basta: quando a reserva vem
+  // do localStorage (F5 ou segunda aba), os campos do card ainda estão vazios. Por
+  // isso renderReservationCard() repopula e cuida da exibição.
+  renderReservationCard();
 
   var list = document.getElementById('pendingViewList');
   if (!list) return;
@@ -93,15 +95,29 @@ export async function confirmReserveById(reservation) {
     const res = await authFetch(API.confirm, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      // Payload completo, igual ao de doConfirmFinal(). Antes faltavam closerId,
+      // slotStart, slotEnd, tempEventId, mode, origin, competitor e campaignActive —
+      // o fluxo de confirm só conseguia esses campos lendo a reserva no Redis. Quando
+      // a reserva já tinha sido apagada (a rotina de limpeza mata em ~1h), o closerId
+      // vinha vazio e o fluxo ia buscar a agenda de um closer inexistente. O endpoint
+      // 21.reservations-list já devolve todos esses campos, então é só repassar.
       body: JSON.stringify({
-        slotId:      reservation.slotId,
-        leadId:      reservation.leadId,
-        clientEmail: reservation.clientEmail,
-        clientValue: reservation.clientValue,
-        segmentKey:  reservation.segmentKey,
-        subgroupKey: reservation.subgroupKey,
-        sdrEmail:    reservation.sdrEmail,
-        ts:          new Date().toISOString()
+        closerId:       reservation.closerId,
+        slotId:         reservation.slotId,
+        slotStart:      reservation.slotStart,
+        slotEnd:        reservation.slotEnd,
+        tempEventId:    reservation.tempEventId,
+        leadId:         reservation.leadId,
+        clientEmail:    reservation.clientEmail,
+        clientValue:    reservation.clientValue,
+        segmentKey:     reservation.segmentKey,
+        subgroupKey:    reservation.subgroupKey,
+        sdrEmail:       reservation.sdrEmail,
+        ts:             new Date().toISOString(),
+        mode:           reservation.mode || 'schedule',
+        competitor:     reservation.competitor || '',
+        origin:         reservation.origin || '',
+        campaignActive: reservation.campaignActive || false
       })
     });
     const raw = await res.json();

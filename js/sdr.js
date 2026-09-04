@@ -3,14 +3,14 @@
    ══════════════════════════════════════════════ */
 
 
-import { API, SEGS } from './api.js?v=20260902-1400';
-import { session, st } from './state.js?v=20260902-1400';
-import { classify, fmtBRL, getMon, extractLeadId } from './utils.js?v=20260902-1400';
-import { authFetch } from './auth.js?v=20260902-1400';
-import { showToast, showPoolFallbackModal } from './ui.js?v=20260902-1400';
-import { markDone, markActive } from './animation.js?v=20260902-1400';
-import { renderAgenda, setSlotView } from './agenda.js?v=20260902-1400';
-import { switchTab } from './navigation.js?v=20260902-1400';
+import { API, SEGS } from './api.js?v=20260904-1900';
+import { session, st, setActiveReservation } from './state.js?v=20260904-1900';
+import { classify, fmtBRL, getMon, extractLeadId } from './utils.js?v=20260904-1900';
+import { authFetch } from './auth.js?v=20260904-1900';
+import { showToast, showPoolFallbackModal } from './ui.js?v=20260904-1900';
+import { markDone, markActive } from './animation.js?v=20260904-1900';
+import { renderAgenda, setSlotView } from './agenda.js?v=20260904-1900';
+import { switchTab } from './navigation.js?v=20260904-1900';
 
 let reservationExpiresAt = null;
 let reservationTimer = null;
@@ -704,7 +704,7 @@ export function showReservationState(data) {
   // Snapshot de tudo que a confirmação/cancelamento/edição desta reserva vão precisar depois.
   // Fica em st.activeReservation (não em st.* direto) porque resetAll(), logo abaixo, libera a
   // sdrView pro SDR já começar outro lead — e activeReservation não é uma das chaves que ele reseta.
-  st.activeReservation = {
+  setActiveReservation({
     closerId:       st.closerId,
     slotId:         st.selectedSlotId,
     slotStart:      st.selectedSlotStart,
@@ -720,28 +720,51 @@ export function showReservationState(data) {
     schedulingMode: st.schedulingMode,
     competitor:     st.competitor,
     origin:         st.leadOrigin,
-    campaignActive: st.campaignActive
-  };
+    campaignActive: st.campaignActive,
+    // Momento da reserva — o contador lê daqui em vez de reiniciar do zero a cada
+    // renderização, senão um F5 faria o prazo voltar a contar do começo.
+    reservedAt:     Date.now()
+  });
+
+  renderReservationCard();
+
+  // Libera a sdrView pro SDR já iniciar outro lead — a reserva atual segue viva em
+  // st.activeReservation e acompanhável na aba "Aguardando confirmação".
+  resetAll();
+
+  showToast('Reserva criada — acompanhe em Aguardando confirmação', 'success');
+  switchTab('pending');
+  // Sem retorno automático para a sdrView: antes o app voltava sozinho depois de 15s,
+  // arrancando o card da tela no meio da leitura/edição — e parecia que o botão
+  // "Cliente confirmou" tinha falhado. Quem decide sair da aba agora é o SDR.
+}
+
+// Preenche o card #reservationState a partir de st.activeReservation. Separado de
+// showReservationState() porque a aba também precisa reconstruir o card quando a
+// reserva vem do localStorage (F5 ou segunda aba) — sem isso o card apareceria vazio.
+export function renderReservationCard() {
+  var card = document.getElementById('reservationState');
+  if (!card) return;
   var ar = st.activeReservation;
+  if (!ar) {
+    // Reserva encerrada (aqui ou em outra aba) — para o contador junto, senão ele
+    // segue tiquetaqueando contra um prazo que não vale mais.
+    if (reservationTimer) { clearInterval(reservationTimer); reservationTimer = null; }
+    card.style.display = 'none';
+    return;
+  }
 
   renderInlineValue('resvLeadId', 'leadId');
   renderInlineValue('resvClientEmail', 'clientEmail');
   document.getElementById('resvCloser').textContent  = '****';
   document.getElementById('resvSlot').textContent    = ar.slotLabel || '—';
-  document.getElementById('resvSeg').textContent     = SEGS[ar.segmentKey].label + ' · ' + ar.subLabel;
+  document.getElementById('resvSeg').textContent     = (SEGS[ar.segmentKey] ? SEGS[ar.segmentKey].label : '—') + ' · ' + (ar.subLabel || '—');
   document.getElementById('resvVal').textContent     = fmtBRL(ar.clientValue);
-  document.getElementById('resvSub').textContent     = ar.slotLabel + ' · ' + fmtBRL(ar.clientValue);
-  reservationExpiresAt = Date.now() + (24 * 60 * 60 * 1000);
+  document.getElementById('resvSub').textContent     = (ar.slotLabel || '—') + ' · ' + fmtBRL(ar.clientValue);
+
+  reservationExpiresAt = (ar.reservedAt || Date.now()) + (24 * 60 * 60 * 1000);
   startReservationTimer();
-
-  // Libera a sdrView pro SDR já iniciar outro lead — a reserva atual segue viva em
-  // st.activeReservation e acompanhável na aba "Aguardando confirmação".
-  resetAll();
-  document.getElementById('reservationState').style.display = 'block';
-
-  showToast('Reserva criada — acompanhe em Aguardando confirmação', 'success');
-  switchTab('pending');
-  setTimeout(function(){ switchTab('sdr'); }, 15000);
+  card.style.display = 'block';
 }
 
 const PENCIL_ICON = '<svg class="confirm-edit-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>';
@@ -848,7 +871,7 @@ export async function doConfirmFinal(){
     // andamento por lá, e essa confirmação (de uma reserva diferente, feita pela
     // aba Pending) não pode sobrepor ou afetar o formulário desse outro lead.
     showToast('Reunião confirmada com ' + closerName + ' — não esqueça de converter a opp no Salesforce.', 'success', 7000);
-    st.activeReservation = null;
+    setActiveReservation(null);
     switchTab('sdr');
   } catch(e) {
     showToast('Erro ao confirmar: ' + e.message, 'error', 5000);
@@ -877,7 +900,7 @@ export async function doCancelReserve(){
     if (data.error) throw new Error(data.error);
     showToast('Reserva cancelada — slot liberado', 'info');
     document.getElementById('reservationState').style.display = 'none';
-    st.activeReservation = null;
+    setActiveReservation(null);
     switchTab('sdr');
   } catch(e) {
     showToast('Erro ao cancelar: ' + e.message, 'error', 5000);

@@ -6,9 +6,9 @@
    o cursor; o clique seleciona aquele horário (mesma caixa de confirmação).
    ══════════════════════════════════════════════ */
 
-import { st } from './state.js?v=20260902-1400';
-import { SEGS } from './api.js?v=20260902-1400';
-import { fmtBRL, getMon } from './utils.js?v=20260902-1400';
+import { st } from './state.js?v=20260904-1900';
+import { SEGS } from './api.js?v=20260904-1900';
+import { fmtBRL, getMon } from './utils.js?v=20260904-1900';
 
 const WIN_START  = 8 * 60;    // 08:00 — início visível
 const WIN_END    = 18 * 60;   // 18:00 — fim visível

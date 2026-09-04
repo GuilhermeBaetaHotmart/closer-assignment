@@ -2,8 +2,8 @@
    app.js — Orquestrador principal
    ══════════════════════════════════════════════ */
 
-import { session, st, setSession } from './state.js?v=20260902-1400';
-import { doLogin, doLogout, setupRole, authFetch, isSessionExpired, touchActivity, startInactivityWatch } from './auth.js?v=20260902-1400';
+import { session, st, setSession, readStoredReservation, ACTIVE_RESERVATION_KEY } from './state.js?v=20260904-1900';
+import { doLogin, doLogout, setupRole, authFetch, isSessionExpired, touchActivity, startInactivityWatch } from './auth.js?v=20260904-1900';
 import {
   loadActiveCompetitorsField, updateTag, goStep2, selectSchedulingMode, validateSlotPicker,
   submitSpecificSlot, backToStep1,
@@ -11,24 +11,24 @@ import {
   applySlotFilters, setFilterDay, setFilterPeriod, rejectAgenda, renderRefused, goBackToCloser,
   renderQueueHint, doReserveSpecific, doReserve, showReservationState, startReservationTimer,
   doConfirmFinal, doCancelReserve, resetAll, onCompetitorChange, onLeadOriginChange, startInlineEdit,
-  doCancelReserveById
-} from './sdr.js?v=20260902-1400';
-import { loadMercado, acceptLead, removeLead } from './mercado.js?v=20260902-1400';
-import { loadPendingView, confirmReserveById } from './pending.js?v=20260902-1400';
-import { switchTab, switchDashTab, setAdminViewMode } from './navigation.js?v=20260902-1400';
-import { setPeriod, setSegFilter, loadDashboard, exportHistory } from './dashboard-core.js?v=20260902-1400';
-import { loadCapacity } from './dashboard-capacity.js?v=20260902-1400';
-import { loadSecurity } from './dashboard-security.js?v=20260902-1400';
-import { loadCampaigns, addCampaign, toggleCampaign } from './dashboard-campaigns.js?v=20260902-1400';
-import { loadTimeConfig, editCloserOverride, saveCloserOverride, clearCloserOverride, saveSegmentDefault } from './dashboard-time.js?v=20260902-1400';
-import { loadEscalationConfig, editEscalationLeader, saveEscalationLeader, removeEscalationLeader, addEscalationLeader } from './dashboard-escalation.js?v=20260902-1400';
-import { loadQueueSetup, toggleEligibility } from './dashboard-queue-setup.js?v=20260902-1400';
-import { loadActivity, exportActivity } from './dashboard-activity.js?v=20260902-1400';
-import { toggleCloser } from './closers.js?v=20260902-1400';
-import { setSlotView, togglePrepAdjust, syncPrepAdjustToggleUI } from './agenda.js?v=20260902-1400';
-import { showToast, toggleTheme, showPoolFallbackModal, confirmPoolFallback, closePoolFallbackModal } from './ui.js?v=20260902-1400';
-import { fmtBRL, classify, getCloserPhoto, getMon } from './utils.js?v=20260902-1400';
-import './animation.js?v=20260902-1400';
+  doCancelReserveById, renderReservationCard
+} from './sdr.js?v=20260904-1900';
+import { loadMercado, acceptLead, removeLead } from './mercado.js?v=20260904-1900';
+import { loadPendingView, confirmReserveById } from './pending.js?v=20260904-1900';
+import { switchTab, switchDashTab, setAdminViewMode } from './navigation.js?v=20260904-1900';
+import { setPeriod, setSegFilter, loadDashboard, exportHistory } from './dashboard-core.js?v=20260904-1900';
+import { loadCapacity } from './dashboard-capacity.js?v=20260904-1900';
+import { loadSecurity } from './dashboard-security.js?v=20260904-1900';
+import { loadCampaigns, addCampaign, toggleCampaign } from './dashboard-campaigns.js?v=20260904-1900';
+import { loadTimeConfig, editCloserOverride, saveCloserOverride, clearCloserOverride, saveSegmentDefault } from './dashboard-time.js?v=20260904-1900';
+import { loadEscalationConfig, editEscalationLeader, saveEscalationLeader, removeEscalationLeader, addEscalationLeader } from './dashboard-escalation.js?v=20260904-1900';
+import { loadQueueSetup, toggleEligibility } from './dashboard-queue-setup.js?v=20260904-1900';
+import { loadActivity, exportActivity } from './dashboard-activity.js?v=20260904-1900';
+import { toggleCloser } from './closers.js?v=20260904-1900';
+import { setSlotView, togglePrepAdjust, syncPrepAdjustToggleUI } from './agenda.js?v=20260904-1900';
+import { showToast, toggleTheme, showPoolFallbackModal, confirmPoolFallback, closePoolFallbackModal } from './ui.js?v=20260904-1900';
+import { fmtBRL, classify, getCloserPhoto, getMon } from './utils.js?v=20260904-1900';
+import './animation.js?v=20260904-1900';
 
 /* ── Expõe no window tudo que é chamado via onclick/onchange no HTML ── */
 Object.assign(window, {
@@ -100,6 +100,23 @@ syncPrepAdjustToggleUI();
     }
   } catch (e) {}
 })();
+
+// Restaura a reserva ativa salva no localStorage. Sem isso, um F5 fazia o card sumir e
+// a reserva cair na lista "Aguardando confirmação" — que até então confirmava por um
+// caminho com menos dados. O card em si é repintado quando a aba é aberta.
+st.activeReservation = readStoredReservation();
+
+// Mantém as abas abertas em sincronia. O evento 'storage' só dispara nas OUTRAS abas,
+// que é exatamente o que queremos: quando uma aba confirma ou cancela, as demais param
+// de exibir o card daquela reserva. Antes, a aba desatualizada continuava mostrando o
+// card de uma reserva já confirmada — e clicar ali criava uma segunda reunião.
+window.addEventListener('storage', function(e) {
+  if (e.key !== ACTIVE_RESERVATION_KEY) return;
+  st.activeReservation = readStoredReservation();
+  renderReservationCard();
+  var pending = document.getElementById('pendingView');
+  if (pending && pending.style.display !== 'none') loadPendingView();
+});
 
 // Marca atividade do usuário (click/tecla) para o timeout de inatividade
 document.addEventListener('click',   function(){ touchActivity(); }, true);
