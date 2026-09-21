@@ -3,14 +3,14 @@
    ══════════════════════════════════════════════ */
 
 
-import { API, SEGS } from './api.js?v=20260904-2200';
-import { session, st, setActiveReservation } from './state.js?v=20260904-2200';
-import { classify, fmtBRL, getMon, extractLeadId } from './utils.js?v=20260904-2200';
-import { authFetch } from './auth.js?v=20260904-2200';
-import { showToast, showPoolFallbackModal } from './ui.js?v=20260904-2200';
-import { markDone, markActive } from './animation.js?v=20260904-2200';
-import { renderAgenda, setSlotView } from './agenda.js?v=20260904-2200';
-import { switchTab } from './navigation.js?v=20260904-2200';
+import { API, SEGS } from './api.js?v=20260920-2128';
+import { session, st, setActiveReservation } from './state.js?v=20260920-2128';
+import { classify, fmtBRL, getMon, extractLeadId } from './utils.js?v=20260920-2128';
+import { authFetch } from './auth.js?v=20260920-2128';
+import { showToast, showPoolFallbackModal } from './ui.js?v=20260920-2128';
+import { markDone, markActive } from './animation.js?v=20260920-2128';
+import { renderAgenda, setSlotView } from './agenda.js?v=20260920-2128';
+import { switchTab } from './navigation.js?v=20260920-2128';
 
 let reservationExpiresAt = null;
 let reservationTimer = null;
@@ -444,16 +444,35 @@ export async function fetchCloser() {
   }
 }
 
+/* Sequência das buscas de agenda. Antes o fetchSlots abria com
+   `if (st.slotsLoading) return;`, que DESCARTAVA em silêncio a busca nova quando
+   outra ainda estava em voo. Como rejectAgenda() e goBackToCloser() trocam
+   st.closerId ANTES de chamar aqui, um clique durante o carregamento deixava o
+   estado apontando pra um closer e a tela pintada com a agenda de outro — e a
+   reserva saía com o par trocado. Foi o que aconteceu em 16/09/2026 (execuções
+   2111653 e 2111670: closerId=camila.harumi com slotId=free_rafael.rufino…, duas
+   vezes seguidas com o mesmo lead).
+   Agora toda busca leva um número de sequência e o dono dela: resposta atrasada é
+   ignorada em vez de sobrescrever a atual, e se o closer mudou no meio a busca é
+   refeita pro closer certo. Ninguém mais é descartado em silêncio. */
+let slotsReqSeq = 0;
+
 export async function fetchSlots() {
-  if (st.slotsLoading) return;          // evita re-clique reiniciar o hook
+  const reqId = ++slotsReqSeq;
+  const owner = st.closerId;            // de quem é a agenda que esta busca vai pintar
   st.slotsLoading = true;
   setSlotsLoading(true);
   setLoading(); updateCalHeader();
   try {
-    const r=await authFetch(API.slots,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({closerId:st.closerId,weekOffset:st.weekOffset})});
+    const r=await authFetch(API.slots,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({closerId:owner,weekOffset:st.weekOffset})});
     const raw=await r.json();
+    // Já existe busca mais nova em voo: quem manda na tela é ela, não esta.
+    if (reqId !== slotsReqSeq) return;
+    // O closer mudou sem disparar nova busca — refaz em vez de pintar o errado.
+    if (owner !== st.closerId) { fetchSlots(); return; }
     const d = Array.isArray(raw) ? raw[0] : raw;
     if(d.error) throw new Error(d.error);
+    st.slotsOwner = owner;              // dono da grade — conferido no doReserve()
     st.agendaEvents = d.events || [];   // eventos ocupados anonimizados (visão Agenda/Completa)
     var allSlots = (d.slots||[]).map(function(s){
       // displayStart é o horário de reunião (sem o tempo de preparação); start/end (slotStart/slotEnd)
@@ -494,8 +513,15 @@ export async function fetchSlots() {
 
     applySlotFilters(); renderRefused(); renderQueueHint();
     if (st.slotView === 'full') renderAgenda();
-  } catch(e) { document.getElementById('slotsGrid').innerHTML='<div class="slot-empty">Erro ao buscar agenda: '+e.message+'</div>'; }
-  finally { st.slotsLoading = false; setSlotsLoading(false); }
+  } catch(e) {
+    if (reqId !== slotsReqSeq) return;  // erro de busca obsoleta não polui a tela da atual
+    document.getElementById('slotsGrid').innerHTML='<div class="slot-empty">Erro ao buscar agenda: '+e.message+'</div>';
+  }
+  finally {
+    // Só a busca mais recente libera o carregamento — senão uma resposta atrasada
+    // destravaria a tela enquanto a busca válida ainda está rodando.
+    if (reqId === slotsReqSeq) { st.slotsLoading = false; setSlotsLoading(false); }
+  }
 }
 
 function setLoading() {
@@ -683,6 +709,17 @@ export async function doReserveSpecific() {
 }
 
 export async function doReserve(){
+  // Rede de segurança: o slot selecionado veio da grade na tela, e a grade precisa
+  // ser do mesmo closer que vai receber a reserva. Cobre qualquer caminho que troque
+  // st.closerId sem repintar a grade — ver o comentário em fetchSlots().
+  if (st.slotsOwner && st.closerId && st.slotsOwner !== st.closerId) {
+    showToast('A agenda na tela é de outro closer. Recarregando os horários…', 'error', 5000);
+    st.selectedSlotId = null;
+    document.getElementById('confirmBox').style.display = 'none';
+    document.getElementById('btnConfirm').disabled = true;
+    fetchSlots();
+    return;
+  }
   const btn = document.getElementById('btnConfirm');
   btn.disabled = true; btn.textContent = 'Reservando...';
   try {
@@ -955,7 +992,7 @@ export async function doCancelReserve(){
 
 export function resetAll(){
   Object.assign(st, {rawValue:0,leadId:null,clientEmail:null,leadOrigin:null,segKey:null,subKey:null,subLabel:null,competitor:null,campaignActive:false,
-      closerId:null,queue:[],refused:[],weekOffset:0,
+      closerId:null,queue:[],refused:[],weekOffset:0,slotsOwner:null,
       selectedSlotId:null,selectedSlotLabel:null,selectedSlotStart:null,selectedSlotEnd:null,
       tempEventId:null,schedulingMode:null,specificSlotStart:null,specificOutOfWindow:false});
   ['leadIdInput','clientEmailInput'].forEach(function(id){ document.getElementById(id).value=''; document.getElementById(id).classList.remove('error'); });
