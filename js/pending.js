@@ -5,11 +5,11 @@
    ══════════════════════════════════════════════ */
 
 
-import { API } from './api.js?v=20260920-2128';
-import { session, st } from './state.js?v=20260920-2128';
-import { authFetch } from './auth.js?v=20260920-2128';
-import { showToast, showPoolFallbackModal } from './ui.js?v=20260920-2128';
-import { renderReservationCard } from './sdr.js?v=20260920-2128';
+import { API } from './api.js?v=20260929-2058';
+import { session, st } from './state.js?v=20260929-2058';
+import { authFetch } from './auth.js?v=20260929-2058';
+import { showToast, showPoolFallbackModal } from './ui.js?v=20260929-2058';
+import { renderReservationCard } from './sdr.js?v=20260929-2058';
 
 // Cache dos itens renderizados, indexado por slotId — permite passar o objeto
 // completo pro onclick="confirmReserveById(...)" sem precisar re-fetch nem
@@ -123,7 +123,7 @@ export async function confirmReserveById(reservation) {
     const raw = await res.json();
     const data = Array.isArray(raw) ? raw[0] : raw;
     if (data.sendToPool) {
-      showPoolFallbackModal(reservation);
+      showPoolFallbackModal(reservation, data.message);
       if (btn) { btn.disabled = false; btn.textContent = 'Confirmar'; }
       return;
     }

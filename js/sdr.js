@@ -3,14 +3,14 @@
    ══════════════════════════════════════════════ */
 
 
-import { API, SEGS } from './api.js?v=20260920-2128';
-import { session, st, setActiveReservation } from './state.js?v=20260920-2128';
-import { classify, fmtBRL, getMon, extractLeadId } from './utils.js?v=20260920-2128';
-import { authFetch } from './auth.js?v=20260920-2128';
-import { showToast, showPoolFallbackModal } from './ui.js?v=20260920-2128';
-import { markDone, markActive } from './animation.js?v=20260920-2128';
-import { renderAgenda, setSlotView } from './agenda.js?v=20260920-2128';
-import { switchTab } from './navigation.js?v=20260920-2128';
+import { API, SEGS } from './api.js?v=20260929-2058';
+import { session, st, setActiveReservation } from './state.js?v=20260929-2058';
+import { classify, fmtBRL, getMon, extractLeadId } from './utils.js?v=20260929-2058';
+import { authFetch } from './auth.js?v=20260929-2058';
+import { showToast, showPoolFallbackModal } from './ui.js?v=20260929-2058';
+import { markDone, markActive } from './animation.js?v=20260929-2058';
+import { renderAgenda, setSlotView } from './agenda.js?v=20260929-2058';
+import { switchTab } from './navigation.js?v=20260929-2058';
 
 let reservationExpiresAt = null;
 let reservationTimer = null;
@@ -943,7 +943,7 @@ export async function doConfirmFinal(){
     const data = Array.isArray(raw) ? raw[0] : raw;
     if (data.sendToPool) {
       btn.disabled = false; btn.textContent = 'Cliente confirmou';
-      showPoolFallbackModal(st.activeReservation);
+      showPoolFallbackModal(st.activeReservation, data.message);
       return;
     }
     if (data.error) throw new Error(data.error);
