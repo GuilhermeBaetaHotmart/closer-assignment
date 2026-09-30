@@ -3,14 +3,14 @@
    ══════════════════════════════════════════════ */
 
 
-import { API, SEGS } from './api.js?v=20260929-2058';
-import { session, st, setActiveReservation } from './state.js?v=20260929-2058';
-import { classify, fmtBRL, getMon, extractLeadId } from './utils.js?v=20260929-2058';
-import { authFetch } from './auth.js?v=20260929-2058';
-import { showToast, showPoolFallbackModal } from './ui.js?v=20260929-2058';
-import { markDone, markActive } from './animation.js?v=20260929-2058';
-import { renderAgenda, setSlotView } from './agenda.js?v=20260929-2058';
-import { switchTab } from './navigation.js?v=20260929-2058';
+import { API, SEGS } from './api.js?v=20260929-2119';
+import { session, st, setActiveReservation } from './state.js?v=20260929-2119';
+import { classify, fmtBRL, getMon, extractLeadId } from './utils.js?v=20260929-2119';
+import { authFetch } from './auth.js?v=20260929-2119';
+import { showToast, showPoolFallbackModal } from './ui.js?v=20260929-2119';
+import { markDone, markActive } from './animation.js?v=20260929-2119';
+import { renderAgenda, setSlotView } from './agenda.js?v=20260929-2119';
+import { switchTab } from './navigation.js?v=20260929-2119';
 
 let reservationExpiresAt = null;
 let reservationTimer = null;

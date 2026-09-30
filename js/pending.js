@@ -5,11 +5,11 @@
    ══════════════════════════════════════════════ */
 
 
-import { API } from './api.js?v=20260929-2058';
-import { session, st } from './state.js?v=20260929-2058';
-import { authFetch } from './auth.js?v=20260929-2058';
-import { showToast, showPoolFallbackModal } from './ui.js?v=20260929-2058';
-import { renderReservationCard } from './sdr.js?v=20260929-2058';
+import { API } from './api.js?v=20260929-2119';
+import { session, st } from './state.js?v=20260929-2119';
+import { authFetch } from './auth.js?v=20260929-2119';
+import { showToast, showPoolFallbackModal } from './ui.js?v=20260929-2119';
+import { renderReservationCard } from './sdr.js?v=20260929-2119';
 
 // Cache dos itens renderizados, indexado por slotId — permite passar o objeto
 // completo pro onclick="confirmReserveById(...)" sem precisar re-fetch nem
