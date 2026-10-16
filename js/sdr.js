@@ -1,0 +1,1181 @@
+/* ══════════════════════════════════════════════
+   sdr.js — Fluxo "Nova Oportunidade" — passos 1 a 3. Equivalente aos Fluxos 1, 3, 4, 5, 6, 12.
+   ══════════════════════════════════════════════ */
+
+
+import { API, SEGS } from './api.js?v=20261016-2109';
+import { session, st, setActiveReservation } from './state.js?v=20261016-2109';
+import { classify, fmtBRL, getMon, extractLeadId } from './utils.js?v=20261016-2109';
+import { authFetch } from './auth.js?v=20261016-2109';
+import { showToast, showPoolFallbackModal } from './ui.js?v=20261016-2109';
+import { markDone, markActive } from './animation.js?v=20261016-2109';
+import { renderAgenda, setSlotView } from './agenda.js?v=20261016-2109';
+import { switchTab } from './navigation.js?v=20261016-2109';
+
+let reservationExpiresAt = null;
+let reservationTimer = null;
+
+/* Prazo da reserva: 2 horas para o SDR confirmar, cancelar ou esperar o cliente.
+   Este numero nao vive sozinho — precisa acompanhar dois valores do backend:
+     - TTL do "22. cleanup-temp", que apaga o [TEMP] da agenda e a chave do Redis
+     - EXPIRE do "3. reserve", que precisa ficar ACIMA do TTL da limpeza mais o
+       intervalo do cron (1h), senao a chave some antes da limpeza conseguir ler o
+       tempEventId de dentro dela e o [TEMP] fica orfao na agenda para sempre.
+   Combinacao atual: tela 2h · limpeza 2h · Redis 4h. Ver o README dos workflows. */
+const RESERVATION_TTL_MS = 2 * 60 * 60 * 1000;
+
+
+export async function loadActiveCompetitorsField() {
+  var field = document.getElementById('competitorField');
+  var select = document.getElementById('competitorInput');
+  if (!field || !select) return;
+
+  try {
+    const r = await authFetch(API.campaignsGet);
+    const d = await r.json();
+    const campaigns = d.campaigns || [];
+    const active = campaigns.filter(function(c) { return c.active; });
+
+    if (!active.length) {
+      field.style.display = 'none';
+      select.removeAttribute('required');
+      st.competitor = null;
+      return;
+    }
+
+    field.style.display = '';
+    var html = '<option value="">Selecione o concorrente</option>';
+    active.forEach(function(c) {
+      html += '<option value="' + c.name + '">' + c.name + '</option>';
+    });
+    html += '<option value="Other">Outro</option>';
+    select.innerHTML = html;
+  } catch(e) {
+    // Em caso de erro, mantém o campo oculto por segurança (evita exigir campo que pode estar quebrado)
+    field.style.display = 'none';
+  }
+}
+
+// Usada pela aba "Aguardando confirmação" (pending.js) para cancelar uma reserva
+// da lista completa. O item/lista alvo (#pendingView_<slotId> / #pendingViewList)
+// pertencem ao markup renderizado por pending.js.
+// Recebe o objeto de reserva inteiro (não só o slotId): o workflow de cancel-reserve
+// não faz fallback pro Redis como o de confirm — ele lê closerId/tempEventId direto
+// do body pra saber qual Google Calendar e qual evento apagar. Sem isso, o slot fica
+// preso na agenda do closer até expirar sozinho.
+export async function doCancelReserveById(reservation) {
+  if (!reservation) return;
+  var slotId = reservation.slotId;
+  try {
+    const res = await authFetch(API.cancelReserve, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        slotId:      reservation.slotId,
+        closerId:    reservation.closerId,
+        slotStart:   reservation.slotStart,
+        slotEnd:     reservation.slotEnd,
+        tempEventId: reservation.tempEventId
+      })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+
+    var item = document.getElementById('pendingView_'+slotId);
+    if (item) item.remove();
+    if (window.__pendingItemsCache) delete window.__pendingItemsCache[slotId];
+    var list = document.getElementById('pendingViewList');
+    if (list && !list.children.length && !st.activeReservation) {
+      list.innerHTML = '<div class="pending-empty">Nenhuma reserva pendente no momento.</div>';
+    }
+    showToast('Reserva cancelada', 'info');
+  } catch(e) {
+    showToast('Erro ao cancelar: ' + e.message, 'error', 5000);
+  }
+}
+
+export function updateTag() {
+  const r=classify(st.rawValue);
+  const el=document.getElementById('segTag');
+  if (r&&st.rawValue>0) {
+    const seg=SEGS[r.segKey];
+    el.innerHTML='<span class="seg-badge '+seg.cls+'">'+seg.label+' &nbsp;·&nbsp; '+r.subLabel+'</span>';
+  } else {
+    el.innerHTML='<span class="seg-badge seg-none">Aguardando valor para classificar</span>';
+  }
+  validateReferral();
+  updateStep1Button();
+}
+
+// Única fonte de habilitação do "Continuar →" do Passo 1: exige valor classificável
+// E um modo de agendamento escolhido ativamente. A data/hora (modo específico) é
+// pedida só no passo seguinte, então não entra aqui.
+export function updateStep1Button() {
+  const btn = document.getElementById('btnS1');
+  const r = classify(st.rawValue);
+  const hasValue = !!(r && st.rawValue > 0);
+  const modeOk = st.schedulingMode === 'slots' || st.schedulingMode === 'specific';
+  const refOk = !st.referral || (!!st.referredCloserId && !st.referralBlocked);
+  btn.disabled = !(hasValue && modeOk && refOk);
+}
+
+/* ── Indicação ─────────────────────────────────────────────────────────────
+   O SDR escolhe o closer e a opp sai da fila automática: não conta nos
+   contadores de distribuição (isso é tratado no backend, no 03 - Increment Redis).
+   A regra dura é a segmentação — o closer indicado atende lead da faixa dele ou
+   inferior, NUNCA acima. Validamos aqui e no envio para o SDR entender o motivo;
+   a validação que de fato garante é a do 07 - Process Queue, no n8n. */
+const SEG_RANK = { SMB: 1, MID: 2, ENT: 3 };
+
+export async function loadCloserOptions() {
+  var sel = document.getElementById('referredCloserInput');
+  if (!sel) return;
+  try {
+    // period=day só para o histórico vir curto — a lista de closers vem completa.
+    const r = await authFetch(API.dashboard + '?period=day');
+    const d = await r.json();
+    st.closersList = (d.closers || []).filter(function(c){ return c.active; });
+    st.closersList.sort(function(a,b){ return String(a.name||a.email).localeCompare(String(b.name||b.email)); });
+    var html = '<option value="">Selecione o closer</option>';
+    st.closersList.forEach(function(c){
+      var seg = SEGS[c.segment] ? SEGS[c.segment].label : c.segment;
+      html += '<option value="' + c.email + '">' + (c.name || c.email) + ' — ' + seg + '</option>';
+    });
+    sel.innerHTML = html;
+  } catch(e) {
+    sel.innerHTML = '<option value="">Erro ao carregar closers</option>';
+    console.warn('[indicacao] nao consegui carregar os closers:', e.message);
+  }
+}
+
+export function onAssignTypeChange() {
+  var tipo = document.getElementById('assignTypeInput').value;
+  var field = document.getElementById('referredCloserField');
+  st.referral = tipo === 'referral';
+  if (!st.referral) {
+    st.referredCloserId = null; st.referredCloserName = null; st.referralBlocked = false;
+    if (field) field.style.display = 'none';
+    clearReferralError();
+  } else {
+    if (field) field.style.display = '';
+    if (!st.closersList.length) loadCloserOptions();
+  }
+  updateStep1Button();
+}
+
+export function onReferredCloserChange() {
+  var sel = document.getElementById('referredCloserInput');
+  st.referredCloserId = sel.value || null;
+  var c = st.closersList.filter(function(x){ return x.email === sel.value; })[0];
+  st.referredCloserName = c ? (c.name || c.email) : null;
+  validateReferral();
+  updateStep1Button();
+}
+
+function clearReferralError() {
+  var err = document.getElementById('referredCloserError');
+  var sel = document.getElementById('referredCloserInput');
+  if (err) err.style.display = 'none';
+  if (sel) sel.classList.remove('error');
+  st.referralBlocked = false;
+}
+
+// Devolve null quando está tudo certo, ou a mensagem de bloqueio.
+// Reavaliada também pelo updateTag(), porque o SDR pode trocar o valor DEPOIS
+// de escolher o closer — é o caminho mais fácil de furar a regra sem querer.
+export function validateReferral() {
+  if (!st.referral) { clearReferralError(); return null; }
+  var err = document.getElementById('referredCloserError');
+  var sel = document.getElementById('referredCloserInput');
+  function barra(msg) {
+    if (err) { err.textContent = msg; err.style.display = 'block'; }
+    if (sel) sel.classList.add('error');
+    st.referralBlocked = true;
+    return msg;
+  }
+  if (!st.referredCloserId) { clearReferralError(); return 'Escolha o closer indicado.'; }
+  var c = st.closersList.filter(function(x){ return x.email === st.referredCloserId; })[0];
+  if (!c) return barra('Closer indicado não encontrado.');
+  var r = classify(st.rawValue);
+  if (!r || !st.rawValue) { clearReferralError(); return null; }
+  if ((SEG_RANK[r.segKey] || 9) > (SEG_RANK[c.segment] || 0)) {
+    var segLead   = SEGS[r.segKey]   ? SEGS[r.segKey].label   : r.segKey;
+    var segCloser = SEGS[c.segment] ? SEGS[c.segment].label : c.segment;
+    return barra('Este lead é ' + segLead + ' · ' + r.subLabel + ' e ' + (c.name || c.email) +
+                 ' atende até ' + segCloser + '. A indicação não pode ser aplicada.');
+  }
+  clearReferralError();
+  return null;
+}
+
+export async function goStep2() {
+  document.getElementById('btnS1').textContent = 'Continuar →';
+  const lid=document.getElementById('leadIdInput').value.trim();
+  if (!lid) { document.getElementById('leadIdError').style.display='block'; document.getElementById('leadIdInput').classList.add('error'); return; }
+  document.getElementById('leadIdError').style.display='none'; document.getElementById('leadIdInput').classList.remove('error');
+  const leadOrigin=document.getElementById('leadOriginInput').value;
+  if (!leadOrigin) { document.getElementById('leadOriginError').style.display='block'; document.getElementById('leadOriginInput').classList.add('error'); return; }
+  document.getElementById('leadOriginError').style.display='none'; document.getElementById('leadOriginInput').classList.remove('error');
+  st.leadOrigin = leadOrigin;
+  var competitorFieldVisible = document.getElementById('competitorField').style.display !== 'none';
+  const competitor = document.getElementById('competitorInput').value.trim();
+  if (competitorFieldVisible && !competitor) { document.getElementById('competitorError').style.display='block'; document.getElementById('competitorInput').classList.add('error'); return; }
+  document.getElementById('competitorError').style.display='none'; document.getElementById('competitorInput').classList.remove('error');
+  st.competitor = competitorFieldVisible ? competitor : null;
+  if (st.referral) {
+    var refMsg = validateReferral();
+    if (refMsg) { showToast(refMsg, 'error', 6000); return; }
+  }
+  const cem=document.getElementById('clientEmailInput').value.trim();
+  const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cem);
+  if (!cem || !emailOk) {
+    document.getElementById('clientEmailError').textContent = cem ? 'E-mail inválido' : 'Campo obrigatório';
+    document.getElementById('clientEmailError').style.display='block';
+    document.getElementById('clientEmailInput').classList.add('error'); return;
+  }
+  document.getElementById('clientEmailError').style.display='none'; document.getElementById('clientEmailInput').classList.remove('error');
+  // Guarda dura: sem modo escolhido ativamente, não avança (nunca assume schedule)
+  if (st.schedulingMode !== 'slots' && st.schedulingMode !== 'specific') {
+    showToast('Escolha como agendar: por slots ou horário específico.', 'error', 4000);
+    return;
+  }
+  const r=classify(st.rawValue); if(!r) return;
+  st.leadId=extractLeadId(lid); st.clientEmail=cem; st.segKey=r.segKey; st.subKey=r.subKey; st.subLabel=r.subLabel;
+  st.refused=[]; st.weekOffset=0; st.selectedSlotId=null;
+  document.getElementById('noAvailBanner').classList.remove('show');
+  markDone('b1','l1'); markActive('b2','l2');
+  document.getElementById('conn1').classList.add('done');
+  document.getElementById('c1').classList.add('dimmed');
+
+  // Modo horário específico: os pickers de data/hora só aparecem agora (após o Continuar).
+  // O algoritmo só roda quando a pessoa confirmar data/hora em submitSpecificSlot().
+  if (st.schedulingMode === 'specific') {
+    document.getElementById('cSpecific').style.display='';
+    document.getElementById('cSpecific').classList.remove('dimmed');
+    // Trava o picker nativo pra não deixar escolher data passada (BRT)
+    document.getElementById('slotDate').min = todayBRT();
+    return;
+  }
+
+  // Modo slots: roda o algoritmo direto e abre a grade de slots.
+  await runAlgorithm();
+}
+
+// Confirma a data/hora do modo específico e dispara o algoritmo (checa disponibilidade).
+export async function submitSpecificSlot() {
+  if (!st.specificSlotStart) {
+    showToast('Preencha data e hora do horário específico.', 'error', 4000);
+    return;
+  }
+  document.getElementById('cSpecific').style.display='none';
+  // Fora da janela: já sabemos que não há atendimento → oferece só o Mercado, sem rodar o algoritmo
+  if (st.specificOutOfWindow) {
+    st.noAvailability = true;
+    st.closerId = null;
+    document.getElementById('c1').classList.remove('dimmed');
+    document.getElementById('c2').style.display='none';
+    document.getElementById('slotsGrid').innerHTML='';
+    var title = document.getElementById('noAvailTitle');
+    if (title) title.textContent = 'Horário fora da janela de atendimento (10h–17h) — envie ao Mercado';
+    var verAgenda = document.getElementById('btnVerAgenda');
+    if (verAgenda) verAgenda.style.display = 'none';   // só a opção de Mercado
+    document.getElementById('btnS1').textContent = 'Escolher outro horário';
+    document.getElementById('noAvailBanner').classList.add('show');
+    return;
+  }
+  await runAlgorithm();
+}
+
+// Volta do passo de data/hora para o Passo 1 sem perder os dados já preenchidos.
+export function backToStep1() {
+  document.getElementById('cSpecific').style.display='none';
+  document.getElementById('c1').classList.remove('dimmed');
+  markActive('b1','l1');
+  document.getElementById('conn1').classList.remove('done');
+}
+
+// Executa o algoritmo (animação + fetch) e roteia o resultado. Compartilhado entre
+// o modo slots (goStep2) e o modo específico (submitSpecificSlot / clearSlotAndRetry).
+async function runAlgorithm() {
+  document.getElementById('noAvailBanner').classList.remove('show');
+  document.getElementById('algoAnim').style.display='block';
+  document.getElementById('c2').style.display='none';
+  await new Promise(function(res){ setTimeout(res, 50); });
+
+  var fetchPromise = fetchCloser();
+  var animPromise = new Promise(function(res){
+    startAlgoAnimation(st.segKey, st.subKey, st.rawValue, res);
+  });
+
+  await Promise.all([animPromise, fetchPromise]);
+  document.getElementById('algoAnim').style.display='none';
+  if (st.noAvailability) {
+    document.getElementById('cSpecific').style.display='none';
+    document.getElementById('c1').classList.remove('dimmed');
+    var verAgenda = document.getElementById('btnVerAgenda');
+    if (verAgenda) verAgenda.style.display = '';   // caso normal: mantém "Ver agenda normal"
+    // No modo horário específico, clicar no botão reabre o seletor → rotula como tal
+    if (st.schedulingMode === 'specific') {
+      document.getElementById('btnS1').textContent = 'Escolher outro horário';
+    }
+    document.getElementById('noAvailBanner').classList.add('show');
+    document.getElementById('slotsGrid').innerHTML='';
+    return;
+  }
+  // modo específico: já foi pro Passo 3 via doReserveSpecific, não abre c2
+  if (st.schedulingMode === 'specific' && st.specificSlotStart) return;
+  document.getElementById('c2').style.display='';
+  document.getElementById('c2').classList.remove('dimmed');
+  document.getElementById('anonSub').textContent=SEGS[st.segKey].label+' · '+st.subLabel;
+  var anonName = document.getElementById('anonName');
+  if (anonName) anonName.textContent = st.referral
+    ? ('Indicação — ' + (st.referredCloserName || st.referredCloserId))
+    : 'Closer atribuído pelo algoritmo';
+  var btnReject = document.getElementById('btnRejectAgenda');
+  // Na indicação não existe "próximo closer": pular desfaria a indicação.
+  if (btnReject) btnReject.style.display =
+    (st.referral || (st.schedulingMode === 'specific' && st.specificSlotStart)) ? 'none' : '';
+}
+
+// Escolha ativa do modo de agendamento. Sem default: enquanto st.schedulingMode
+// for null, o "Continuar →" fica bloqueado. Não persiste em lugar nenhum → F5,
+// restore e nova opp nascem sem seleção (sem legado).
+export function selectSchedulingMode(mode) {
+  st.schedulingMode = mode;
+  document.getElementById('modeSlots').classList.toggle('selected', mode === 'slots');
+  document.getElementById('modeSpecific').classList.toggle('selected', mode === 'specific');
+  document.getElementById('noAvailBanner').classList.remove('show');
+  document.getElementById('btnS1').textContent = 'Continuar →';
+  if (mode !== 'specific') {
+    document.getElementById('slotDate').value = '';
+    document.getElementById('slotTime').value = '';
+    st.specificSlotStart = null;
+  }
+  updateStep1Button();
+}
+
+// Data de hoje em BRT no formato YYYY-MM-DD (comparável lexicograficamente com o value do <input type="date">)
+function todayBRT() {
+  return new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
+}
+
+export function validateSlotPicker() {
+  const date = document.getElementById('slotDate').value;
+  const time = document.getElementById('slotTime').value;
+  const warn = document.getElementById('specificWarn');
+  const btn  = document.getElementById('btnSpecific');
+
+  // Bloqueia data passada mesmo se o SDR digitar manualmente (o min do input só bloqueia o calendário nativo)
+  if (date && date < todayBRT()) {
+    st.specificSlotStart = null;
+    st.specificOutOfWindow = false;
+    warn.textContent = 'Selecione uma data a partir de hoje.';
+    warn.style.display = 'block';
+    if (btn) btn.disabled = true;
+    return;
+  }
+
+  if (date && time) {
+    st.specificSlotStart = date + 'T' + time + ':00-03:00';
+    // Fora da janela 10h–17h BRT → vai direto ao Mercado (sem rodar o algoritmo)
+    const [h, m] = time.split(':').map(Number);
+    const totalMin = h * 60 + m;
+    st.specificOutOfWindow = (totalMin < 10 * 60 || totalMin >= 17 * 60);
+    if (st.specificOutOfWindow) {
+      warn.textContent = 'Horário fora da janela de atendimento (10h–17h) — o lead irá ao Mercado.';
+      warn.style.display = 'block';
+    } else {
+      warn.style.display = 'none';
+    }
+  } else {
+    st.specificSlotStart = null;
+    st.specificOutOfWindow = false;
+    warn.style.display = 'none';
+  }
+  if (btn) btn.disabled = !st.specificSlotStart;
+}
+
+// "Ver agenda normal" no banner de indisponibilidade do modo Horário específico:
+// tenta o modo slots sem perder a data/hora já escolhida — se essa segunda tentativa
+// também não achar closer, "Enviar ao Mercado" ainda precisa mandar o horário desejado
+// original. Por isso NÃO usa selectSchedulingMode('slots') direto: aquela função zera
+// st.specificSlotStart, que é exatamente o dado que goEmergencyPool() precisa preservar.
+export function clearSlotAndRetry() {
+  st.schedulingMode = 'slots';
+  document.getElementById('modeSlots').classList.add('selected');
+  document.getElementById('modeSpecific').classList.remove('selected');
+  document.getElementById('noAvailBanner').classList.remove('show');
+  document.getElementById('btnS1').textContent = 'Continuar →';
+  updateStep1Button();
+  runAlgorithm();
+}
+
+export async function goEmergencyPool() {
+  // Popula state a partir dos inputs caso goStep2 não tenha rodado
+  // (cenário: SDR selecionou horário fora da janela sem passar pelo Step 2)
+  if (!st.leadId) {
+    st.leadId = extractLeadId(document.getElementById('leadIdInput').value.trim());
+  }
+  if (!st.clientEmail) {
+    st.clientEmail = document.getElementById('clientEmailInput').value.trim();
+  }
+  if (!st.subKey) {
+    const r = classify(st.rawValue);
+    if (r) {
+      st.segKey   = r.segKey;
+      st.subKey   = r.subKey;
+      st.subLabel = r.subLabel;
+    }
+  }
+
+  if (!st.leadId || !st.subKey) {
+    showToast('Preencha o formulário completo antes de enviar ao Mercado.', 'error', 4000);
+    return;
+  }
+
+  try {
+    // Só verifica disponibilidade se há um horário específico selecionado
+    if (st.specificSlotStart) {
+      showToast('Verificando disponibilidade...', 'info', 3000);
+      const checkPayload = {
+        lead_id:     st.leadId,
+        clientValue: st.rawValue,
+        segmentKey:  st.segKey,
+        subgroupKey: st.subKey,
+        mode:        'specific_date',
+        slotStart:   st.specificSlotStart,
+        origin:      st.leadOrigin || ''
+      };
+      const checkRes = await authFetch(API.algorithm, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(checkPayload)
+      });
+      const checkData = await checkRes.json();
+
+      // Se encontrou closer disponível, bloqueia mercado e atribui
+      if (!checkData.no_availability && checkData.closerId) {
+        document.getElementById('noAvailBanner').classList.remove('show');
+        showToast('Closer disponível encontrado — redirecionando para agendamento.', 'info', 5000);
+        st.closerId   = checkData.closerId;
+        st.closerName = checkData.closerName || '';
+        st.queue      = checkData.queue || [];
+        st.noAvailability = false;
+        await doReserveSpecific();
+        return;
+      }
+    }
+
+    // Sem closer disponível ou sem horário específico — vai direto pro pool
+    const payload = {
+      leadId:      st.leadId,
+      clientValue: st.rawValue,
+      clientEmail: st.clientEmail || '',
+      segmentKey:  st.segKey,
+      subgroupKey: st.subKey,
+      slotStart:   st.specificSlotStart || '',
+      sdrEmail:    session ? session.email : '',
+      origin:      st.leadOrigin || ''
+    };
+    const r = await authFetch(API.poolAdd, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const d = await r.json();
+    if (d.success !== false) {
+      document.getElementById('noAvailBanner').classList.remove('show');
+      showToast('Lead enviado ao Emergency Pool. Closers serão notificados.', 'success', 5000);
+    } else {
+      showToast('Erro ao enviar para o pool.', 'error', 4000);
+    }
+  } catch(e) {
+    showToast('Erro: ' + e.message, 'error', 4000);
+  }
+}
+
+export async function fetchCloser() {
+  setLoading();
+  document.getElementById('noAvailBanner').classList.remove('show');
+
+  try {
+    console.log('[DEBUG fetchCloser] schedulingMode:', st.schedulingMode, '| specificSlotStart:', st.specificSlotStart);
+    const payload = {
+      lead_id: st.leadId,
+      clientValue: st.rawValue,
+      segmentKey: st.segKey,
+      subgroupKey: st.subKey,
+      mode: st.schedulingMode === 'specific' ? 'specific_date' : 'schedule',
+      competitor: st.competitor || '',
+      origin: st.leadOrigin || '',
+      referral: st.referral || false,
+      referredCloserId: st.referral ? (st.referredCloserId || '') : ''
+    };
+    if (payload.mode === 'specific_date') payload.slotStart = st.specificSlotStart;
+    const r=await authFetch(API.algorithm,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const d=await r.json(); if(d.error) throw new Error(d.error);
+    if (d.no_availability || d.fallback === 'emergency' || (!d.closerId && !(d.queue && d.queue.length))) {
+      st.noAvailability = true;
+      // Atualiza título do banner conforme o motivo
+      var title = document.getElementById('noAvailTitle');
+      if (title) {
+        title.textContent = d.fallback === 'emergency'
+          ? 'Nenhum closer disponível neste segmento'
+          : 'Nenhum closer disponível neste horário';
+      }
+      // Aviso imediato em destaque — o banner troca o Passo 1, que é fácil de não notar
+      // logo após os ~12s da animação de busca (SDR pode achar que travou).
+      if (d.fallback === 'emergency') {
+        showToast('Nenhum closer disponível para este segmento no momento. Tente agendar por slots ou envie ao Mercado.', 'error', 6000);
+      }
+      return;
+    }
+    st.noAvailability = false;
+    st.closerId=d.closerId; st.closerName=d.closerName||''; st.queue=d.queue||[];
+    st.campaignActive = d.campaignActive || false;
+    console.log('[DEBUG] schedulingMode:', st.schedulingMode, 'specificSlotStart:', st.specificSlotStart);
+    if (st.schedulingMode === 'specific' && st.specificSlotStart) {
+      console.log('[DEBUG] chamando doReserveSpecific');
+      await doReserveSpecific();
+    } else {
+      console.log('[DEBUG] chamando fetchSlots');
+      await fetchSlots();
+    }
+  } catch(e) {
+    st.noAvailability = false;
+    document.getElementById('slotsGrid').innerHTML='<div class="slot-empty">Erro ao buscar closer: '+e.message+'</div>';
+  }
+}
+
+/* Sequência das buscas de agenda. Antes o fetchSlots abria com
+   `if (st.slotsLoading) return;`, que DESCARTAVA em silêncio a busca nova quando
+   outra ainda estava em voo. Como rejectAgenda() e goBackToCloser() trocam
+   st.closerId ANTES de chamar aqui, um clique durante o carregamento deixava o
+   estado apontando pra um closer e a tela pintada com a agenda de outro — e a
+   reserva saía com o par trocado. Foi o que aconteceu em 16/09/2026 (execuções
+   2111653 e 2111670: closerId=camila.harumi com slotId=free_rafael.rufino…, duas
+   vezes seguidas com o mesmo lead).
+   Agora toda busca leva um número de sequência e o dono dela: resposta atrasada é
+   ignorada em vez de sobrescrever a atual, e se o closer mudou no meio a busca é
+   refeita pro closer certo. Ninguém mais é descartado em silêncio. */
+let slotsReqSeq = 0;
+
+export async function fetchSlots() {
+  const reqId = ++slotsReqSeq;
+  const owner = st.closerId;            // de quem é a agenda que esta busca vai pintar
+  st.slotsLoading = true;
+  setSlotsLoading(true);
+  setLoading(); updateCalHeader();
+  try {
+    const r=await authFetch(API.slots,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({closerId:owner,weekOffset:st.weekOffset})});
+    const raw=await r.json();
+    // Já existe busca mais nova em voo: quem manda na tela é ela, não esta.
+    if (reqId !== slotsReqSeq) return;
+    // O closer mudou sem disparar nova busca — refaz em vez de pintar o errado.
+    if (owner !== st.closerId) { fetchSlots(); return; }
+    const d = Array.isArray(raw) ? raw[0] : raw;
+    if(d.error) throw new Error(d.error);
+    st.slotsOwner = owner;              // dono da grade — conferido no doReserve()
+    st.agendaEvents = d.events || [];   // eventos ocupados anonimizados (visão Agenda/Completa)
+    var allSlots = (d.slots||[]).map(function(s){
+      // displayStart é o horário de reunião (sem o tempo de preparação); start/end (slotStart/slotEnd)
+      // são o bloco total reservado de fato, usados no /reserve.
+      var displayStartRaw = s.displayStart || s.slotStart;
+      var displayStart = new Date(displayStartRaw);
+      var end   = new Date(s.slotEnd);
+      var opts  = {timeZone:'America/Sao_Paulo'};
+      var dateStr = displayStart.toLocaleDateString('pt-BR',Object.assign({},opts,{day:'2-digit',month:'2-digit'}));
+      var timeStr = displayStart.toLocaleTimeString('pt-BR',Object.assign({},opts,{hour:'2-digit',minute:'2-digit',hour12:false}));
+      var endStr  = end.toLocaleTimeString('pt-BR',Object.assign({},opts,{hour:'2-digit',minute:'2-digit',hour12:false}));
+      var weekdayFull = displayStart.toLocaleDateString('pt-BR',Object.assign({},opts,{weekday:'long'})).toLowerCase();
+      var weekdayShort = displayStart.toLocaleDateString('pt-BR',Object.assign({},opts,{weekday:'short'}));
+      var hourBRT = parseInt(displayStart.toLocaleTimeString('pt-BR',Object.assign({},opts,{hour:'2-digit',hour12:false})));
+      if (hourBRT < 10 || hourBRT > 17) return null;
+      var period = hourBRT < 12 ? 'manha' : 'tarde';
+      var dayKey = weekdayFull.startsWith('seg') ? 'seg' :
+                   weekdayFull.startsWith('ter') ? 'ter' :
+                   weekdayFull.startsWith('qua') ? 'qua' :
+                   weekdayFull.startsWith('qui') ? 'qui' :
+                   weekdayFull.startsWith('sex') ? 'sex' : 'other';
+      return {
+        id:      s.slotId,
+        start:   s.slotStart,
+        end:     s.slotEnd,
+        day:     weekdayShort,
+        date:    dateStr,
+        time:    timeStr + ' – ' + endStr,
+        label:   dateStr + ' ' + timeStr + (s.type==='slot' ? ' (Slot)' : ''),
+        type:    s.type,
+        dayKey:  dayKey,
+        period:  period
+      };
+    });
+    st.allSlots = allSlots.filter(function(s){ return s !== null; });
+    st.filterDay = st.filterDay || 'all';
+    st.filterPeriod = st.filterPeriod || 'all';
+
+    applySlotFilters(); renderRefused(); renderQueueHint();
+    if (st.slotView === 'full') renderAgenda();
+  } catch(e) {
+    if (reqId !== slotsReqSeq) return;  // erro de busca obsoleta não polui a tela da atual
+    document.getElementById('slotsGrid').innerHTML='<div class="slot-empty">Erro ao buscar agenda: '+e.message+'</div>';
+  }
+  finally {
+    // Só a busca mais recente libera o carregamento — senão uma resposta atrasada
+    // destravaria a tela enquanto a busca válida ainda está rodando.
+    if (reqId === slotsReqSeq) { st.slotsLoading = false; setSlotsLoading(false); }
+  }
+}
+
+function setLoading() {
+  document.getElementById('slotsGrid').innerHTML='<div class="slot-loading"><div class="spinner"></div> Buscando disponibilidade...</div>';
+  document.getElementById('btnConfirm').disabled=true;
+  document.getElementById('confirmBox').style.display='none';
+  st.selectedSlotId=null;
+}
+
+// Overlay de "Carregando semana…" sobre a agenda + trava os botões de semana (anti re-clique)
+function setSlotsLoading(on) {
+  var ov = document.getElementById('calLoading');
+  if (ov) ov.classList.toggle('show', on);
+  document.querySelectorAll('.cal-nav-btn').forEach(function(b){ b.disabled = on; });
+}
+
+function updateCalHeader() {
+  const mon=getMon(st.weekOffset); const fri=new Date(mon); fri.setDate(mon.getDate()+4);
+  const fmt=d=>d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});
+  document.getElementById('calHead').textContent=fmt(mon)+' – '+fmt(fri);
+}
+
+export function renderSlots(slots) {
+  const g=document.getElementById('slotsGrid');
+  if (!slots.length) { g.innerHTML='<div class="slot-empty">Sem slots disponíveis nesta semana.</div>'; return; }
+  g.innerHTML='';
+  slots.forEach(function(s){
+    const btn=document.createElement('button');
+    var isSlot = s.type === 'slot';
+    btn.className='slot-btn' + (isSlot ? ' is-slot' : ''); btn.setAttribute('role','listitem');
+    btn.innerHTML=
+      '<span class="slot-badge ' + (isSlot ? 'slot-badge-slot' : 'slot-badge-free') + '">' + (isSlot ? 'Slot' : 'Janela livre') + '</span>' +
+      '<span class="slot-day">'+s.day+' '+s.date+'</span>' +
+      '<span class="slot-time">'+s.time+'</span>';
+    btn.onclick=function(){ selectSlot(btn,s); };
+    g.appendChild(btn);
+  });
+}
+
+export function selectSlot(el,s) {
+  document.querySelectorAll('.slot-btn').forEach(function(b){ b.classList.remove('selected'); });
+  el.classList.add('selected');
+  st.selectedSlotId=s.id; st.selectedSlotLabel=s.label;
+  st.selectedSlotStart=s.start; st.selectedSlotEnd=s.end;
+  document.getElementById('cfLeadId').textContent=st.leadId||'—';
+  document.getElementById('cfClientEmail').textContent=st.clientEmail||'—';
+  document.getElementById('cfSeg').textContent=SEGS[st.segKey].label;
+  document.getElementById('cfSub').textContent=st.subLabel;
+  document.getElementById('cfSlot').textContent=s.label;
+  document.getElementById('cfVal').textContent=fmtBRL(st.rawValue);
+  document.getElementById('confirmBox').style.display='block';
+  document.getElementById('btnConfirm').disabled=false;
+}
+
+export function applySlotFilters() {
+  var filtered = (st.allSlots || []).filter(function(s) {
+    if (st.filterDay !== 'all' && s.dayKey !== st.filterDay) return false;
+    if (st.filterPeriod !== 'all' && s.period !== st.filterPeriod) return false;
+    return true;
+  });
+  renderSlots(filtered);
+}
+
+export function setFilterDay(val, btn) {
+  st.filterDay = val;
+  document.querySelectorAll('#filterDayBtns .filter-btn').forEach(function(b){ b.classList.remove('active'); });
+  btn.classList.add('active');
+  applySlotFilters();
+}
+
+export function setFilterPeriod(val, btn) {
+  st.filterPeriod = val;
+  btn.closest('.slots-filter-btns').querySelectorAll('.filter-btn').forEach(function(b){ b.classList.remove('active'); });
+  btn.classList.add('active');
+  applySlotFilters();
+}
+
+export async function rejectAgenda(){
+  if(!st.closerId) return;
+  // Registra o pulo antes de trocar o closer
+  try {
+    await authFetch(API.skip, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sdrEmail:         session ? session.email : '',
+        skippedCloserId:  st.closerId,
+        slots:            st.allSlots || []
+      })
+    });
+  } catch(e) {
+    console.warn('[skip] Erro ao registrar pulo:', e.message);
+  }
+  st.refused.push(st.closerId);
+
+  if (!st.queue.length) {
+    // Sem próximo closer na fila — em vez de travar o SDR, deixa revisar os recusados
+    st.closerId = null;
+    document.getElementById('slotsGrid').innerHTML='<div class="slot-empty">Nenhum closer restante na fila.</div>';
+    document.getElementById('queueInfo').textContent = 'Todos os closers foram verificados. Clique em um abaixo para revisar a agenda.';
+    renderRefused();
+    return;
+  }
+
+  st.closerId=st.queue.shift(); st.weekOffset=0;
+  fetchSlots(); renderRefused(); renderQueueHint();
+}
+
+// Volta a exibir a agenda de um closer já recusado, sem criar nova reserva.
+// O closer atualmente selecionado (se houver) retorna para a frente da fila.
+export function goBackToCloser(closerIdFromRefused){
+  var idx = st.refused.indexOf(closerIdFromRefused);
+  if (idx === -1) return;
+  st.refused.splice(idx, 1);
+  if (st.closerId) st.queue.unshift(st.closerId);
+  st.closerId = closerIdFromRefused;
+  st.weekOffset = 0;
+  document.getElementById('noAvailBanner').classList.remove('show');
+  fetchSlots();
+  renderRefused();
+  renderQueueHint();
+}
+
+export function renderRefused(){
+  const log=document.getElementById('refusedLog'); const items=document.getElementById('refusedItems');
+  if(!st.refused.length){ log.style.display='none'; return; }
+  log.style.display='block';
+  items.innerHTML=st.refused.map(function(id,i){
+    return '<button type="button" class="refused-item" onclick="goBackToCloser(\''+id+'\')">↺ Closer '+(i+1)+' — agenda indisponível — clique para revisar</button>';
+  }).join('');
+}
+
+export function renderQueueHint(){
+  const el=document.getElementById('queueInfo');
+  el.textContent=st.queue.length>0?'↻ '+st.queue.length+' closer(s) na fila':'';
+}
+
+export async function doReserveSpecific() {
+  // Monta slotEnd = slotStart + 1h30
+  const start = new Date(st.specificSlotStart);
+  const end = new Date(start.getTime() + 90 * 60 * 1000);
+  // O closer entra no id porque a reserva e gravada no Redis como
+  // reservation:<slotId>. Sem ele, o id carregava so o horario — e dois SDRs
+  // reservando o MESMO horario com closers DIFERENTES escreviam na mesma chave,
+  // o segundo sobrescrevendo o primeiro. A reuniao acabava na agenda do closer
+  // errado, a opp era creditada pra ele, e o [TEMP] do outro ficava orfao.
+  // Nenhum fluxo interpreta o conteudo do slotId: todos so fazem startsWith()
+  // no prefixo, entao inserir o closer depois dele nao quebra nada.
+  st.selectedSlotId    = 'specific_' + st.closerId + '_' + start.toISOString();
+  st.selectedSlotStart = st.specificSlotStart;
+  st.selectedSlotEnd   = end.toISOString();
+  st.selectedSlotLabel = start.toLocaleString('pt-BR', {
+    timeZone: 'America/Sao_Paulo',
+    weekday: 'short', day: '2-digit', month: '2-digit',
+    hour: '2-digit', minute: '2-digit'
+  });
+  try {
+    const res = await authFetch(API.reserve, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        closerId:    st.closerId,
+        slotId:      st.selectedSlotId,
+        slotStart:   st.selectedSlotStart,
+        slotEnd:     st.selectedSlotEnd,
+        leadId:      st.leadId,
+        clientEmail: st.clientEmail,
+        clientValue: st.rawValue,
+        segmentKey:  st.segKey,
+        subgroupKey: st.subKey,
+        sdrEmail:    session ? session.email : '',
+        ts:          new Date().toISOString(),
+        mode:           st.schedulingMode === 'specific' ? 'specific_date' : 'schedule',
+        origin:         st.leadOrigin || '',
+        competitor:     st.competitor || '',
+        campaignActive: st.campaignActive || false,
+        referral:         st.referral || false,
+        referredCloserId: st.referral ? (st.referredCloserId || '') : ''
+      })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    showReservationState(data);
+  } catch(e) {
+    showToast('Erro ao reservar: ' + e.message, 'error', 5000);
+  }
+}
+
+export async function doReserve(){
+  // Rede de segurança: o slot selecionado veio da grade na tela, e a grade precisa
+  // ser do mesmo closer que vai receber a reserva. Cobre qualquer caminho que troque
+  // st.closerId sem repintar a grade — ver o comentário em fetchSlots().
+  if (st.slotsOwner && st.closerId && st.slotsOwner !== st.closerId) {
+    showToast('A agenda na tela é de outro closer. Recarregando os horários…', 'error', 5000);
+    st.selectedSlotId = null;
+    document.getElementById('confirmBox').style.display = 'none';
+    document.getElementById('btnConfirm').disabled = true;
+    fetchSlots();
+    return;
+  }
+  const btn = document.getElementById('btnConfirm');
+  btn.disabled = true; btn.textContent = 'Reservando...';
+  try {
+    const res = await authFetch(API.reserve, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        closerId:    st.closerId,
+        slotId:      st.selectedSlotId,
+        slotStart:   st.selectedSlotStart,
+        slotEnd:     st.selectedSlotEnd,
+        leadId:      st.leadId,
+        clientEmail: st.clientEmail,
+        clientValue: st.rawValue,
+        segmentKey:  st.segKey,
+        subgroupKey: st.subKey,
+        sdrEmail:    session ? session.email : '',
+        ts:          new Date().toISOString(),
+        mode:           st.schedulingMode === 'specific' ? 'specific_date' : 'schedule',
+        origin:         st.leadOrigin || '',
+        competitor:     st.competitor || '',
+        campaignActive: st.campaignActive || false,
+        referral:         st.referral || false,
+        referredCloserId: st.referral ? (st.referredCloserId || '') : ''
+      })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    showReservationState(data);
+  } catch(e) {
+    showToast('Erro ao reservar: ' + e.message, 'error', 5000);
+    btn.disabled = false; btn.textContent = 'Reservar horário';
+  }
+}
+
+export function showReservationState(data) {
+  // Snapshot de tudo que a confirmação/cancelamento/edição desta reserva vão precisar depois.
+  // Fica em st.activeReservation (não em st.* direto) porque resetAll(), logo abaixo, libera a
+  // sdrView pro SDR já começar outro lead — e activeReservation não é uma das chaves que ele reseta.
+  setActiveReservation({
+    closerId:       st.closerId,
+    slotId:         st.selectedSlotId,
+    slotStart:      st.selectedSlotStart,
+    slotEnd:        st.selectedSlotEnd,
+    slotLabel:      st.selectedSlotLabel,
+    tempEventId:    data.tempEventId,
+    leadId:         st.leadId,
+    clientEmail:    st.clientEmail,
+    clientValue:    st.rawValue,
+    segmentKey:     st.segKey,
+    subgroupKey:    st.subKey,
+    subLabel:       st.subLabel,
+    schedulingMode: st.schedulingMode,
+    competitor:     st.competitor,
+    origin:         st.leadOrigin,
+    campaignActive: st.campaignActive,
+    referral:         st.referral || false,
+    referredCloserId: st.referral ? (st.referredCloserId || '') : '',
+    referredCloserName: st.referredCloserName || '',
+    // Momento da reserva — o contador lê daqui em vez de reiniciar do zero a cada
+    // renderização, senão um F5 faria o prazo voltar a contar do começo.
+    reservedAt:     Date.now()
+  });
+
+  renderReservationCard();
+
+  // Libera a sdrView pro SDR já iniciar outro lead — a reserva atual segue viva em
+  // st.activeReservation e acompanhável na aba "Aguardando confirmação".
+  resetAll();
+
+  showToast('Reserva criada — acompanhe em Aguardando confirmação', 'success');
+  switchTab('pending');
+  // Sem retorno automático para a sdrView: antes o app voltava sozinho depois de 15s,
+  // arrancando o card da tela no meio da leitura/edição — e parecia que o botão
+  // "Cliente confirmou" tinha falhado. Quem decide sair da aba agora é o SDR.
+}
+
+// Preenche o card #reservationState a partir de st.activeReservation. Separado de
+// showReservationState() porque a aba também precisa reconstruir o card quando a
+// reserva vem do localStorage (F5 ou segunda aba) — sem isso o card apareceria vazio.
+export function renderReservationCard() {
+  var card = document.getElementById('reservationState');
+  if (!card) return;
+  var ar = st.activeReservation;
+  if (!ar) {
+    // Reserva encerrada (aqui ou em outra aba) — para o contador junto, senão ele
+    // segue tiquetaqueando contra um prazo que não vale mais.
+    if (reservationTimer) { clearInterval(reservationTimer); reservationTimer = null; }
+    card.style.display = 'none';
+    return;
+  }
+
+  // Reserva vencida: o backend já liberou o horário (o 22.cleanup-temp apaga o [TEMP]
+  // da agenda e a chave do Redis). Manter o card na tela levaria o SDR a confirmar um
+  // horário que não está mais reservado — e como o /confirm faz fallback pro corpo da
+  // requisição, a reunião seria criada assim mesmo, possivelmente em cima de alguém que
+  // pegou o horário no meio tempo. Agora o card se descarta sozinho.
+  if (ar.reservedAt && Date.now() - ar.reservedAt > RESERVATION_TTL_MS) {
+    expireActiveReservation();
+    return;
+  }
+
+  renderInlineValue('resvLeadId', 'leadId');
+  renderInlineValue('resvClientEmail', 'clientEmail');
+  document.getElementById('resvCloser').textContent  = '****';
+  document.getElementById('resvSlot').textContent    = ar.slotLabel || '—';
+  document.getElementById('resvSeg').textContent     = (SEGS[ar.segmentKey] ? SEGS[ar.segmentKey].label : '—') + ' · ' + (ar.subLabel || '—');
+  document.getElementById('resvVal').textContent     = fmtBRL(ar.clientValue);
+  document.getElementById('resvSub').textContent     = (ar.slotLabel || '—') + ' · ' + fmtBRL(ar.clientValue);
+
+  reservationExpiresAt = (ar.reservedAt || Date.now()) + RESERVATION_TTL_MS;
+  startReservationTimer();
+  card.style.display = 'block';
+}
+
+// Descarta a reserva vencida: limpa o estado (e o localStorage, via setActiveReservation),
+// para o contador, esconde o card e avisa. Chamado tanto ao repintar quanto pelo tique
+// do contador, então precisa ser idempotente — sair cedo se já não há reserva evita
+// mostrar o aviso duas vezes.
+function expireActiveReservation() {
+  if (!st.activeReservation) return;
+  setActiveReservation(null);
+  if (reservationTimer) { clearInterval(reservationTimer); reservationTimer = null; }
+  var card = document.getElementById('reservationState');
+  if (card) card.style.display = 'none';
+  showToast('Reserva expirada — o horário foi liberado. Faça uma nova reserva se ainda precisar.', 'info', 8000);
+}
+
+const PENCIL_ICON = '<svg class="confirm-edit-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>';
+
+// Reexibe o valor de st.activeReservation[stateKey] em modo texto (com o ícone de lápis).
+// resvLeadId/resvClientEmail representam sempre a reserva ativa, nunca o lead em
+// andamento na sdrView — por isso lêem de activeReservation, não de st[stateKey] direto.
+function renderInlineValue(containerId, stateKey) {
+  var container = document.getElementById(containerId);
+  if (!container) return;
+  var ar = st.activeReservation || {};
+  container.innerHTML = '<span class="confirm-v-text">' + (ar[stateKey] || '—') + '</span>' + PENCIL_ICON;
+}
+
+// Troca o container pra um <input> editável. Enter/blur salva; Escape descarta.
+// Valor vazio nunca é salvo — restaura o anterior.
+export function startInlineEdit(containerId, stateKey) {
+  var container = document.getElementById(containerId);
+  if (!container || container.querySelector('input')) return;
+  var ar = st.activeReservation || {};
+  var previousValue = ar[stateKey] || '';
+
+  var input = document.createElement('input');
+  input.type = 'text';
+  input.className = 'inline-edit-input';
+  input.value = previousValue;
+  container.innerHTML = '';
+  container.appendChild(input);
+  input.focus();
+  input.select();
+
+  input.addEventListener('blur', function() {
+    var newValue = input.value.trim();
+    if (st.activeReservation) {
+      st.activeReservation[stateKey] = newValue || previousValue;
+      // Regrava no localStorage: agora que a reserva sobrevive ao F5, a edição
+      // também precisa sobreviver — senão o card voltaria com o valor antigo.
+      setActiveReservation(st.activeReservation);
+    }
+    renderInlineValue(containerId, stateKey);
+  });
+  input.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
+    else if (e.key === 'Escape') { input.value = previousValue; input.blur(); }
+  });
+}
+
+export function startReservationTimer() {
+  if (reservationTimer) clearInterval(reservationTimer);
+  function tick() {
+    var remaining = reservationExpiresAt - Date.now();
+    if (remaining <= 0) {
+      // Antes o card ficava na tela marcado "Expirada", com os botões ainda ativos.
+      // Agora ele é descartado de vez — o horário já não está mais reservado.
+      document.getElementById('timerLabel').textContent = 'Expirada';
+      document.getElementById('timerFill').style.width = '0%';
+      expireActiveReservation();
+      return;
+    }
+    var totalMs = RESERVATION_TTL_MS;
+    var pct     = (remaining / totalMs) * 100;
+    var hours   = Math.floor(remaining / (60 * 60 * 1000));
+    var minutes = Math.floor((remaining % (60 * 60 * 1000)) / 60000);
+    document.getElementById('timerLabel').textContent = hours + 'h ' + String(minutes).padStart(2,'0') + 'm';
+    document.getElementById('timerFill').style.width = pct + '%';
+  }
+  tick();
+  reservationTimer = setInterval(tick, 60000);
+}
+
+export async function doConfirmFinal(){
+  var btn = document.querySelector('.btn-confirm-final');
+  btn.disabled = true; btn.textContent = 'Confirmando...';
+  if (reservationTimer) clearInterval(reservationTimer);
+  var ar = st.activeReservation || {};
+  try {
+    const res = await authFetch(API.confirm, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        closerId:      ar.closerId,
+        slotId:        ar.slotId,
+        slotStart:     ar.slotStart,
+        slotEnd:       ar.slotEnd,
+        tempEventId:   ar.tempEventId,
+        leadId:        ar.leadId,
+        clientEmail:   ar.clientEmail,
+        clientValue:   ar.clientValue,
+        segmentKey:    ar.segmentKey,
+        subgroupKey:   ar.subgroupKey,
+        sdrEmail:      session ? session.email : '',
+        ts:            new Date().toISOString(),
+        mode:          ar.schedulingMode === 'specific' ? 'specific_date' : 'schedule',
+        competitor:    ar.competitor || '',
+        origin:        ar.origin || '',
+        campaignActive: ar.campaignActive || false,
+        referral:         ar.referral || false,
+        referredCloserId: ar.referredCloserId || ''
+      })
+    });
+    const raw = await res.json();
+    const data = Array.isArray(raw) ? raw[0] : raw;
+    if (data.sendToPool) {
+      btn.disabled = false; btn.textContent = 'Cliente confirmou';
+      // Opp indicada nunca vai ao Mercado — o backend já devolve erro em vez de
+      // sendToPool, mas a guarda fica aqui também.
+      if (st.activeReservation && st.activeReservation.referral) {
+        showToast(data.message || 'O horário não está mais livre na agenda do closer indicado.', 'error', 6000);
+        return;
+      }
+      showPoolFallbackModal(st.activeReservation, data.message);
+      return;
+    }
+    if (data.error) throw new Error(data.error);
+    document.getElementById('reservationState').style.display = 'none';
+    var closerName = data.closerName || '****';
+    // Sem tela de sucesso na sdrView de propósito: um segundo lead pode estar em
+    // andamento por lá, e essa confirmação (de uma reserva diferente, feita pela
+    // aba Pending) não pode sobrepor ou afetar o formulário desse outro lead.
+    showToast('Reunião confirmada com ' + closerName + ' — não esqueça de converter a opp no Salesforce.', 'success', 7000);
+    setActiveReservation(null);
+    switchTab('sdr');
+  } catch(e) {
+    showToast('Erro ao confirmar: ' + e.message, 'error', 5000);
+    btn.disabled = false; btn.textContent = 'Cliente confirmou';
+  }
+}
+
+export async function doCancelReserve(){
+  var btn = document.querySelector('.btn-cancel-reserve');
+  btn.disabled = true; btn.textContent = 'Cancelando...';
+  if (reservationTimer) clearInterval(reservationTimer);
+  var ar = st.activeReservation || {};
+  try {
+    const res = await authFetch(API.cancelReserve, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        closerId:    ar.closerId,
+        slotId:      ar.slotId,
+        slotStart:   ar.slotStart,
+        slotEnd:     ar.slotEnd,
+        tempEventId: ar.tempEventId,
+      })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    showToast('Reserva cancelada — slot liberado', 'info');
+    document.getElementById('reservationState').style.display = 'none';
+    setActiveReservation(null);
+    switchTab('sdr');
+  } catch(e) {
+    showToast('Erro ao cancelar: ' + e.message, 'error', 5000);
+    btn.disabled = false; btn.textContent = 'Cancelar reserva';
+  }
+}
+
+export function resetAll(){
+  Object.assign(st, {rawValue:0,leadId:null,clientEmail:null,leadOrigin:null,segKey:null,subKey:null,subLabel:null,competitor:null,campaignActive:false,
+      closerId:null,queue:[],refused:[],weekOffset:0,slotsOwner:null,
+      selectedSlotId:null,selectedSlotLabel:null,selectedSlotStart:null,selectedSlotEnd:null,
+      tempEventId:null,schedulingMode:null,specificSlotStart:null,specificOutOfWindow:false,
+      referral:false,referredCloserId:null,referredCloserName:null,referralBlocked:false});
+  var tipoEl = document.getElementById('assignTypeInput'); if(tipoEl) tipoEl.value='normal';
+  var refEl  = document.getElementById('referredCloserInput'); if(refEl) refEl.value='';
+  var refFld = document.getElementById('referredCloserField'); if(refFld) refFld.style.display='none';
+  var refErr = document.getElementById('referredCloserError'); if(refErr) refErr.style.display='none';
+  ['leadIdInput','clientEmailInput'].forEach(function(id){ document.getElementById(id).value=''; document.getElementById(id).classList.remove('error'); });
+  var compEl = document.getElementById('competitorInput'); if(compEl) { compEl.value=''; compEl.classList.remove('error'); }
+  var originEl = document.getElementById('leadOriginInput'); if(originEl) { originEl.value=''; originEl.classList.remove('error'); }
+  document.getElementById('leadOriginError').style.display='none';
+  document.getElementById('valInput').value='';
+  // Zera a escolha de modo de agendamento — sem seleção, sem legado entre opps
+  document.getElementById('modeSlots').classList.remove('selected');
+  document.getElementById('modeSpecific').classList.remove('selected');
+  document.getElementById('cSpecific').style.display='none';
+  document.getElementById('slotDate').value = '';
+  document.getElementById('slotTime').value = '';
+  var sWarn = document.getElementById('specificWarn'); if (sWarn) sWarn.style.display='none';
+  var bSpec = document.getElementById('btnSpecific'); if (bSpec) bSpec.disabled = true;
+  var bVer = document.getElementById('btnVerAgenda'); if (bVer) bVer.style.display = '';
+  var bS1 = document.getElementById('btnS1'); if (bS1) bS1.textContent = 'Continuar →';
+  setSlotView('compact');
+  document.getElementById('noAvailBanner').classList.remove('show');
+  document.getElementById('leadIdError').style.display='none';
+  document.getElementById('clientEmailError').style.display='none';
+  updateTag();
+  if (reservationTimer) clearInterval(reservationTimer);
+  document.getElementById('reservationState').style.display='none';
+  document.getElementById('algoAnim').style.display='none';
+  ['c1','c2'].forEach(function(id){ var e=document.getElementById(id); e.style.display=''; });
+  document.getElementById('c2').style.display='none';
+  document.getElementById('c1').classList.remove('dimmed');
+  document.getElementById('c2').classList.add('dimmed');
+  document.getElementById('successState').style.display='none';
+  document.getElementById('confirmBox').style.display='none';
+  document.getElementById('refusedLog').style.display='none';
+  document.getElementById('btnConfirm').disabled=true;
+  document.getElementById('btnConfirm').textContent='Confirmar agendamento';
+  var btnFinal = document.querySelector('.btn-confirm-final');
+  if (btnFinal) { btnFinal.disabled = false; btnFinal.textContent = 'Cliente confirmou'; }
+  document.getElementById('queueInfo').textContent='';
+  document.querySelector('.steps').style.display='';
+  [['b1','l1',1],['b2','l2',2],['b3','l3',3]].forEach(function(arr){
+    var b=document.getElementById(arr[0]); b.className='step-dot'+(arr[2]===1?' active':''); b.textContent=arr[2];
+    document.getElementById(arr[1]).className='step-label'+(arr[2]===1?' active':'');
+  });
+  ['conn1','conn2'].forEach(function(id){ document.getElementById(id).classList.remove('done'); });
+}
+
+export function onCompetitorChange() {
+  var val = document.getElementById('competitorInput').value;
+  if (val) {
+    document.getElementById('competitorError').style.display = 'none';
+    document.getElementById('competitorInput').classList.remove('error');
+  }
+  st.competitor = val;
+}
+
+export function onLeadOriginChange() {
+  var val = document.getElementById('leadOriginInput').value;
+  if (val) {
+    document.getElementById('leadOriginError').style.display = 'none';
+    document.getElementById('leadOriginInput').classList.remove('error');
+  }
+  st.leadOrigin = val;
+}
+

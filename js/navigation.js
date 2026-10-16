@@ -1,0 +1,87 @@
+/* ══════════════════════════════════════════════
+   navigation.js — Navegação entre abas e views do app.
+   ══════════════════════════════════════════════ */
+
+
+import { session, st } from './state.js?v=20261016-2109';
+import { setupRole } from './auth.js?v=20261016-2109';
+import { loadDashboard } from './dashboard-core.js?v=20261016-2109';
+import { loadMercado } from './mercado.js?v=20261016-2109';
+import { loadCapacity } from './dashboard-capacity.js?v=20261016-2109';
+import { loadSecurity } from './dashboard-security.js?v=20261016-2109';
+import { loadCampaigns } from './dashboard-campaigns.js?v=20261016-2109';
+import { loadTimeConfig } from './dashboard-time.js?v=20261016-2109';
+import { loadEscalationConfig } from './dashboard-escalation.js?v=20261016-2109';
+import { loadQueueSetup } from './dashboard-queue-setup.js?v=20261016-2109';
+import { loadActivity } from './dashboard-activity.js?v=20261016-2109';
+import { loadPendingView } from './pending.js?v=20261016-2109';
+
+
+export function switchTab(tab){
+  // tabs novas
+  var tSdr     = document.getElementById('tabSdr');
+  var tMercado = document.getElementById('tabMercado');
+  var tPending = document.getElementById('tabPending');
+  var tAdmin   = document.getElementById('tabAdmin');
+  var tSdrL    = document.getElementById('tabSdrLegacy');
+  var tAdminL  = document.getElementById('tabAdminLegacy');
+
+  [tSdr,tMercado,tPending,tAdmin,tSdrL,tAdminL].forEach(function(t){ if(t){ t.classList.remove('active'); t.setAttribute('aria-selected','false'); } });
+
+  var active = document.getElementById('tab' + tab.charAt(0).toUpperCase() + tab.slice(1));
+  if (active) { active.classList.add('active'); active.setAttribute('aria-selected','true'); }
+  var activeL = document.getElementById('tab' + tab.charAt(0).toUpperCase() + tab.slice(1) + 'Legacy');
+  if (activeL) { activeL.classList.add('active'); activeL.setAttribute('aria-selected','true'); }
+
+  document.getElementById('sdrView').style.display     = tab==='sdr'     ? '' : 'none';
+  document.getElementById('mercadoView').style.display = tab==='mercado' ? '' : 'none';
+  document.getElementById('pendingView').style.display = tab==='pending' ? '' : 'none';
+  document.getElementById('adminView').style.display   = tab==='admin'   ? '' : 'none';
+
+  if (tab==='admin')   loadDashboard();
+  if (tab==='mercado') loadMercado();
+  if (tab==='pending') loadPendingView();
+}
+
+export function switchDashTab(tab, btn) {
+  document.getElementById('dashHistorico').style.display  = tab === 'historico'  ? '' : 'none';
+  document.getElementById('dashCapacidade').style.display = tab === 'capacidade' ? '' : 'none';
+  document.getElementById('dashSecurity').style.display   = tab === 'security'   ? '' : 'none';
+  document.getElementById('dashCampaigns').style.display  = tab === 'campaigns'  ? '' : 'none';
+  document.getElementById('dashTime').style.display       = tab === 'time'       ? '' : 'none';
+  document.getElementById('dashEscalation').style.display  = tab === 'escalation' ? '' : 'none';
+  document.getElementById('dashQueueSetup').style.display  = tab === 'queuesetup' ? '' : 'none';
+  document.getElementById('dashActivity').style.display    = tab === 'activity'   ? '' : 'none';
+  document.querySelectorAll('#adminView .filter-btn').forEach(function(b){ b.classList.remove('active'); });
+  if (btn) btn.classList.add('active');
+  if (tab === 'capacidade') loadCapacity();
+  if (tab === 'security')   loadSecurity();
+  if (tab === 'campaigns')  loadCampaigns();
+  if (tab === 'time')       loadTimeConfig();
+  if (tab === 'escalation') loadEscalationConfig();
+  if (tab === 'queuesetup') loadQueueSetup();
+  if (tab === 'activity')   loadActivity();
+}
+
+export function setAdminViewMode(mode) {
+  var realRole = session ? session.role : 'admin';
+  if (mode === 'admin') {
+    setupRole(session);
+  } else {
+    // Simula visão sem trocar o role real
+    var tabSdr     = document.getElementById('tabSdr');
+    var tabMercado = document.getElementById('tabMercado');
+    var tabAdmin   = document.getElementById('tabAdmin');
+    [tabSdr, tabMercado, tabAdmin].forEach(function(t){ if(t) t.style.display='none'; });
+    document.getElementById('navTabs').style.display = 'block';
+    if (mode === 'sdr') {
+      tabSdr.style.display = '';
+      tabMercado.style.display = '';
+      switchTab('sdr');
+    } else if (mode === 'closer') {
+      tabMercado.style.display = '';
+      switchTab('mercado');
+    }
+  }
+}
+

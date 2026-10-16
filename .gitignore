@@ -1,0 +1,12 @@
+Workflows N8N/
+Workflows N8N Atual/
+
+# Documentos internos e ferramentas locais — nunca publicar (repo publico)
+INCIDENTE-*.md
+PENDENCIAS.md
+ESPEC-*.md
+MUDANCAS-*.md
+.claude/
+.vscode/
+err.log
+*.bundle
