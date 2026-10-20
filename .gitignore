@@ -6,6 +6,7 @@ INCIDENTE-*.md
 PENDENCIAS.md
 ESPEC-*.md
 MUDANCAS-*.md
+painel-fila-roleta/
 .claude/
 .vscode/
 err.log
