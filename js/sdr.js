@@ -160,7 +160,23 @@ export function onAssignTypeChange() {
     if (field) field.style.display = '';
     if (!st.closersList.length) loadCloserOptions();
   }
+  syncReferralMode();
   updateStep1Button();
+}
+
+// Indicação: os dois modos valem. Por slots mostra só os horários livres do closer;
+// no horário específico vale qualquer hora combinada (sem a janela 10h–17h), desde que
+// a agenda do closer esteja livre — quem confere é o algoritmo.
+export function syncReferralMode() {
+  var desc = document.getElementById('modeSlotsDesc');
+  if (desc) desc.textContent = st.referral
+    ? 'Mostra os horários livres do closer indicado'
+    : 'O algoritmo escolhe o closer e mostra as janelas livres';
+  var descS = document.getElementById('modeSpecificDesc');
+  if (descS) descS.textContent = st.referral
+    ? 'O horário combinado com o closer — vale se a agenda dele estiver livre'
+    : 'Você define a data e a hora exatas da reunião';
+  if (st.schedulingMode) validateSlotPicker();
 }
 
 export function onReferredCloserChange() {
@@ -294,6 +310,22 @@ export function backToStep1() {
   document.getElementById('conn1').classList.remove('done');
 }
 
+// Da grade de slots de volta ao Passo 1, mantendo o que o SDR preencheu, para
+// trocar o modo (slots ↔ horário específico) sem recomeçar. Antes de reservar
+// nada foi gravado no servidor — algoritmo e /slots só consultam —, então basta
+// esquecer o closer sorteado e a grade.
+export function backToModeChoice() {
+  document.getElementById('c2').style.display = 'none';
+  document.getElementById('c2').classList.add('dimmed');
+  document.getElementById('noAvailBanner').classList.remove('show');
+  document.getElementById('slotsGrid').innerHTML = '';
+  Object.assign(st, { closerId: null, closerName: '', queue: [], refused: [], selectedSlotId: null,
+    noAvailability: false, algoError: null });
+  var btnConfirm = document.getElementById('btnConfirm');
+  if (btnConfirm) btnConfirm.disabled = true;
+  backToStep1();
+}
+
 // Executa o algoritmo (animação + fetch) e roteia o resultado. Compartilhado entre
 // o modo slots (goStep2) e o modo específico (submitSpecificSlot / clearSlotAndRetry).
 async function runAlgorithm() {
@@ -309,6 +341,20 @@ async function runAlgorithm() {
 
   await Promise.all([animPromise, fetchPromise]);
   document.getElementById('algoAnim').style.display='none';
+  if (st.algoError) {
+    // Volta ao Passo 1 com o motivo visível (ex.: closer indicado ocupado no horário).
+    var who = st.referral ? (st.referredCloserName || st.referredCloserId) : '';
+    var msg = who && /closer indicado/i.test(st.algoError)
+      ? who + ' já tem compromisso nesse horário. Escolha outro horário.'
+      : st.algoError;
+    document.getElementById('c1').classList.remove('dimmed');
+    if (st.schedulingMode === 'specific') {
+      document.getElementById('cSpecific').style.display = '';
+      document.getElementById('cSpecific').classList.remove('dimmed');
+    }
+    showToast(msg, 'error', 9000);
+    return;
+  }
   if (st.noAvailability) {
     document.getElementById('cSpecific').style.display='none';
     document.getElementById('c1').classList.remove('dimmed');
@@ -380,7 +426,15 @@ export function validateSlotPicker() {
     // Fora da janela 10h–17h BRT → vai direto ao Mercado (sem rodar o algoritmo)
     const [h, m] = time.split(':').map(Number);
     const totalMin = h * 60 + m;
-    st.specificOutOfWindow = (totalMin < 10 * 60 || totalMin >= 17 * 60);
+    // Indicação: horário combinado com o closer, sem janela — só não pode ser no passado.
+    st.specificOutOfWindow = !st.referral && (totalMin < 10 * 60 || totalMin >= 17 * 60);
+    if (st.referral && new Date(st.specificSlotStart).getTime() <= Date.now()) {
+      st.specificSlotStart = null;
+      warn.textContent = 'Esse horário já passou.';
+      warn.style.display = 'block';
+      if (btn) btn.disabled = true;
+      return;
+    }
     if (st.specificOutOfWindow) {
       warn.textContent = 'Horário fora da janela de atendimento (10h–17h) — o lead irá ao Mercado.';
       warn.style.display = 'block';
@@ -496,6 +550,7 @@ export async function goEmergencyPool() {
 
 export async function fetchCloser() {
   setLoading();
+  st.algoError = null;
   document.getElementById('noAvailBanner').classList.remove('show');
 
   try {
@@ -543,6 +598,9 @@ export async function fetchCloser() {
     }
   } catch(e) {
     st.noAvailability = false;
+    // Guarda o motivo: o runAlgorithm mostra na tela. Antes ia só para a grade de slots,
+    // que nem aparece no horário específico — o SDR ficava sem resposta.
+    st.algoError = e.message;
     document.getElementById('slotsGrid').innerHTML='<div class="slot-empty">Erro ao buscar closer: '+e.message+'</div>';
   }
 }
@@ -553,7 +611,7 @@ export async function fetchCloser() {
    st.closerId ANTES de chamar aqui, um clique durante o carregamento deixava o
    estado apontando pra um closer e a tela pintada com a agenda de outro — e a
    reserva saía com o par trocado. Foi o que aconteceu em 16/09/2026 (execuções
-   2111653 e 2111670: closerId=camila.harumi com slotId=free_rafael.rufino…, duas
+   2111653 e 2111670: closerId de um closer com slotId da agenda de outro, duas
    vezes seguidas com o mesmo lead).
    Agora toda busca leva um número de sequência e o dono dela: resposta atrasada é
    ignorada em vez de sobrescrever a atual, e se o closer mudou no meio a busca é
@@ -1118,6 +1176,7 @@ export function resetAll(){
   var refEl  = document.getElementById('referredCloserInput'); if(refEl) refEl.value='';
   var refFld = document.getElementById('referredCloserField'); if(refFld) refFld.style.display='none';
   var refErr = document.getElementById('referredCloserError'); if(refErr) refErr.style.display='none';
+  syncReferralMode();
   ['leadIdInput','clientEmailInput'].forEach(function(id){ document.getElementById(id).value=''; document.getElementById(id).classList.remove('error'); });
   var compEl = document.getElementById('competitorInput'); if(compEl) { compEl.value=''; compEl.classList.remove('error'); }
   var originEl = document.getElementById('leadOriginInput'); if(originEl) { originEl.value=''; originEl.classList.remove('error'); }

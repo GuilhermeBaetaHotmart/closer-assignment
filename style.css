@@ -607,6 +607,8 @@ body::after {
   border-color: var(--org); background: var(--org-tint);
   box-shadow: var(--shadow-glow);
 }
+.mode-card:disabled { opacity: 0.4; cursor: not-allowed; }
+.mode-card:disabled:hover { border-color: var(--bd-default); background: var(--bg-raised); }
 .mode-card-title { font-size: 14px; font-weight: 600; color: var(--txt-1); }
 .mode-card-desc { font-size: 12px; color: var(--txt-3); line-height: 1.4; }
 .specific-warn { margin-top: 12px; font-size: 13px; color: var(--org-lt); font-weight: 500; }

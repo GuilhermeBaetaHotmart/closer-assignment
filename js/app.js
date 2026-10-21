@@ -6,7 +6,7 @@ import { session, st, setSession, readStoredReservation, ACTIVE_RESERVATION_KEY 
 import { doLogout, setupRole, authFetch, isSessionExpired, touchActivity, startInactivityWatch, initGoogleLogin, isValidSessionToken, loadSegments } from './auth.js?v=20261016-2109';
 import {
   loadActiveCompetitorsField, updateTag, goStep2, selectSchedulingMode, validateSlotPicker,
-  submitSpecificSlot, backToStep1,
+  submitSpecificSlot, backToStep1, backToModeChoice,
   clearSlotAndRetry, goEmergencyPool, fetchCloser, fetchSlots, renderSlots, selectSlot,
   applySlotFilters, setFilterDay, setFilterPeriod, rejectAgenda, renderRefused, goBackToCloser,
   renderQueueHint, doReserveSpecific, doReserve, showReservationState, startReservationTimer,
@@ -34,7 +34,7 @@ import './animation.js?v=20261016-2109';
 /* ── Expõe no window tudo que é chamado via onclick/onchange no HTML ── */
 Object.assign(window, {
   doLogout,
-  goStep2, selectSchedulingMode, validateSlotPicker, submitSpecificSlot, backToStep1, clearSlotAndRetry, goEmergencyPool,
+  goStep2, selectSchedulingMode, validateSlotPicker, submitSpecificSlot, backToStep1, backToModeChoice, clearSlotAndRetry, goEmergencyPool,
   selectSlot, setFilterDay, setFilterPeriod, rejectAgenda, goBackToCloser, doReserveSpecific, doReserve,
   doConfirmFinal, doCancelReserve, resetAll, onCompetitorChange, onLeadOriginChange, startInlineEdit,
   onAssignTypeChange, onReferredCloserChange, loadCloserOptions, validateReferral,

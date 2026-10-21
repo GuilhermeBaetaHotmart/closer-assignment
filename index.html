@@ -218,11 +218,11 @@
         <div class="mode-choice" id="modeChoice">
           <button type="button" class="mode-card" id="modeSlots" onclick="selectSchedulingMode('slots')">
             <span class="mode-card-title">Agendar por slots</span>
-            <span class="mode-card-desc">O algoritmo escolhe o closer e mostra as janelas livres</span>
+            <span class="mode-card-desc" id="modeSlotsDesc">O algoritmo escolhe o closer e mostra as janelas livres</span>
           </button>
           <button type="button" class="mode-card" id="modeSpecific" onclick="selectSchedulingMode('specific')">
             <span class="mode-card-title">Horário específico</span>
-            <span class="mode-card-desc">Você define a data e a hora exatas da reunião</span>
+            <span class="mode-card-desc" id="modeSpecificDesc">Você define a data e a hora exatas da reunião</span>
           </button>
         </div>
 
@@ -351,6 +351,7 @@
         <div class="btn-row">
           <button class="btn btn-primary" id="btnConfirm" onclick="doReserve()" disabled>Reservar horário</button>
           <button class="btn btn-ghost" id="btnRejectAgenda" onclick="rejectAgenda()">Agenda não atende — próximo</button>
+          <button class="btn btn-ghost" onclick="backToModeChoice()">‹ Voltar e trocar o modo</button>
         </div>
         <div class="queue-hint" id="queueInfo" role="status"></div>
       </div>
