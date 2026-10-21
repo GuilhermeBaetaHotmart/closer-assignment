@@ -4,10 +4,10 @@
    ══════════════════════════════════════════════ */
 
 
-import { API, SEGS } from './api.js?v=20261016-2109';
-import { authFetch } from './auth.js?v=20261016-2109';
-import { showToast } from './ui.js?v=20261016-2109';
-import { session } from './state.js?v=20261016-2109';
+import { API, SEGS } from './api.js?v=20261020-2140';
+import { authFetch } from './auth.js?v=20261020-2140';
+import { showToast } from './ui.js?v=20261020-2140';
+import { session } from './state.js?v=20261020-2140';
 
 export async function loadQueueSetup() {
   var sections = document.getElementById('queueSetupSections');

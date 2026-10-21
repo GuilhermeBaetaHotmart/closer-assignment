@@ -5,7 +5,7 @@
    Usa só SEGS (faixas carregadas do backend) para os rótulos dos grupos.
    ══════════════════════════════════════════════ */
 
-import { SEGS } from './api.js?v=20261016-2109';
+import { SEGS } from './api.js?v=20261020-2140';
 
 /* ── Animação de fundo da tela de login ───────── */
 (function() {

@@ -2,11 +2,11 @@
    dashboard-capacity.js — Aba Capacidade. Equivalente ao Fluxo 10 (capacity).
    ══════════════════════════════════════════════ */
 
-import { API, SEGS } from './api.js?v=20261016-2109';
-import { authFetch } from './auth.js?v=20261016-2109';
-import { session, st } from './state.js?v=20261016-2109';
-import { fmtBRL, classify, getMon } from './utils.js?v=20261016-2109';
-import { showToast } from './ui.js?v=20261016-2109';
+import { API, SEGS } from './api.js?v=20261020-2140';
+import { authFetch } from './auth.js?v=20261020-2140';
+import { session, st } from './state.js?v=20261020-2140';
+import { fmtBRL, classify, getMon } from './utils.js?v=20261020-2140';
+import { showToast } from './ui.js?v=20261020-2140';
 
 // Helper: extrai total de um valor que pode ser number (formato antigo) ou {slots,free,total}
 function getTotal(v) {
